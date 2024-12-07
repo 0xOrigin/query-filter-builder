@@ -1,8 +1,5 @@
 # Query Filter Builder
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.github.0xorigin/query-filter-builder)](https://central.sonatype.com/artifact/com.github.0xorigin/query-filter-builder)
-[![License](https://img.shields.io/github/license/0xOrigin/query-filter-builder)](LICENSE)
-
 ## Overview
 **Query Filter Builder** is a Spring Boot-based library designed to simplify filtering data in Spring Data JPA repositories. It allows developers to build complex, dynamic queries with minimal boilerplate while enforcing clean code practices.
 
@@ -28,7 +25,7 @@ Add the following dependency to your `pom.xml`:
 
 ```xml
 <dependency>
-    <groupId>com.github._0xorigin</groupId>
+    <groupId>io.github.0xorigin</groupId>
     <artifactId>query-filter-builder</artifactId>
     <version>0.0.0-alpha</version>
 </dependency>

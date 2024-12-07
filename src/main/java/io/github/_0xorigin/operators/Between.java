@@ -1,0 +1,44 @@
+package io.github._0xorigin.operators;
+
+import io.github._0xorigin.base.AbstractFilterOperator;
+import io.github._0xorigin.base.ErrorWrapper;
+import io.github._0xorigin.base.Operator;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+
+import java.util.List;
+
+public class Between extends AbstractFilterOperator {
+
+    @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Predicate apply(Path<?> path, CriteriaBuilder cb, List<?> values, ErrorWrapper errorWrapper) {
+        if (isContainNulls(values))
+            return cb.conjunction();
+
+        if (values.size() != 2) {
+            addError(
+                errorWrapper,
+                generateFieldError(
+                    errorWrapper,
+                    values.toString(),
+                    "Value must be a List with exactly 2 elements for " + Operator.BETWEEN.getValue() + " operator."
+                )
+            );
+
+            return null;
+        }
+
+        if (isTemporalFilter(path)) {
+            TemporalGroup group = getTemporalGroup(path);
+            List<? extends Comparable> jdbcTypes = getJdbcTypes(path, group, values);
+            Expression expression = getTemporalPath(group).apply(path);
+            return cb.between(expression, jdbcTypes.get(0), jdbcTypes.get(jdbcTypes.size() - 1));
+        }
+
+        return cb.between(path.as(Comparable.class), (Comparable) values.get(0), (Comparable) values.get(values.size() - 1));
+    }
+
+}
