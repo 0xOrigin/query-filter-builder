@@ -30,5 +30,5 @@ Add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>com.github._0xorigin</groupId>
     <artifactId>query-filter-builder</artifactId>
-    <version>0.0.0-alpha</version>
+    <version>0.0.1-alpha</version>
 </dependency>
