@@ -1,3 +1,5 @@
+[![javadoc](https://javadoc.io/badge2/io.github.0xorigin/query-filter-builder/javadoc.svg)](https://javadoc.io/doc/io.github.0xorigin/query-filter-builder)
+
 # Query Filter Builder
 
 ## Overview
