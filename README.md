@@ -3,6 +3,8 @@
 ## Overview
 **Query Filter Builder** is a Spring Boot-based library designed to simplify filtering data in Spring Data JPA repositories. It allows developers to build complex, dynamic queries with minimal boilerplate while enforcing clean code practices.
 
+Read the [Javadoc](https://javadoc.io/doc/io.github.0xorigin/query-filter-builder)
+
 ---
 
 ## Features
