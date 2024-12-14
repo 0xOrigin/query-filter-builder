@@ -1,7 +1,7 @@
 # Query Filter Builder
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.0xorigin/query-filter-builder.svg)](https://search.maven.org/artifact/io.github.0xorigin/query-filter-builder)
-[![javadoc](https://javadoc.io/badge2/io.github.0xorigin/query-filter-builder/javadoc.svg?kill-cache=true)](https://javadoc.io/doc/io.github.0xorigin/query-filter-builder)
+[![javadoc](https://javadoc.io/badge2/io.github.0xorigin/query-filter-builder/JavaDoc.svg?color=blue&kill-cache=true)](https://javadoc.io/doc/io.github.0xorigin/query-filter-builder)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **Query Filter Builder** is a robust and versatile library designed to dynamically generate type-safe JPA queries from HTTP query parameters in Spring Boot applications.
