@@ -85,7 +85,7 @@ public class UserSpecification implements Specification<User> {
         filterContext.addFilter("createdBy", Operator.EQ)
                 .addFilter("isActive", Operator.IS_NULL, Operator.IS_NOT_NULL)
                 .addFilter("lastLogin", Operator.EQ, Operator.GTE)
-                .addFilter("createdBy__lastLogin__createdBy", Operator.EQ)
+                .addFilter("createdBy__lastLogin", Operator.EQ)
                 .addFilter("search", String.class, this::search);
 
         return queryFilterBuilder.buildFilterPredicate(root, query, cb, filterContext);
