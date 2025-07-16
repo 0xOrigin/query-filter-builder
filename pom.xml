@@ -7,15 +7,15 @@
     <artifactId>query-filter-builder</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-
-    <name>QueryFilterBuilder</name>
-    <description>A lightweight, extensible library for building dynamic filters for Spring Data JPA.</description>
+    <name>Query Filter Builder</name>
+    <description>A robust and versatile library designed to dynamically generate type-safe JPA queries from HTTP query parameters in Spring Boot applications.</description>
     <url>https://github.com/0xOrigin/query-filter-builder</url>
 
     <licenses>
         <license>
             <name>Apache License 2.0</name>
             <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
 
@@ -33,8 +33,13 @@
         <url>https://github.com/0xOrigin/query-filter-builder</url>
         <connection>scm:git:git://github.com/0xOrigin/query-filter-builder.git</connection>
         <developerConnection>scm:git:ssh://github.com/0xOrigin/query-filter-builder.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v1.0.0</tag>
     </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/0xOrigin/query-filter-builder/issues</url>
+    </issueManagement>
 
     <distributionManagement>
         <repository>
