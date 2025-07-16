@@ -4,11 +4,9 @@ import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.Operator;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import jakarta.persistence.metamodel.*;
+import org.aspectj.weaver.ast.Expr;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -76,7 +74,7 @@ public class FilterPathGeneratorTest {
         when(root.get(field)).thenReturn(path);
 
         // Execute
-        Path<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+        Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
 
         // Verify
         assertNotNull(result);
@@ -102,7 +100,7 @@ public class FilterPathGeneratorTest {
         when(join.get("name")).thenReturn(path);
 
         // Execute
-        Path<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+        Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
 
         // Verify
         assertNotNull(result);
@@ -139,7 +137,7 @@ public class FilterPathGeneratorTest {
         when(path.get("id")).thenReturn(path);
 
         // Execute
-        Path<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+        Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
 
         // Verify
         assertNotNull(result);
@@ -157,7 +155,7 @@ public class FilterPathGeneratorTest {
         when(managedType.getAttribute(field)).thenThrow(new IllegalArgumentException("Invalid field"));
 
         // Execute
-        Path<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+        Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
 
         // Verify
         assertNull(result);
@@ -181,7 +179,7 @@ public class FilterPathGeneratorTest {
             when(join.get("name")).thenReturn(path);
 
             // Execute
-            Path<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+            Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
 
             // Verify
             assertNotNull(result);

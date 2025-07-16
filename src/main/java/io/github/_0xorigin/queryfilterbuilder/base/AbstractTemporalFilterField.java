@@ -1,9 +1,10 @@
 package io.github._0xorigin.queryfilterbuilder.base;
 
+import java.io.Serializable;
 import java.time.temporal.Temporal;
 import java.util.Set;
 
-public abstract class AbstractTemporalFilterField<T extends Temporal> extends AbstractFilterField<T> {
+public abstract class AbstractTemporalFilterField<T extends Temporal & Comparable<? super T> & Serializable> extends AbstractFilterField<T> {
 
     {
         this.setSupportedOperators(
@@ -13,5 +14,4 @@ public abstract class AbstractTemporalFilterField<T extends Temporal> extends Ab
             )
         );
     }
-
 }

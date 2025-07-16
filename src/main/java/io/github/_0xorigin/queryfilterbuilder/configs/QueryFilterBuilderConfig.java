@@ -1,6 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder.configs;
 
 import io.github._0xorigin.queryfilterbuilder.*;
+import io.github._0xorigin.queryfilterbuilder.base.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.Parser;
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.QueryFilterBuilder;
@@ -37,5 +38,4 @@ public class QueryFilterBuilderConfig {
     public QueryFilterBuilderExceptionHandler queryFilterBuilderExceptionHandler(MessageSource messageSource) {
         return new QueryFilterBuilderExceptionHandler(messageSource);
     }
-
 }

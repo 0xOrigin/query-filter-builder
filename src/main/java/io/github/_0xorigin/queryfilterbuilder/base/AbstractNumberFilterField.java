@@ -1,8 +1,9 @@
 package io.github._0xorigin.queryfilterbuilder.base;
 
+import java.io.Serializable;
 import java.util.Set;
 
-public abstract class AbstractNumberFilterField<T extends Number> extends AbstractFilterField<T> {
+public abstract class AbstractNumberFilterField<T extends Number & Comparable<? super T> & Serializable> extends AbstractFilterField<T> {
 
     {
         this.setSupportedOperators(
@@ -12,5 +13,4 @@ public abstract class AbstractNumberFilterField<T extends Number> extends Abstra
             )
         );
     }
-
 }

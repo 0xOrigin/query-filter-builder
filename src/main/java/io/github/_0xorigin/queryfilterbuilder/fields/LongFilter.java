@@ -7,20 +7,11 @@ public class LongFilter extends AbstractNumberFilterField<Long> {
 
     @Override
     public Long cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return Long.parseLong(value.toString());
-        } catch (NumberFormatException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return Long.parseLong(value.toString());
     }
 
+    @Override
+    public Class<Long> getDataType() {
+        return Long.class;
+    }
 }

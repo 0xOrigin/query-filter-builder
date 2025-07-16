@@ -10,20 +10,11 @@ public class OffsetTimeFilter extends AbstractTemporalFilterField<OffsetDateTime
 
     @Override
     public OffsetDateTime cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return OffsetDateTime.parse(value.toString());
-        } catch (DateTimeParseException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return OffsetDateTime.parse(value.toString());
     }
 
+    @Override
+    public Class<OffsetDateTime> getDataType() {
+        return OffsetDateTime.class;
+    }
 }

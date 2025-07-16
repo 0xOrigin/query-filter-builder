@@ -7,20 +7,11 @@ public class ShortFilter extends AbstractNumberFilterField<Short> {
 
     @Override
     public Short cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return Short.parseShort(value.toString());
-        } catch (NumberFormatException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return Short.parseShort(value.toString());
     }
 
+    @Override
+    public Class<Short> getDataType() {
+        return Short.class;
+    }
 }

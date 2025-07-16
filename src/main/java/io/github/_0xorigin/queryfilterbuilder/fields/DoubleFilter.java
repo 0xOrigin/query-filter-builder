@@ -7,20 +7,11 @@ public class DoubleFilter extends AbstractNumberFilterField<Double> {
 
     @Override
     public Double cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return Double.parseDouble(value.toString());
-        } catch (NumberFormatException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return Double.parseDouble(value.toString());
     }
 
+    @Override
+    public Class<Double> getDataType() {
+        return Double.class;
+    }
 }

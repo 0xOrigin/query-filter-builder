@@ -10,20 +10,11 @@ public class ZonedDateTimeFilter extends AbstractTemporalFilterField<ZonedDateTi
 
     @Override
     public ZonedDateTime cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return ZonedDateTime.parse(value.toString());
-        } catch (DateTimeParseException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return ZonedDateTime.parse(value.toString());
     }
 
+    @Override
+    public Class<ZonedDateTime> getDataType() {
+        return ZonedDateTime.class;
+    }
 }

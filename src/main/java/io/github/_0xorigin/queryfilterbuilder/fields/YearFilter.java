@@ -10,20 +10,11 @@ public class YearFilter extends AbstractTemporalFilterField<Year> {
 
     @Override
     public Year cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return Year.parse(value.toString());
-        } catch (DateTimeParseException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return Year.parse(value.toString());
     }
 
+    @Override
+    public Class<Year> getDataType() {
+        return Year.class;
+    }
 }

@@ -95,7 +95,7 @@ class FilterBuilderTest {
             when(filterParser.parse()).thenReturn(Collections.emptyList());
             when(criteriaBuilder.conjunction()).thenReturn(mock(Predicate.class));
 
-            Predicate result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
+            Optional<Predicate> result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
 
             assertNotNull(result);
             verify(criteriaBuilder).conjunction();
@@ -128,7 +128,7 @@ class FilterBuilderTest {
                 when(filterContext.getFieldOperators()).thenReturn(fieldOperators);
 
                 // Execute
-                Predicate result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
+                Optional<Predicate> result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
 
                 // Verify
                 assertNotNull(result);
@@ -173,7 +173,7 @@ class FilterBuilderTest {
                 when(customFilterWrapper.getFilterField()).thenReturn((AbstractFilterField) filterField);
                 when(customFilterWrapper.getCustomFilterFunction()).thenReturn((r, q, cb, values, errors) -> predicate);
 
-                Predicate result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
+                Optional<Predicate> result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
 
                 assertNotNull(result);
                 assertEquals(predicate, result);

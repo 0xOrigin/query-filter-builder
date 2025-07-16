@@ -7,20 +7,11 @@ public class IntegerFilter extends AbstractNumberFilterField<Integer> {
 
     @Override
     public Integer cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return Integer.parseInt(value.toString());
-        } catch (NumberFormatException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return Integer.parseInt(value.toString());
     }
 
+    @Override
+    public Class<Integer> getDataType() {
+        return Integer.class;
+    }
 }

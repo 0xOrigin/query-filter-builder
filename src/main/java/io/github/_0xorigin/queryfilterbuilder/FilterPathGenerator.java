@@ -8,7 +8,9 @@ import jakarta.persistence.criteria.*;
 import jakarta.persistence.metamodel.*;
 import org.springframework.beans.factory.annotation.Value;
 
-public class FilterPathGenerator<T> extends FilterUtils implements PathGenerator<T> {
+import java.io.Serializable;
+
+public class FilterPathGenerator<T> implements PathGenerator<T> {
 
     @Value("${query-filter-builder.defaults.field-delimiter:__}")
     private String FIELD_DELIMITER;
@@ -21,7 +23,7 @@ public class FilterPathGenerator<T> extends FilterUtils implements PathGenerator
     }
 
     @Override
-    public Path<T> generate(Root<T> root, String field, ErrorWrapper errorWrapper) {
+    public <K extends Comparable<? super K> & Serializable> Expression<K> generate(Root<T> root, String field, ErrorWrapper errorWrapper) {
         String[] parts = field.split(FIELD_DELIMITER);
         Path<T> path = root;
         Class<?> currentJavaType = root.getJavaType();
@@ -58,9 +60,9 @@ public class FilterPathGenerator<T> extends FilterUtils implements PathGenerator
             SingularAttribute<?, ?> idAttribute = associatedEntity.getId(associatedEntity.getIdType().getJavaType());
             return path.get(finalPart).get(idAttribute.getName());
         } catch (IllegalStateException | IllegalArgumentException e) {
-            addError(
+            FilterUtils.addError(
                 errorWrapper,
-                generateFieldError(
+                FilterUtils.generateFieldError(
                     errorWrapper,
                     errorWrapper.getFilterWrapper().getValues().toString().replace("[", "").replace("]", ""),
                     e.getLocalizedMessage()

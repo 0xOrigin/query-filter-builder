@@ -10,20 +10,11 @@ public class LocalDateTimeFilter extends AbstractTemporalFilterField<LocalDateTi
 
     @Override
     public LocalDateTime cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return LocalDateTime.parse(value.toString());
-        } catch (DateTimeParseException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return LocalDateTime.parse(value.toString());
     }
 
+    @Override
+    public Class<LocalDateTime> getDataType() {
+        return LocalDateTime.class;
+    }
 }

@@ -6,8 +6,9 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import java.util.List;
+import java.util.Optional;
 
 @FunctionalInterface
-public interface CustomFilterFunction<T> extends QuintFunction<Root<T>, CriteriaQuery<?>, CriteriaBuilder, List<?>, ErrorWrapper, Predicate> {
+public interface CustomFilterFunction<T> extends QuintFunction<Root<T>, CriteriaQuery<?>, CriteriaBuilder, List<?>, ErrorWrapper, Optional<Predicate>> {
 
 }

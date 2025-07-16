@@ -7,11 +7,13 @@ import io.github._0xorigin.queryfilterbuilder.base.Parser;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
 import jakarta.persistence.criteria.*;
+import org.aspectj.weaver.ast.Expr;
 import org.springframework.core.MethodParameter;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
+import java.io.Serializable;
 import java.util.*;
 
 public class FilterBuilder<T> implements QueryFilterBuilder<T> {
@@ -30,7 +32,7 @@ public class FilterBuilder<T> implements QueryFilterBuilder<T> {
         this.filterValidator = filterValidator;
     }
 
-    public Predicate buildFilterPredicate(
+    public Optional<Predicate> buildFilterPredicate(
             Root<T> root,
             CriteriaQuery<?> criteriaQuery,
             CriteriaBuilder cb,
@@ -39,14 +41,15 @@ public class FilterBuilder<T> implements QueryFilterBuilder<T> {
         BindingResult bindingResult = new BeanPropertyBindingResult(this, "queryFilterBuilder");
         List<Predicate> predicates = filterParser.parse().stream()
                 .map(filterWrapper -> buildPredicateForWrapper(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper))
-                .filter(Objects::nonNull)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .toList();
 
         throwClientSideExceptionIfInvalid(bindingResult);
-        return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
+        return predicates.isEmpty() ? Optional.empty() : Optional.of(cb.and(predicates.toArray(new Predicate[0])));
     }
 
-    private Predicate buildPredicateForWrapper(
+    private Optional<Predicate> buildPredicateForWrapper(
             Root<T> root,
             CriteriaQuery<?> criteriaQuery,
             CriteriaBuilder cb,
@@ -54,17 +57,17 @@ public class FilterBuilder<T> implements QueryFilterBuilder<T> {
             FilterContext<T> filterContext,
             FilterWrapper filterWrapper
     ) {
-        Predicate customPredicate = buildCustomFieldPredicate(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper);
-        if (customPredicate != null)
+        Optional<Predicate> customPredicate = buildCustomFieldPredicate(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper);
+        if (customPredicate.isPresent())
             return customPredicate;
 
         if (isValidFieldOperator(filterContext, filterWrapper))
             return createPredicate(root, cb, bindingResult, filterWrapper);
 
-        return null;
+        return Optional.empty();
     }
 
-    private Predicate buildCustomFieldPredicate(
+    private Optional<Predicate> buildCustomFieldPredicate(
             Root<T> root,
             CriteriaQuery<?> criteriaQuery,
             CriteriaBuilder cb,
@@ -74,7 +77,7 @@ public class FilterBuilder<T> implements QueryFilterBuilder<T> {
     ) {
         CustomFilterWrapper<T> customFilter = filterContext.getCustomFieldFilters().get(filterWrapper.getOriginalFieldName());
         if (customFilter == null)
-            return null;
+            return Optional.empty();
 
         FilterOperator filterOperator = FilterOperatorRegistry.getOperator(Operator.EQ);
         filterValidator.validateFilterFieldAndOperator(
@@ -96,13 +99,13 @@ public class FilterBuilder<T> implements QueryFilterBuilder<T> {
                 filterContext.getFieldOperators().get(filterWrapper.getField()).contains(filterWrapper.getOperator());
     }
 
-    private Predicate createPredicate(
+    private <K extends Comparable<? super K> & Serializable> Optional<Predicate> createPredicate(
             Root<T> root,
             CriteriaBuilder builder,
             BindingResult bindingResult,
             FilterWrapper filterWrapper
     ) {
-        Path<T> path = getPath(root, filterWrapper, bindingResult);
+        Expression<K> path = getPath(root, filterWrapper, bindingResult);
         throwServerSideExceptionIfInvalid(bindingResult);
 
         Class<? extends Comparable<?>> dataType = getFieldDataType(path);
@@ -117,20 +120,19 @@ public class FilterBuilder<T> implements QueryFilterBuilder<T> {
         );
         throwServerSideExceptionIfInvalid(bindingResult);
 
-        List<?> values = filterWrapper.getValues()
+        List<K> values = filterWrapper.getValues()
                 .stream()
-                .map(value -> filterClass.cast(value, new ErrorWrapper(bindingResult, filterWrapper)))
+                .map(value -> (K) filterClass.safeCast(value, new ErrorWrapper(bindingResult, filterWrapper)))
                 .toList();
         return filterOperator.apply(path, builder, values, new ErrorWrapper(bindingResult, filterWrapper));
     }
 
-    private Path<T> getPath(Root<T> root, FilterWrapper filterWrapper, BindingResult bindingResult) {
+    private <K extends Comparable<? super K> & Serializable> Expression<K> getPath(Root<T> root, FilterWrapper filterWrapper, BindingResult bindingResult) {
         return filterPathGenerator.generate(root, filterWrapper.getField(), new ErrorWrapper(bindingResult, filterWrapper));
     }
 
-    @SuppressWarnings("unchecked")
-    private Class<? extends Comparable<?>> getFieldDataType(Path<T> path) {
-        return (Class<? extends Comparable<?>>) path.getJavaType();
+    private <K extends Comparable<? super K> & Serializable> Class<? extends Comparable<?>> getFieldDataType(Expression<K> path) {
+        return path.getJavaType();
     }
 
     private AbstractFilterField<?> getFieldFilter(Class<? extends Comparable<?>> dataType) {

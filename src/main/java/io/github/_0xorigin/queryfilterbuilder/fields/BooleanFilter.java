@@ -1,6 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
 import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.AbstractFilterField;
 
@@ -21,9 +22,9 @@ public class BooleanFilter extends AbstractFilterField<Boolean> {
         try {
             return !value.equals("null") ? Boolean.valueOf(value.toString()) : null;
         } catch (Exception e) {
-            addError(
+            FilterUtils.addError(
                 errorWrapper,
-                generateFieldError(
+                FilterUtils.generateFieldError(
                     errorWrapper,
                     value.toString(),
                     e.getLocalizedMessage()
@@ -34,4 +35,8 @@ public class BooleanFilter extends AbstractFilterField<Boolean> {
         return null;
     }
 
+    @Override
+    public Class<Boolean> getDataType() {
+        return Boolean.class;
+    }
 }

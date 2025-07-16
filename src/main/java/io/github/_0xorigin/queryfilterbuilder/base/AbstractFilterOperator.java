@@ -11,7 +11,7 @@ import java.time.temporal.Temporal;
 import java.util.*;
 import java.util.function.Function;
 
-public abstract class AbstractFilterOperator extends FilterUtils implements FilterOperator {
+public abstract class AbstractFilterOperator implements FilterOperator {
 
     protected enum TemporalGroup {
         Date, Time, Timestamp;
@@ -105,13 +105,4 @@ public abstract class AbstractFilterOperator extends FilterUtils implements Filt
     protected Boolean isTemporalFilter(Path<?> path) {
         return Arrays.stream(path.getJavaType().getInterfaces()).anyMatch(i -> i == Temporal.class);
     }
-
-    protected Boolean isContainNulls(List<?> values) {
-        return values.stream().anyMatch(Objects::isNull);
-    }
-
-    protected Boolean isEmpty(List<?> values) {
-        return values.isEmpty();
-    }
-
 }

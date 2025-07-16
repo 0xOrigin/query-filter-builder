@@ -5,7 +5,7 @@ import io.github._0xorigin.queryfilterbuilder.base.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FilterValidator extends FilterUtils {
+public class FilterValidator {
 
     public void validateFilterFieldAndOperator(
             AbstractFilterField<?> filterClass,
@@ -29,9 +29,9 @@ public class FilterValidator extends FilterUtils {
             );
 
         for (String errorMessage : errorMessages) {
-            addError(
+            FilterUtils.addError(
                 errorWrapper,
-                generateFieldError(
+                FilterUtils.generateFieldError(
                     errorWrapper,
                     filterWrapper.getValues().toString(),
                     errorMessage

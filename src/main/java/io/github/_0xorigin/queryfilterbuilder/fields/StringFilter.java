@@ -23,4 +23,8 @@ public class StringFilter extends AbstractFilterField<String> {
         return value.toString();
     }
 
+    @Override
+    public Class<String> getDataType() {
+        return String.class;
+    }
 }

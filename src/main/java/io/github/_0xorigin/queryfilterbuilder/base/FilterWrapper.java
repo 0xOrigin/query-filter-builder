@@ -1,5 +1,6 @@
 package io.github._0xorigin.queryfilterbuilder.base;
 
+import java.io.Serializable;
 import java.util.List;
 
 public class FilterWrapper {
@@ -28,8 +29,9 @@ public class FilterWrapper {
         return operator;
     }
 
-    public List<?> getValues() {
-        return values;
+    @SuppressWarnings("unchecked")
+    public <K extends Comparable<? super K> & Serializable> List<K> getValues() {
+        return (List<K>) values;
     }
 
     @Override

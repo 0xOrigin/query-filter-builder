@@ -19,20 +19,11 @@ public class CharacterFilter extends AbstractFilterField<Character> {
 
     @Override
     public Character cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return value.toString().charAt(0);
-        } catch (Exception e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return value.toString().charAt(0);
     }
 
+    @Override
+    public Class<Character> getDataType() {
+        return Character.class;
+    }
 }

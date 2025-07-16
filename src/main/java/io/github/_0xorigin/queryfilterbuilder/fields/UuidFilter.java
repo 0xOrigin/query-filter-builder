@@ -20,20 +20,11 @@ public class UuidFilter extends AbstractFilterField<UUID> {
 
     @Override
     public UUID cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return UUID.fromString(value.toString());
-        } catch (IllegalArgumentException e) {
-            addError(
-                errorWrapper,
-                generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+        return UUID.fromString(value.toString());
     }
 
+    @Override
+    public Class<UUID> getDataType() {
+        return UUID.class;
+    }
 }

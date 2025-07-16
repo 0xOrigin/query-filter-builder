@@ -5,12 +5,18 @@ import io.github._0xorigin.queryfilterbuilder.fields.*;
 
 import java.time.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 public class FilterRegistry {
 
     private static final Map<Class<? extends Comparable<?>>, AbstractFilterField<?>> fieldConfigMap = new HashMap<>();
+    private final List<AbstractFilterField<?>> filters;
+
+    public FilterRegistry(List<AbstractFilterField<?>> filters) {
+        this.filters = filters;
+    }
 
     static {
         addFieldFilter(Boolean.class, new BooleanFilter());
