@@ -1,15 +1,13 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractTemporalFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractTemporalFilterField;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 
-public class LocalDateFilter extends AbstractTemporalFilterField<LocalDate> {
+public final class LocalDateFilter extends AbstractTemporalFilterField<LocalDate> {
 
     @Override
-    public LocalDate cast(Object value, ErrorWrapper errorWrapper) {
+    public LocalDate cast(Object value) {
         return LocalDate.parse(value.toString());
     }
 

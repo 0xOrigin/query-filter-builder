@@ -1,1 +1,5 @@
+io.github._0xorigin.queryfilterbuilder.configs.FilterFieldConfig
+io.github._0xorigin.queryfilterbuilder.configs.FilterOperatorConfig
+io.github._0xorigin.queryfilterbuilder.configs.FilterRegistryConfig
+io.github._0xorigin.queryfilterbuilder.configs.FilterOperatorRegistryConfig
 io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderConfig

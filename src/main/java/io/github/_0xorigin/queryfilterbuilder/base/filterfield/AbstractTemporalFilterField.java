@@ -1,4 +1,6 @@
-package io.github._0xorigin.queryfilterbuilder.base;
+package io.github._0xorigin.queryfilterbuilder.base.filterfield;
+
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
 import java.io.Serializable;
 import java.time.temporal.Temporal;

@@ -1,12 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.*;
 import jakarta.persistence.metamodel.*;
-import org.aspectj.weaver.ast.Expr;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,7 +78,7 @@ public class FilterPathGeneratorTest {
         // Verify
         assertNotNull(result);
         verify(root).get(field);
-        assertFalse(errorWrapper.getBindingResult().hasErrors());
+        assertFalse(errorWrapper.bindingResult().hasErrors());
     }
 
     @Test
@@ -143,7 +142,7 @@ public class FilterPathGeneratorTest {
         assertNotNull(result);
         verify(root).get(field);
         verify(path).get("id");
-        assertFalse(errorWrapper.getBindingResult().hasErrors());
+        assertFalse(errorWrapper.bindingResult().hasErrors());
     }
 
     @Test
@@ -159,8 +158,8 @@ public class FilterPathGeneratorTest {
 
         // Verify
         assertNull(result);
-        assertTrue(errorWrapper.getBindingResult().hasErrors());
-        assertEquals(1, errorWrapper.getBindingResult().getAllErrors().size());
+        assertTrue(errorWrapper.bindingResult().hasErrors());
+        assertEquals(1, errorWrapper.bindingResult().getAllErrors().size());
     }
 
     @Test
@@ -185,7 +184,7 @@ public class FilterPathGeneratorTest {
             assertNotNull(result);
             verify(root).join("user", JoinType.LEFT);
             verify(join).get("name");
-            assertFalse(errorWrapper.getBindingResult().hasErrors());
+            assertFalse(errorWrapper.bindingResult().hasErrors());
 
         } catch (Exception e) {
             fail("Failed to set custom delimiter: " + e.getMessage());

@@ -1,12 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractNumberFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFilterField;
 
-public class ShortFilter extends AbstractNumberFilterField<Short> {
+public final class ShortFilter extends AbstractNumberFilterField<Short> {
 
     @Override
-    public Short cast(Object value, ErrorWrapper errorWrapper) {
+    public Short cast(Object value) {
         return Short.parseShort(value.toString());
     }
 

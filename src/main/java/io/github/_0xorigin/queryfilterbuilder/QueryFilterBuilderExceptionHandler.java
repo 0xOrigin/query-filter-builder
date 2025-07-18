@@ -4,7 +4,6 @@ import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurat
 import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryFilterValueException;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.context.MessageSource;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
-@Order(Ordered.LOWEST_PRECEDENCE)
+@Order
 public class QueryFilterBuilderExceptionHandler {
 
     private final MessageSource messageSource;
@@ -66,5 +65,4 @@ public class QueryFilterBuilderExceptionHandler {
         response.put("errors", groupedErrors);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
-
 }

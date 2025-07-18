@@ -1,13 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.FilterUtils;
-import io.github._0xorigin.queryfilterbuilder.base.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
 import java.util.Set;
 
-public class BooleanFilter extends AbstractFilterField<Boolean> {
+public final class BooleanFilter extends AbstractFilterField<Boolean> {
 
     {
         this.setSupportedOperators(
@@ -18,21 +16,8 @@ public class BooleanFilter extends AbstractFilterField<Boolean> {
     }
 
     @Override
-    public Boolean cast(Object value, ErrorWrapper errorWrapper) {
-        try {
-            return !value.equals("null") ? Boolean.valueOf(value.toString()) : null;
-        } catch (Exception e) {
-            FilterUtils.addError(
-                errorWrapper,
-                FilterUtils.generateFieldError(
-                    errorWrapper,
-                    value.toString(),
-                    e.getLocalizedMessage()
-                )
-            );
-        }
-
-        return null;
+    public Boolean cast(Object value) {
+        return !value.equals("null") ? Boolean.valueOf(value.toString()) : null;
     }
 
     @Override

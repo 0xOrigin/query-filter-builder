@@ -1,20 +1,18 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractTemporalFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractTemporalFilterField;
 
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeParseException;
+import java.time.OffsetTime;
 
-public class OffsetTimeFilter extends AbstractTemporalFilterField<OffsetDateTime> {
+public final class OffsetTimeFilter extends AbstractTemporalFilterField<OffsetTime> {
 
     @Override
-    public OffsetDateTime cast(Object value, ErrorWrapper errorWrapper) {
-        return OffsetDateTime.parse(value.toString());
+    public OffsetTime cast(Object value) {
+        return OffsetTime.parse(value.toString());
     }
 
     @Override
-    public Class<OffsetDateTime> getDataType() {
-        return OffsetDateTime.class;
+    public Class<OffsetTime> getDataType() {
+        return OffsetTime.class;
     }
 }

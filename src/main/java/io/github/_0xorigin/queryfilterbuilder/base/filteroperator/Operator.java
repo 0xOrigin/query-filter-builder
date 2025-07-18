@@ -1,4 +1,4 @@
-package io.github._0xorigin.queryfilterbuilder.base;
+package io.github._0xorigin.queryfilterbuilder.base.filteroperator;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,5 +49,4 @@ public enum Operator {
 
         return operator;
     }
-
 }

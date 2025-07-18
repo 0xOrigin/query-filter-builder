@@ -1,12 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractNumberFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFilterField;
 
-public class FloatFilter extends AbstractNumberFilterField<Float> {
+public final class FloatFilter extends AbstractNumberFilterField<Float> {
 
     @Override
-    public Float cast(Object value, ErrorWrapper errorWrapper) {
+    public Float cast(Object value) {
         return Float.parseFloat(value.toString());
     }
 

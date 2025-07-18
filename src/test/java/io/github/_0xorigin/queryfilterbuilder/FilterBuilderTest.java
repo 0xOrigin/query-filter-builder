@@ -1,6 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.*;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.CustomFilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurationException;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
@@ -14,6 +19,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.*;
 
@@ -38,6 +44,12 @@ class FilterBuilderTest {
 
     @Mock
     private FilterValidator filterValidator;
+
+    @Mock
+    private FilterRegistry filterRegistry;
+
+    @Mock
+    private FilterOperatorRegistry filterOperatorRegistry;
 
     @Mock
     private AbstractFilterField<String> filterField;
@@ -83,8 +95,8 @@ class FilterBuilderTest {
 
     @BeforeEach
     void setUp() {
-        filterBuilder = new FilterBuilder<>(filterParser, pathGenerator, filterValidator);
-        when(filterOperator.apply(any(), any(), any(), any())).thenReturn(predicate);
+        filterBuilder = new FilterBuilder<>(filterParser, pathGenerator, filterRegistry, filterOperatorRegistry);
+        when(filterOperator.apply(any(), any(), any(), any())).thenReturn(Optional.of(predicate));
     }
 
     @Nested
@@ -95,7 +107,7 @@ class FilterBuilderTest {
             when(filterParser.parse()).thenReturn(Collections.emptyList());
             when(criteriaBuilder.conjunction()).thenReturn(mock(Predicate.class));
 
-            Optional<Predicate> result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
+            Specification result = filterBuilder.buildFilterSpecification(filterContext);
 
             assertNotNull(result);
             verify(criteriaBuilder).conjunction();
@@ -112,9 +124,9 @@ class FilterBuilderTest {
                 FilterWrapper validFilter = new FilterWrapper(field, field, operator, List.of("value"));
 
                 // Mock registries
-                mockedRegistry.when(() -> FilterRegistry.getFieldFilter(String.class))
+                mockedRegistry.when(() -> filterRegistry.getFieldFilter(String.class))
                         .thenReturn(filterField);
-                mockedOperatorRegistry.when(() -> FilterOperatorRegistry.getOperator(operator))
+                mockedOperatorRegistry.when(() -> filterOperatorRegistry.getOperator(operator))
                         .thenReturn(filterOperator);
 
                 // Mock other dependencies
@@ -128,13 +140,13 @@ class FilterBuilderTest {
                 when(filterContext.getFieldOperators()).thenReturn(fieldOperators);
 
                 // Execute
-                Optional<Predicate> result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
+                Specification result = filterBuilder.buildFilterSpecification(filterContext);
 
                 // Verify
                 assertNotNull(result);
                 verify(filterParser).parse();
                 verify(pathGenerator).generate(eq(root), eq(field), any());
-                verify(filterField).cast(any(), any());
+                verify(filterField).cast(any());
             }
         }
     }
@@ -152,9 +164,9 @@ class FilterBuilderTest {
                 FilterWrapper customFilter = new FilterWrapper(field, field, operator, List.of("value"));
 
                 // Mock registries
-                mockedRegistry.when(() -> FilterRegistry.getFieldFilter(String.class))
+                mockedRegistry.when(() -> filterRegistry.getFieldFilter(String.class))
                         .thenReturn(filterField);
-                mockedOperatorRegistry.when(() -> FilterOperatorRegistry.getOperator(operator))
+                mockedOperatorRegistry.when(() -> filterOperatorRegistry.getOperator(operator))
                         .thenReturn(filterOperator);
 
                 // Mock other dependencies
@@ -163,17 +175,16 @@ class FilterBuilderTest {
                 when(path.getJavaType()).thenReturn((Class) String.class);
                 when(criteriaBuilder.and(any())).thenReturn(predicate);
 
-                CustomFilterWrapper<TestEntity> customFilterWrapper = mock(CustomFilterWrapper.class);
-                Map<String, CustomFilterWrapper<TestEntity>> customFilters = new HashMap<>();
+                CustomFilterWrapper<TestEntity, ?> customFilterWrapper = mock(CustomFilterWrapper.class);
+                Map<String, CustomFilterWrapper<TestEntity, ?>> customFilters = new HashMap<>();
                 customFilters.put("customField", customFilterWrapper);
 
                 when(filterParser.parse()).thenReturn(List.of(customFilter));
                 when(filterContext.getCustomFieldFilters()).thenReturn(customFilters);
 
-                when(customFilterWrapper.getFilterField()).thenReturn((AbstractFilterField) filterField);
-                when(customFilterWrapper.getCustomFilterFunction()).thenReturn((r, q, cb, values, errors) -> predicate);
+                when(customFilterWrapper.customFilterFunction()).thenReturn((r, q, cb, values, errors) -> Optional.of(predicate));
 
-                Optional<Predicate> result = filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext);
+                Specification result = filterBuilder.buildFilterSpecification(filterContext);
 
                 assertNotNull(result);
                 assertEquals(predicate, result);
@@ -184,19 +195,18 @@ class FilterBuilderTest {
         void buildFilterPredicate_WithInvalidCustomFilter_ThrowsException() {
             String field = "customField";
             FilterWrapper customFilter = new FilterWrapper(field, field, Operator.EQ, List.of("value"));
-            CustomFilterWrapper<TestEntity> customFilterWrapper = mock(CustomFilterWrapper.class);
+            CustomFilterWrapper<TestEntity, ?> customFilterWrapper = mock(CustomFilterWrapper.class);
             AbstractFilterField<?> filterField = mock(AbstractFilterField.class);
 
-            Map<String, CustomFilterWrapper<TestEntity>> customFilters = new HashMap<>();
+            Map<String, CustomFilterWrapper<TestEntity, ?>> customFilters = new HashMap<>();
             customFilters.put(field, customFilterWrapper);
 
             when(filterParser.parse()).thenReturn(List.of(customFilter));
             when(filterContext.getCustomFieldFilters()).thenReturn(customFilters);
-            when(customFilterWrapper.getFilterField()).thenReturn((AbstractFilterField) filterField);
             doThrow(RuntimeException.class).when(filterValidator).validateFilterFieldAndOperator(any(), any(), any(), any());
 
             assertThrows(RuntimeException.class, () ->
-                    filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext)
+                    filterBuilder.buildFilterSpecification(filterContext)
             );
         }
     }
@@ -217,7 +227,7 @@ class FilterBuilderTest {
                     .when(pathGenerator).generate(any(), any(), any());
 
             assertThrows(InvalidFilterConfigurationException.class, () ->
-                    filterBuilder.buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext)
+                    filterBuilder.buildFilterSpecification(filterContext)
             );
         }
 

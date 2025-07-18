@@ -1,7 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.Parser;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class FilterParser implements Parser {
+public final class FilterParser implements Parser {
 
     private final HttpServletRequest request;
 
@@ -60,5 +60,4 @@ public class FilterParser implements Parser {
 
         return wrapperList;
     }
-
 }

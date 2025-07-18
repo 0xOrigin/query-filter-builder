@@ -1,6 +1,9 @@
-package io.github._0xorigin.queryfilterbuilder.base;
+package io.github._0xorigin.queryfilterbuilder.base.filterfield;
+
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,7 +13,7 @@ public abstract class AbstractFilterField<T extends Comparable<? super T> & Seri
 
     @Override
     public Set<Operator> getSupportedOperators() {
-        return supportedOperators;
+        return Collections.unmodifiableSet(supportedOperators);
     }
 
     protected void setSupportedOperators(Set<Operator> operators) {

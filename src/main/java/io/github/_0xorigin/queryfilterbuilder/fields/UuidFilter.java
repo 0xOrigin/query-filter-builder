@@ -1,13 +1,12 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
 import java.util.Set;
 import java.util.UUID;
 
-public class UuidFilter extends AbstractFilterField<UUID> {
+public final class UuidFilter extends AbstractFilterField<UUID> {
 
     {
         this.setSupportedOperators(
@@ -19,7 +18,7 @@ public class UuidFilter extends AbstractFilterField<UUID> {
     }
 
     @Override
-    public UUID cast(Object value, ErrorWrapper errorWrapper) {
+    public UUID cast(Object value) {
         return UUID.fromString(value.toString());
     }
 

@@ -1,2 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderConfig

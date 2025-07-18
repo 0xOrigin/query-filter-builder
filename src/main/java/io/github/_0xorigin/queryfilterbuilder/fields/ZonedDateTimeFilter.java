@@ -1,15 +1,13 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractTemporalFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractTemporalFilterField;
 
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
 
-public class ZonedDateTimeFilter extends AbstractTemporalFilterField<ZonedDateTime> {
+public final class ZonedDateTimeFilter extends AbstractTemporalFilterField<ZonedDateTime> {
 
     @Override
-    public ZonedDateTime cast(Object value, ErrorWrapper errorWrapper) {
+    public ZonedDateTime cast(Object value) {
         return ZonedDateTime.parse(value.toString());
     }
 

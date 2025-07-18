@@ -1,18 +1,20 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.*;
-import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.function.CustomFilterFunction;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.CustomFilterWrapper;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class FilterContext<T> {
+public final class FilterContext<T> {
 
     private final Map<String, Set<Operator>> fieldOperators = new HashMap<>();
-    private final Map<String, CustomFilterWrapper<T>> customFieldFilters = new HashMap<>();
+    private final Map<String, CustomFilterWrapper<T, ?>> customFieldFilters = new HashMap<>();
 
     public FilterContext<T> addFilter(
-            String fieldName,
-            Operator... operators
+        String fieldName,
+        Operator... operators
     ) {
         if (operators == null || operators.length == 0) {
             throw new IllegalArgumentException("At least one operator must be provided");
@@ -22,13 +24,12 @@ public class FilterContext<T> {
         return this;
     }
 
-    public FilterContext<T> addFilter(
-            String fieldName,
-            Class<? extends Comparable<?>> dataType,
-            CustomFilterFunction<T> filterFunction
+    public <K extends Comparable<? super K> & Serializable> FilterContext<T> addFilter(
+        String fieldName,
+        Class<K> dataType,
+        CustomFilterFunction<T> filterFunction
     ) {
-        AbstractFilterField<?> filterField = FilterRegistry.getFieldFilter(dataType);
-        customFieldFilters.put(fieldName, new CustomFilterWrapper<T>(filterField, filterFunction));
+        customFieldFilters.put(fieldName, new CustomFilterWrapper<>(dataType, filterFunction));
         return this;
     }
 
@@ -36,8 +37,7 @@ public class FilterContext<T> {
         return Collections.unmodifiableMap(fieldOperators);
     }
 
-    public Map<String, CustomFilterWrapper<T>> getCustomFieldFilters() {
+    public Map<String, CustomFilterWrapper<T, ?>> getCustomFieldFilters() {
         return Collections.unmodifiableMap(customFieldFilters);
     }
-
 }

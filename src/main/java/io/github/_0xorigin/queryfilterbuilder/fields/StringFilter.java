@@ -1,12 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
 import java.util.Set;
 
-public class StringFilter extends AbstractFilterField<String> {
+public final class StringFilter extends AbstractFilterField<String> {
 
     {
         this.setSupportedOperators(
@@ -19,7 +18,7 @@ public class StringFilter extends AbstractFilterField<String> {
     }
 
     @Override
-    public String cast(Object value, ErrorWrapper errorWrapper) {
+    public String cast(Object value) {
         return value.toString();
     }
 

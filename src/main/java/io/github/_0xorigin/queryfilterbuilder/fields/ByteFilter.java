@@ -1,13 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractNumberFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFilterField;
 
-public class ByteFilter extends AbstractNumberFilterField<Byte> {
+public final class ByteFilter extends AbstractNumberFilterField<Byte> {
 
     @Override
-    public Byte cast(Object value, ErrorWrapper errorWrapper) {
+    public Byte cast(Object value) {
         return Byte.parseByte(value.toString());
     }
 

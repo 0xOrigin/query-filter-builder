@@ -1,10 +1,14 @@
 package io.github._0xorigin.queryfilterbuilder.configs;
 
-import io.github._0xorigin.queryfilterbuilder.*;
-import io.github._0xorigin.queryfilterbuilder.base.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.FilterBuilder;
+import io.github._0xorigin.queryfilterbuilder.FilterParser;
+import io.github._0xorigin.queryfilterbuilder.FilterPathGenerator;
+import io.github._0xorigin.queryfilterbuilder.QueryFilterBuilderExceptionHandler;
 import io.github._0xorigin.queryfilterbuilder.base.Parser;
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.QueryFilterBuilder;
+import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
+import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.MessageSource;
@@ -20,18 +24,18 @@ public class QueryFilterBuilderConfig {
     }
 
     @Bean
-    public FilterValidator validator() {
-        return new FilterValidator();
-    }
-
-    @Bean
     public <T> PathGenerator<T> pathGenerator(EntityManager entityManager) {
-        return new FilterPathGenerator<T>(entityManager);
+        return new FilterPathGenerator<>(entityManager);
     }
 
     @Bean
-    public <T> QueryFilterBuilder<T> queryFilterBuilder(HttpServletRequest request, EntityManager entityManager) {
-        return new FilterBuilder<>(parser(request), pathGenerator(entityManager), validator());
+    public <T> QueryFilterBuilder<T> queryFilterBuilder(
+        HttpServletRequest request,
+        EntityManager entityManager,
+        FilterRegistry filterRegistry,
+        FilterOperatorRegistry filterOperatorRegistry
+    ) {
+        return new FilterBuilder<>(parser(request), pathGenerator(entityManager), filterRegistry, filterOperatorRegistry);
     }
 
     @Bean

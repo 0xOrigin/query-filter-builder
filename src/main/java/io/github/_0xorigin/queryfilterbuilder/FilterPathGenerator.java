@@ -1,7 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.*;
@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.io.Serializable;
 
-public class FilterPathGenerator<T> implements PathGenerator<T> {
+public final class FilterPathGenerator<T> implements PathGenerator<T> {
 
     @Value("${query-filter-builder.defaults.field-delimiter:__}")
     private String FIELD_DELIMITER;
@@ -64,13 +64,11 @@ public class FilterPathGenerator<T> implements PathGenerator<T> {
                 errorWrapper,
                 FilterUtils.generateFieldError(
                     errorWrapper,
-                    errorWrapper.getFilterWrapper().getValues().toString().replace("[", "").replace("]", ""),
+                    errorWrapper.filterWrapper().values().toString().replace("[", "").replace("]", ""),
                     e.getLocalizedMessage()
                 )
             );
+            return null;
         }
-
-        return null;
     }
-
 }

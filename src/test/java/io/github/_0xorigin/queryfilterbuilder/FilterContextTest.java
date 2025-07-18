@@ -1,9 +1,9 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.CustomFilterFunction;
-import io.github._0xorigin.queryfilterbuilder.base.CustomFilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.function.CustomFilterFunction;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.CustomFilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 class FilterContextTest {
 
@@ -27,6 +27,12 @@ class FilterContextTest {
 
     @Mock
     private AbstractFilterField<?> mockFilterField;
+
+    @Mock
+    private Class<String> dataType;
+
+    @Mock
+    private FilterRegistry filterRegistry;
 
     @BeforeEach
     void setUp() {
@@ -93,7 +99,6 @@ class FilterContextTest {
             // Given
             String fieldName = "customField";
             try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
-                filterRegistry.when(() -> FilterRegistry.getFieldFilter(any())).thenReturn(mockFilterField);
 
                 // When
                 FilterContext<TestEntity> result = filterContext.addFilter(fieldName, String.class, mockFilterFunction);
@@ -102,10 +107,9 @@ class FilterContextTest {
                 assertSame(filterContext, result);
                 assertTrue(filterContext.getCustomFieldFilters().containsKey(fieldName));
 
-                CustomFilterWrapper<TestEntity> wrapper = filterContext.getCustomFieldFilters().get(fieldName);
+                CustomFilterWrapper<TestEntity, ?> wrapper = filterContext.getCustomFieldFilters().get(fieldName);
                 assertNotNull(wrapper);
-                assertEquals(mockFilterField, wrapper.getFilterField());
-                assertEquals(mockFilterFunction, wrapper.getCustomFilterFunction());
+                assertEquals(mockFilterFunction, wrapper.customFilterFunction());
             }
         }
 
@@ -114,7 +118,6 @@ class FilterContextTest {
             // Given
             String fieldName = "customField";
             try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
-                filterRegistry.when(() -> FilterRegistry.getFieldFilter(any())).thenReturn(mockFilterField);
 
                 CustomFilterFunction<TestEntity> newFilterFunction = mock(CustomFilterFunction.class);
 
@@ -124,8 +127,8 @@ class FilterContextTest {
 
                 // Then
                 assertEquals(1, filterContext.getCustomFieldFilters().size());
-                CustomFilterWrapper<TestEntity> wrapper = filterContext.getCustomFieldFilters().get(fieldName);
-                assertEquals(newFilterFunction, wrapper.getCustomFilterFunction());
+                CustomFilterWrapper<TestEntity, ?> wrapper = filterContext.getCustomFieldFilters().get(fieldName);
+                assertEquals(newFilterFunction, wrapper.customFilterFunction());
             }
         }
     }
@@ -141,7 +144,6 @@ class FilterContextTest {
             Operator[] operators1 = {Operator.EQ};
 
             try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
-                filterRegistry.when(() -> FilterRegistry.getFieldFilter(any())).thenReturn(mockFilterField);
 
                 // When
                 filterContext
@@ -179,15 +181,14 @@ class FilterContextTest {
             // Given
             String fieldName = "testField";
             try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
-                filterRegistry.when(() -> FilterRegistry.getFieldFilter(any())).thenReturn(mockFilterField);
                 filterContext.addFilter(fieldName, String.class, mockFilterFunction);
 
                 // When
-                Map<String, CustomFilterWrapper<TestEntity>> customFilters = filterContext.getCustomFieldFilters();
+                Map<String, CustomFilterWrapper<TestEntity, ?>> customFilters = filterContext.getCustomFieldFilters();
 
                 // Then
                 assertThrows(UnsupportedOperationException.class,
-                        () -> customFilters.put("newField", new CustomFilterWrapper<>(mockFilterField, mockFilterFunction)));
+                        () -> customFilters.put("newField", new CustomFilterWrapper<>(dataType, mockFilterFunction)));
             }
         }
     }

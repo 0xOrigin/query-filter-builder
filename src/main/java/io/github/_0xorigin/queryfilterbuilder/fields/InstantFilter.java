@@ -1,15 +1,13 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractTemporalFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractTemporalFilterField;
 
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
 
-public class InstantFilter extends AbstractTemporalFilterField<Instant> {
+public final class InstantFilter extends AbstractTemporalFilterField<Instant> {
 
     @Override
-    public Instant cast(Object value, ErrorWrapper errorWrapper) {
+    public Instant cast(Object value) {
         return Instant.parse(value.toString());
     }
 

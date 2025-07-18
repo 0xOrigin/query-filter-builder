@@ -1,15 +1,13 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractTemporalFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractTemporalFilterField;
 
 import java.time.YearMonth;
-import java.time.format.DateTimeParseException;
 
-public class YearMonthFilter extends AbstractTemporalFilterField<YearMonth> {
+public final class YearMonthFilter extends AbstractTemporalFilterField<YearMonth> {
 
     @Override
-    public YearMonth cast(Object value, ErrorWrapper errorWrapper) {
+    public YearMonth cast(Object value) {
         return YearMonth.parse(value.toString());
     }
 

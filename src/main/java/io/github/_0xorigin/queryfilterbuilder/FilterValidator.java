@@ -1,31 +1,39 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.*;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
+import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FilterValidator {
+public final class FilterValidator {
 
-    public void validateFilterFieldAndOperator(
-            AbstractFilterField<?> filterClass,
-            FilterOperator filterOperator,
-            FilterWrapper filterWrapper,
-            ErrorWrapper errorWrapper
+    private FilterValidator () {
+        throw new IllegalStateException("Utility class");
+    }
+
+    public static void validateFilterFieldAndOperator(
+        AbstractFilterField<?> filterClass,
+        FilterOperator filterOperator,
+        FilterWrapper filterWrapper,
+        ErrorWrapper errorWrapper
     ) {
         List<String> errorMessages = new ArrayList<>();
 
         if (filterClass == null)
-            errorMessages.add("Data type for field '" + filterWrapper.getField() + "' is not supported.");
+            errorMessages.add("Data type for field '" + filterWrapper.field() + "' is not supported.");
 
         if (filterOperator == null)
-            errorMessages.add("Operator '" + filterWrapper.getOperator().getValue() + "' is not a valid operator.");
+            errorMessages.add("Operator '" + filterWrapper.operator().getValue() + "' is not a valid operator.");
 
-        if (filterClass != null && !filterClass.getSupportedOperators().contains(filterWrapper.getOperator()))
+        if (filterClass != null && !filterClass.getSupportedOperators().contains(filterWrapper.operator()))
             errorMessages.add(
-                    "Operator '" + filterWrapper.getOperator().getValue() +
+                    "Operator '" + filterWrapper.operator().getValue() +
                     "' is not a valid operator for the type of field '" +
-                    filterWrapper.getField() + "'."
+                    filterWrapper.field() + "'."
             );
 
         for (String errorMessage : errorMessages) {
@@ -33,11 +41,10 @@ public class FilterValidator {
                 errorWrapper,
                 FilterUtils.generateFieldError(
                     errorWrapper,
-                    filterWrapper.getValues().toString(),
+                    filterWrapper.values().toString(),
                     errorMessage
                 )
             );
         }
     }
-
 }

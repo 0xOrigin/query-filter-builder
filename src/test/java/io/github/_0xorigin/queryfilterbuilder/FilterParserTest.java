@@ -1,7 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -88,10 +88,10 @@ class FilterParserTest {
             // Then
             assertEquals(1, result.size());
             FilterWrapper wrapper = result.get(0);
-            assertEquals("name", wrapper.getField());
-            assertEquals("name", wrapper.getOriginalFieldName());
-            assertEquals(Operator.EQ, wrapper.getOperator());
-            assertEquals(List.of("John"), wrapper.getValues());
+            assertEquals("name", wrapper.field());
+            assertEquals("name", wrapper.originalFieldName());
+            assertEquals(Operator.EQ, wrapper.operator());
+            assertEquals(List.of("John"), wrapper.values());
         }
 
         @Test
@@ -107,10 +107,10 @@ class FilterParserTest {
             // Then
             assertEquals(1, result.size());
             FilterWrapper wrapper = result.get(0);
-            assertEquals("age", wrapper.getField());
-            assertEquals("age__gt", wrapper.getOriginalFieldName());
-            assertEquals(Operator.GT, wrapper.getOperator());
-            assertEquals(List.of("25"), wrapper.getValues());
+            assertEquals("age", wrapper.field());
+            assertEquals("age__gt", wrapper.originalFieldName());
+            assertEquals(Operator.GT, wrapper.operator());
+            assertEquals(List.of("25"), wrapper.values());
         }
     }
 
@@ -130,10 +130,10 @@ class FilterParserTest {
             // Then
             assertEquals(1, result.size());
             FilterWrapper wrapper = result.get(0);
-            assertEquals("user__manager__name", wrapper.getField());
-            assertEquals("user__manager__name__icontains", wrapper.getOriginalFieldName());
-            assertEquals(Operator.ICONTAINS, wrapper.getOperator());
-            assertEquals(List.of("Smith"), wrapper.getValues());
+            assertEquals("user__manager__name", wrapper.field());
+            assertEquals("user__manager__name__icontains", wrapper.originalFieldName());
+            assertEquals(Operator.ICONTAINS, wrapper.operator());
+            assertEquals(List.of("Smith"), wrapper.values());
         }
 
         @Test
@@ -151,14 +151,14 @@ class FilterParserTest {
             // Then
             assertEquals(3, result.size());
             assertTrue(result.stream().anyMatch(w ->
-                    w.getField().equals("name") &&
-                            w.getOperator() == Operator.STARTS_WITH));
+                    w.field().equals("name") &&
+                            w.operator() == Operator.STARTS_WITH));
             assertTrue(result.stream().anyMatch(w ->
-                    w.getField().equals("age") &&
-                            w.getOperator() == Operator.GTE));
+                    w.field().equals("age") &&
+                            w.operator() == Operator.GTE));
             assertTrue(result.stream().anyMatch(w ->
-                    w.getField().equals("active") &&
-                            w.getOperator() == Operator.EQ));
+                    w.field().equals("active") &&
+                            w.operator() == Operator.EQ));
         }
     }
 
@@ -178,9 +178,9 @@ class FilterParserTest {
             // Then
             assertEquals(1, result.size());
             FilterWrapper wrapper = result.get(0);
-            assertEquals("status", wrapper.getField());
-            assertEquals(Operator.IN, wrapper.getOperator());
-            assertEquals(List.of("active", "pending", "suspended"), wrapper.getValues());
+            assertEquals("status", wrapper.field());
+            assertEquals(Operator.IN, wrapper.operator());
+            assertEquals(List.of("active", "pending", "suspended"), wrapper.values());
         }
 
         @Test
@@ -196,9 +196,9 @@ class FilterParserTest {
             // Then
             assertEquals(1, result.size());
             FilterWrapper wrapper = result.get(0);
-            assertEquals("name", wrapper.getField());
-            assertEquals(Operator.IS_NULL, wrapper.getOperator());
-            assertEquals(List.of(""), wrapper.getValues());
+            assertEquals("name", wrapper.field());
+            assertEquals(Operator.IS_NULL, wrapper.operator());
+            assertEquals(List.of(""), wrapper.values());
         }
     }
 
@@ -218,9 +218,9 @@ class FilterParserTest {
             // Then
             assertEquals(1, result.size());
             FilterWrapper wrapper = result.get(0);
-            assertEquals("age__invalid", wrapper.getField());
-            assertEquals(Operator.EQ, wrapper.getOperator());
-            assertEquals(List.of("25"), wrapper.getValues());
+            assertEquals("age__invalid", wrapper.field());
+            assertEquals(Operator.EQ, wrapper.operator());
+            assertEquals(List.of("25"), wrapper.values());
         }
 
         @Test
@@ -236,9 +236,9 @@ class FilterParserTest {
             // Then
             assertEquals(1, result.size());
             FilterWrapper wrapper = result.get(0);
-            assertEquals("user__profile____bio", wrapper.getField());
-            assertEquals(Operator.EQ, wrapper.getOperator());
-            assertEquals(List.of("text"), wrapper.getValues());
+            assertEquals("user__profile____bio", wrapper.field());
+            assertEquals(Operator.EQ, wrapper.operator());
+            assertEquals(List.of("text"), wrapper.values());
         }
 
         @Test
@@ -256,9 +256,9 @@ class FilterParserTest {
             // Then
             assertEquals(1, result.size());
             FilterWrapper wrapper = result.get(0);
-            assertEquals("user##profile##bio", wrapper.getField());
-            assertEquals(Operator.EQ, wrapper.getOperator());
-            assertEquals(List.of("text"), wrapper.getValues());
+            assertEquals("user##profile##bio", wrapper.field());
+            assertEquals(Operator.EQ, wrapper.operator());
+            assertEquals(List.of("text"), wrapper.values());
         }
     }
 }

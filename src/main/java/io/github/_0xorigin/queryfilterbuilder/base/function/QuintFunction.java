@@ -1,4 +1,4 @@
-package io.github._0xorigin.queryfilterbuilder.base;
+package io.github._0xorigin.queryfilterbuilder.base.function;
 
 @FunctionalInterface
 public interface QuintFunction<T, U, W, V, E, R> {

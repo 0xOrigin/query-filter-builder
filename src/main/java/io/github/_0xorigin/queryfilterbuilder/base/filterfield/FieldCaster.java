@@ -1,15 +1,18 @@
-package io.github._0xorigin.queryfilterbuilder.base;
+package io.github._0xorigin.queryfilterbuilder.base.filterfield;
+
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
 
 import java.io.Serializable;
 
 @FunctionalInterface
 public interface FieldCaster<T extends Comparable<? super T> & Serializable> {
 
-    T cast(Object value, ErrorWrapper errorWrapper);
+    T cast(Object value);
 
     default T safeCast(Object value, ErrorWrapper errorWrapper) {
         try {
-            return cast(value, errorWrapper);
+            return cast(value);
         } catch (RuntimeException exception) {
             FilterUtils.addError(
                 errorWrapper,
@@ -19,7 +22,7 @@ public interface FieldCaster<T extends Comparable<? super T> & Serializable> {
                     exception.getLocalizedMessage()
                 )
             );
+            return null;
         }
-        return null;
     }
 }

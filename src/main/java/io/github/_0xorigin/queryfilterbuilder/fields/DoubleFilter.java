@@ -1,12 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder.fields;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractNumberFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFilterField;
 
-public class DoubleFilter extends AbstractNumberFilterField<Double> {
+public final class DoubleFilter extends AbstractNumberFilterField<Double> {
 
     @Override
-    public Double cast(Object value, ErrorWrapper errorWrapper) {
+    public Double cast(Object value) {
         return Double.parseDouble(value.toString());
     }
 

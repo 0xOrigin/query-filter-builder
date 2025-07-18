@@ -1,8 +1,7 @@
-package io.github._0xorigin.queryfilterbuilder.base;
+package io.github._0xorigin.queryfilterbuilder.base.util;
 
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
 import org.springframework.lang.Nullable;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
@@ -24,41 +23,41 @@ public final class FilterUtils {
             @Nullable String defaultMessage
     ) {
         return new FieldError(
-                errorWrapper.getBindingResult().getObjectName(),
-                errorWrapper.getFilterWrapper().getOriginalFieldName(),
-                value,
-                bindingFailure,
-                codes,
-                arguments,
-                defaultMessage
+            errorWrapper.bindingResult().getObjectName(),
+            errorWrapper.filterWrapper().originalFieldName(),
+            value,
+            bindingFailure,
+            codes,
+            arguments,
+            defaultMessage
         );
     }
 
     public static FieldError generateFieldError(ErrorWrapper errorWrapper, String value, String defaultMessage) {
         return generateFieldError(
-                errorWrapper,
-                value,
-                false,
-                null,
-                null,
-                defaultMessage
+            errorWrapper,
+            value,
+            false,
+            null,
+            null,
+            defaultMessage
         );
     }
 
     public static FieldError generateFieldError(ErrorWrapper errorWrapper, String value, String defaultMessage, String messagePrefix) {
         return generateFieldError(
-                errorWrapper,
-                value,
-                false,
-                null,
-                null,
-                messagePrefix + defaultMessage
+            errorWrapper,
+            value,
+            false,
+            null,
+            null,
+            messagePrefix + defaultMessage
         );
     }
 
     public static void addError(ErrorWrapper errorWrapper, ObjectError error) {
         errorWrapper
-            .getBindingResult()
+            .bindingResult()
             .addError(error);
     }
 
@@ -71,6 +70,6 @@ public final class FilterUtils {
     }
 
     public static boolean isNotValidList(List<?> values) {
-        return isEmpty(values) && isContainNulls(values);
+        return isEmpty(values) || isContainNulls(values);
     }
 }
