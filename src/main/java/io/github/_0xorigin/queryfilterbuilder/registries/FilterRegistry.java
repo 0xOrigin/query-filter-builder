@@ -9,17 +9,17 @@ import java.util.Map;
 
 public final class FilterRegistry {
 
-    private final Map<Class<? extends Comparable<?>>, AbstractFilterField<?>> fieldConfigMap = new HashMap<>();
+    private final Map<Class<? extends Comparable<?>>, AbstractFilterField<? extends Comparable<?>>> fieldConfigMap = new HashMap<>();
 
-    public <K extends Comparable<? super K> & Serializable> FilterRegistry(List<AbstractFilterField<K>> filters) {
+    public FilterRegistry(List<AbstractFilterField<? extends Comparable<?>>> filters) {
         filters.forEach(filter -> addFieldFilter(filter.getDataType(), filter));
     }
 
-    private <K extends Comparable<? super K> & Serializable> void addFieldFilter(Class<K> dataType, AbstractFilterField<K> filterClass) {
+    private <K extends Comparable<? super K> & Serializable> void addFieldFilter(Class<? extends Comparable<?>> dataType, AbstractFilterField<K> filterClass) {
         fieldConfigMap.put(dataType, filterClass);
     }
 
-    public <K extends Comparable<? super K> & Serializable> AbstractFilterField<?> getFieldFilter(Class<K> dataType) {
+    public <K extends Comparable<? super K> & Serializable> AbstractFilterField<? extends Comparable<?>> getFieldFilter(Class<K> dataType) {
         return fieldConfigMap.get(dataType);
     }
 }

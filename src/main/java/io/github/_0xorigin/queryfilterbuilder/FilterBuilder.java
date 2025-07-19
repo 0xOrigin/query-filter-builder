@@ -1,6 +1,8 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.*;
+import io.github._0xorigin.queryfilterbuilder.base.Parser;
+import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
+import io.github._0xorigin.queryfilterbuilder.base.QueryFilterBuilder;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
@@ -56,12 +58,12 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     }
 
     private Optional<Predicate> buildPredicateForWrapper(
-            Root<T> root,
-            CriteriaQuery<?> criteriaQuery,
-            CriteriaBuilder cb,
-            BindingResult bindingResult,
-            FilterContext<T> filterContext,
-            FilterWrapper filterWrapper
+        Root<T> root,
+        CriteriaQuery<?> criteriaQuery,
+        CriteriaBuilder cb,
+        BindingResult bindingResult,
+        FilterContext<T> filterContext,
+        FilterWrapper filterWrapper
     ) {
         Optional<Predicate> customPredicate = buildCustomFieldPredicate(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper);
         if (customPredicate.isPresent())
@@ -74,19 +76,19 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     }
 
     private <K extends Comparable<? super K> & Serializable> Optional<Predicate> buildCustomFieldPredicate(
-            Root<T> root,
-            CriteriaQuery<?> criteriaQuery,
-            CriteriaBuilder cb,
-            BindingResult bindingResult,
-            FilterContext<T> filterContext,
-            FilterWrapper filterWrapper
+        Root<T> root,
+        CriteriaQuery<?> criteriaQuery,
+        CriteriaBuilder cb,
+        BindingResult bindingResult,
+        FilterContext<T> filterContext,
+        FilterWrapper filterWrapper
     ) {
         CustomFilterWrapper<T, ?> customFilter = filterContext.getCustomFieldFilters().get(filterWrapper.originalFieldName());
         if (customFilter == null)
             return Optional.empty();
 
         FilterOperator filterOperator = filterOperatorRegistry.getOperator(Operator.EQ);
-        AbstractFilterField<?> filterClass = getFieldFilter(customFilter.dataType());
+        AbstractFilterField<? extends Comparable<?>> filterClass = getFieldFilter(customFilter.dataType());
         FilterValidator.validateFilterFieldAndOperator(
             filterClass,
             filterOperator,
@@ -107,16 +109,16 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     }
 
     private <K extends Comparable<? super K> & Serializable> Optional<Predicate> createPredicate(
-            Root<T> root,
-            CriteriaBuilder builder,
-            BindingResult bindingResult,
-            FilterWrapper filterWrapper
+        Root<T> root,
+        CriteriaBuilder builder,
+        BindingResult bindingResult,
+        FilterWrapper filterWrapper
     ) {
         Expression<K> expression = getExpression(root, filterWrapper, bindingResult);
         throwServerSideExceptionIfInvalid(bindingResult);
 
         Class<? extends K> dataType = getFieldDataType(expression);
-        AbstractFilterField<?> filterClass = getFieldFilter(dataType);
+        AbstractFilterField<? extends Comparable<?>> filterClass = getFieldFilter(dataType);
         FilterOperator filterOperator = filterOperatorRegistry.getOperator(filterWrapper.operator());
 
         FilterValidator.validateFilterFieldAndOperator(
@@ -142,7 +144,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         return expression.getJavaType();
     }
 
-    private <K extends Comparable<? super K> & Serializable> AbstractFilterField<?> getFieldFilter(Class<K> dataType) {
+    private <K extends Comparable<? super K> & Serializable> AbstractFilterField<? extends Comparable<?>> getFieldFilter(Class<K> dataType) {
         return filterRegistry.getFieldFilter(dataType);
     }
 

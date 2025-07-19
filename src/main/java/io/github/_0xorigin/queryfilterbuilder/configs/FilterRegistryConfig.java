@@ -5,14 +5,13 @@ import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.Serializable;
 import java.util.List;
 
 @Configuration
 public class FilterRegistryConfig {
 
     @Bean
-    public <K extends Comparable<? super K> & Serializable> FilterRegistry filterRegistry(List<AbstractFilterField<K>> filters) {
+    public FilterRegistry filterRegistry(List<AbstractFilterField<? extends Comparable<?>>> filters) {
         return new FilterRegistry(filters);
     }
 }
