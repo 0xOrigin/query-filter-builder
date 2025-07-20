@@ -7,6 +7,7 @@ import org.springframework.validation.ObjectError;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public final class FilterUtils {
 
@@ -59,6 +60,11 @@ public final class FilterUtils {
         errorWrapper
             .bindingResult()
             .addError(error);
+    }
+
+    public static String[] splitWithEscapedDelimiter(String value, String delimiter) {
+        Pattern pattern = Pattern.compile(Pattern.quote(delimiter));
+        return pattern.split(value);
     }
 
     public static boolean isContainNulls(List<?> values) {

@@ -1,6 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.*;
+import io.github._0xorigin.queryfilterbuilder.base.Parser;
+import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
@@ -10,6 +11,7 @@ import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurat
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
 import jakarta.persistence.criteria.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -69,6 +71,9 @@ class FilterBuilderTest {
     @Mock
     private FilterOperator filterOperator;
 
+    @Mock
+    private HttpServletRequest request;
+
     private FilterBuilder<TestEntity> filterBuilder;
 
     private static class TestEntity {
@@ -104,14 +109,14 @@ class FilterBuilderTest {
 
         @Test
         void buildFilterPredicate_WithNoFilters_ReturnConjunction() {
-            when(filterParser.parse()).thenReturn(Collections.emptyList());
+            when(filterParser.parse(request)).thenReturn(Collections.emptyList());
             when(criteriaBuilder.conjunction()).thenReturn(mock(Predicate.class));
 
-            Specification result = filterBuilder.buildFilterSpecification(filterContext);
+            Specification result = filterBuilder.buildFilterSpecification(request, filterContext);
 
             assertNotNull(result);
             verify(criteriaBuilder).conjunction();
-            verify(filterParser).parse();
+            verify(filterParser).parse(request);
         }
 
         @Test
@@ -130,7 +135,7 @@ class FilterBuilderTest {
                         .thenReturn(filterOperator);
 
                 // Mock other dependencies
-                when(filterParser.parse()).thenReturn(List.of(validFilter));
+                when(filterParser.parse(request)).thenReturn(List.of(validFilter));
                 when(pathGenerator.generate(eq(root), eq(field), any())).thenReturn((Path) path);
                 when(path.getJavaType()).thenReturn((Class) String.class);
                 when(criteriaBuilder.and(any())).thenReturn(predicate);
@@ -140,11 +145,11 @@ class FilterBuilderTest {
                 when(filterContext.getFieldOperators()).thenReturn(fieldOperators);
 
                 // Execute
-                Specification result = filterBuilder.buildFilterSpecification(filterContext);
+                Specification result = filterBuilder.buildFilterSpecification(request, filterContext);
 
                 // Verify
                 assertNotNull(result);
-                verify(filterParser).parse();
+                verify(filterParser).parse(request);
                 verify(pathGenerator).generate(eq(root), eq(field), any());
                 verify(filterField).cast(any());
             }
@@ -170,7 +175,7 @@ class FilterBuilderTest {
                         .thenReturn(filterOperator);
 
                 // Mock other dependencies
-                when(filterParser.parse()).thenReturn(List.of(customFilter));
+                when(filterParser.parse(request)).thenReturn(List.of(customFilter));
                 when(pathGenerator.generate(eq(root), eq(field), any())).thenReturn((Path) path);
                 when(path.getJavaType()).thenReturn((Class) String.class);
                 when(criteriaBuilder.and(any())).thenReturn(predicate);
@@ -179,12 +184,12 @@ class FilterBuilderTest {
                 Map<String, CustomFilterWrapper<TestEntity, ?>> customFilters = new HashMap<>();
                 customFilters.put("customField", customFilterWrapper);
 
-                when(filterParser.parse()).thenReturn(List.of(customFilter));
+                when(filterParser.parse(request)).thenReturn(List.of(customFilter));
                 when(filterContext.getCustomFieldFilters()).thenReturn(customFilters);
 
                 when(customFilterWrapper.customFilterFunction()).thenReturn((r, q, cb, values, errors) -> Optional.of(predicate));
 
-                Specification result = filterBuilder.buildFilterSpecification(filterContext);
+                Specification result = filterBuilder.buildFilterSpecification(request, filterContext);
 
                 assertNotNull(result);
                 assertEquals(predicate, result);
@@ -201,12 +206,12 @@ class FilterBuilderTest {
             Map<String, CustomFilterWrapper<TestEntity, ?>> customFilters = new HashMap<>();
             customFilters.put(field, customFilterWrapper);
 
-            when(filterParser.parse()).thenReturn(List.of(customFilter));
+            when(filterParser.parse(request)).thenReturn(List.of(customFilter));
             when(filterContext.getCustomFieldFilters()).thenReturn(customFilters);
             doThrow(RuntimeException.class).when(filterValidator).validateFilterFieldAndOperator(any(), any(), any(), any());
 
             assertThrows(RuntimeException.class, () ->
-                    filterBuilder.buildFilterSpecification(filterContext)
+                    filterBuilder.buildFilterSpecification(request, filterContext)
             );
         }
     }
@@ -218,7 +223,7 @@ class FilterBuilderTest {
         void buildFilterPredicate_WithInvalidPathGeneration_ThrowsException() {
             String field = "invalidField";
             FilterWrapper filter = new FilterWrapper(field, field, Operator.EQ, List.of("value"));
-            when(filterParser.parse()).thenReturn(List.of(filter));
+            when(filterParser.parse(request)).thenReturn(List.of(filter));
             Map<String, Set<Operator>> fieldOperators = new HashMap<>();
             fieldOperators.put(field, Set.of(Operator.EQ));
             when(filterContext.getFieldOperators()).thenReturn(fieldOperators);
@@ -227,7 +232,7 @@ class FilterBuilderTest {
                     .when(pathGenerator).generate(any(), any(), any());
 
             assertThrows(InvalidFilterConfigurationException.class, () ->
-                    filterBuilder.buildFilterSpecification(filterContext)
+                    filterBuilder.buildFilterSpecification(request, filterContext)
             );
         }
 

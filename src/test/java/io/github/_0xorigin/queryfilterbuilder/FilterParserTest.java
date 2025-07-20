@@ -2,6 +2,7 @@ package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -24,12 +25,15 @@ class FilterParserTest {
     @Mock
     private HttpServletRequest request;
 
+    @Mock
+    private QueryFilterBuilderProperties properties;
+
     private FilterParser filterParser;
     private static final String FIELD_DELIMITER = "__";
 
     @BeforeEach
     void setUp() {
-        filterParser = new FilterParser(request);
+        filterParser = new FilterParser(properties);
         ReflectionTestUtils.setField(filterParser, "FIELD_DELIMITER", FIELD_DELIMITER);
     }
 
@@ -43,19 +47,10 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(emptyParams);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertTrue(result.isEmpty());
-        }
-
-        @Test
-        void shouldGetCorrectRequest() {
-            // When
-            HttpServletRequest result = filterParser.getRequest();
-
-            // Then
-            assertEquals(request, result);
         }
 
         @Test
@@ -65,7 +60,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            Map<String, String[]> result = filterParser.getRequestQueryParams();
+            Map<String, String[]> result = filterParser.getRequestQueryParams(request);
 
             // Then
             assertEquals(params, result);
@@ -83,7 +78,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(1, result.size());
@@ -102,7 +97,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(1, result.size());
@@ -125,7 +120,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(1, result.size());
@@ -146,7 +141,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(3, result.size());
@@ -173,7 +168,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(1, result.size());
@@ -191,7 +186,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(1, result.size());
@@ -213,7 +208,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(1, result.size());
@@ -231,7 +226,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(1, result.size());
@@ -251,7 +246,7 @@ class FilterParserTest {
             when(request.getParameterMap()).thenReturn(params);
 
             // When
-            List<FilterWrapper> result = filterParser.parse();
+            List<FilterWrapper> result = filterParser.parse(request);
 
             // Then
             assertEquals(1, result.size());

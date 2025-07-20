@@ -9,33 +9,40 @@ import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.QueryFilterBuilder;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.metamodel.Metamodel;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@EnableConfigurationProperties(QueryFilterBuilderProperties.class)
 public class QueryFilterBuilderConfig {
 
     @Bean
-    public Parser parser(HttpServletRequest request) {
-        return new FilterParser(request);
+    public Parser parser(QueryFilterBuilderProperties properties) {
+        return new FilterParser(properties);
     }
 
     @Bean
-    public <T> PathGenerator<T> pathGenerator(EntityManager entityManager) {
-        return new FilterPathGenerator<>(entityManager);
+    public Metamodel metamodel(EntityManagerFactory entityManagerFactory) {
+        return entityManagerFactory.getMetamodel();
+    }
+
+    @Bean
+    public <T> PathGenerator<T> pathGenerator(EntityManagerFactory entityManagerFactory, QueryFilterBuilderProperties properties) {
+        return new FilterPathGenerator<>(metamodel(entityManagerFactory), properties);
     }
 
     @Bean
     public <T> QueryFilterBuilder<T> queryFilterBuilder(
-        HttpServletRequest request,
-        EntityManager entityManager,
+        EntityManagerFactory entityManagerFactory,
         FilterRegistry filterRegistry,
-        FilterOperatorRegistry filterOperatorRegistry
+        FilterOperatorRegistry filterOperatorRegistry,
+        QueryFilterBuilderProperties properties
     ) {
-        return new FilterBuilder<>(parser(request), pathGenerator(entityManager), filterRegistry, filterOperatorRegistry);
+        return new FilterBuilder<>(parser(properties), pathGenerator(entityManagerFactory, properties), filterRegistry, filterOperatorRegistry);
     }
 
     @Bean

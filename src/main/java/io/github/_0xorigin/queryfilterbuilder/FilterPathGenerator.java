@@ -1,33 +1,30 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
-import jakarta.persistence.EntityManager;
+import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.persistence.criteria.*;
 import jakarta.persistence.metamodel.*;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.io.Serializable;
 
 public final class FilterPathGenerator<T> implements PathGenerator<T> {
 
-    @Value("${query-filter-builder.defaults.field-delimiter:__}")
-    private String FIELD_DELIMITER;
-    private final EntityManager entityManager;
+    private final Metamodel metamodel;
+    private final QueryFilterBuilderProperties properties;
 
-    public FilterPathGenerator(
-        EntityManager entityManager
-    ) {
-        this.entityManager = entityManager;
+    public FilterPathGenerator(Metamodel metamodel, QueryFilterBuilderProperties properties) {
+        this.metamodel = metamodel;
+        this.properties = properties;
     }
 
     @Override
     public <K extends Comparable<? super K> & Serializable> Expression<K> generate(Root<T> root, String field, ErrorWrapper errorWrapper) {
-        String[] parts = field.split(FIELD_DELIMITER);
+        final String FIELD_DELIMITER = properties.queryParam().defaults().fieldDelimiter();
+        String[] parts = FilterUtils.splitWithEscapedDelimiter(field, FIELD_DELIMITER);
         Path<T> path = root;
         Class<?> currentJavaType = root.getJavaType();
-        Metamodel metamodel = entityManager.getMetamodel();
 
         try {
             for (int i = 0; i < parts.length - 1; i++) {

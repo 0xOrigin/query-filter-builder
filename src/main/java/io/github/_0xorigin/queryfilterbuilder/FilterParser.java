@@ -1,10 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.Parser;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,34 +14,26 @@ import java.util.Map;
 
 public final class FilterParser implements Parser {
 
-    private final HttpServletRequest request;
+    private final QueryFilterBuilderProperties properties;
 
-    @Value("${query-filter-builder.defaults.field-delimiter:__}")
-    private String FIELD_DELIMITER;
-
-    public FilterParser(
-        HttpServletRequest request
-    ) {
-        this.request = request;
+    public FilterParser(QueryFilterBuilderProperties properties) {
+        this.properties = properties;
     }
 
-    public HttpServletRequest getRequest() {
-        return request;
-    }
-
-    public Map<String, String[]> getRequestQueryParams() {
-        return getRequest().getParameterMap();
+    public Map<String, String[]> getRequestQueryParams(HttpServletRequest request) {
+        return request.getParameterMap();
     }
 
     @Override
-    public List<FilterWrapper> parse() {
+    public List<FilterWrapper> parse(HttpServletRequest request) {
         List<FilterWrapper> wrapperList = new ArrayList<>();
 
-        for (Map.Entry<String, String[]> entry : getRequestQueryParams().entrySet()) {
+        for (Map.Entry<String, String[]> entry : getRequestQueryParams(request).entrySet()) {
             String paramName = entry.getKey(); // e.g., "user__manager__name__icontains" or "user__manager__name"
             String paramValue = Arrays.stream(entry.getValue()).toList().get(0);
+            final String FIELD_DELIMITER = properties.queryParam().defaults().fieldDelimiter();
 
-            String[] parts = paramName.split(FIELD_DELIMITER);
+            String[] parts = FilterUtils.splitWithEscapedDelimiter(paramName, FIELD_DELIMITER);
             String operatorPart = parts[parts.length - 1]; // The last part might be the operator
 
             Operator operator;

@@ -1,9 +1,9 @@
 package io.github._0xorigin.queryfilterbuilder;
 
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-import jakarta.persistence.EntityManager;
+import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.persistence.criteria.*;
 import jakarta.persistence.metamodel.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,9 +22,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class FilterPathGeneratorTest {
-
-    @Mock
-    private EntityManager entityManager;
 
     @Mock
     private Metamodel metamodel;
@@ -47,18 +44,20 @@ public class FilterPathGeneratorTest {
     @Mock
     private Join<Object, Object> join;
 
+    @Mock
+    private QueryFilterBuilderProperties properties;
+
     private BindingResult bindingResult;
     private FilterPathGenerator<Object> filterPathGenerator;
 
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
-        filterPathGenerator = new FilterPathGenerator<>(entityManager);
+        filterPathGenerator = new FilterPathGenerator<>(metamodel, properties);
         bindingResult = new BeanPropertyBindingResult(this, "queryFilterBuilder");
         Field delimiterField = FilterPathGenerator.class.getDeclaredField("FIELD_DELIMITER");
         delimiterField.setAccessible(true);
         delimiterField.set(filterPathGenerator, "__");
 
-        when(entityManager.getMetamodel()).thenReturn(metamodel);
         when(metamodel.managedType(any())).thenReturn(managedType);
         when(managedType.getAttribute(anyString())).thenReturn((Attribute) attribute);
     }

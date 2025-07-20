@@ -14,6 +14,7 @@ import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryFilterValue
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
 import jakarta.persistence.criteria.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -44,10 +45,10 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     }
 
     @Override
-    public Specification<T> buildFilterSpecification(FilterContext<T> filterContext) {
+    public Specification<T> buildFilterSpecification(HttpServletRequest request, FilterContext<T> filterContext) {
         BindingResult bindingResult = new BeanPropertyBindingResult(this, "queryFilterBuilder");
         return (root, criteriaQuery, criteriaBuilder) -> {
-            List<Predicate> predicates = filterParser.parse().stream()
+            List<Predicate> predicates = filterParser.parse(request).stream()
                     .map(filterWrapper -> buildPredicateForWrapper(root, criteriaQuery, criteriaBuilder, bindingResult, filterContext, filterWrapper))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
@@ -122,10 +123,10 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         FilterOperator filterOperator = filterOperatorRegistry.getOperator(filterWrapper.operator());
 
         FilterValidator.validateFilterFieldAndOperator(
-                filterClass,
-                filterOperator,
-                filterWrapper,
-                new ErrorWrapper(bindingResult, filterWrapper)
+            filterClass,
+            filterOperator,
+            filterWrapper,
+            new ErrorWrapper(bindingResult, filterWrapper)
         );
         throwServerSideExceptionIfInvalid(bindingResult);
 
@@ -159,6 +160,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
                         this.getClass()
                             .getMethod(
                                 "buildFilterSpecification",
+                                HttpServletRequest.class,
                                 FilterContext.class
                             ),
                     0
@@ -182,6 +184,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
                         this.getClass()
                             .getMethod(
                                 "buildFilterSpecification",
+                                HttpServletRequest.class,
                                 FilterContext.class
                             ),
                     0
