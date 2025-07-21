@@ -1,6 +1,6 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.Parser;
+import io.github._0xorigin.queryfilterbuilder.base.FilterParser;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
@@ -12,11 +12,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public final class FilterParser implements Parser {
+public final class FilterParserImp implements FilterParser {
 
     private final QueryFilterBuilderProperties properties;
 
-    public FilterParser(QueryFilterBuilderProperties properties) {
+    public FilterParserImp(QueryFilterBuilderProperties properties) {
         this.properties = properties;
     }
 

@@ -1,6 +1,6 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.Parser;
+import io.github._0xorigin.queryfilterbuilder.base.FilterParser;
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
 class FilterBuilderTest {
 
     @Mock
-    private Parser filterParser;
+    private FilterParser filterParser;
 
     @Mock
     private Path<Object> path;

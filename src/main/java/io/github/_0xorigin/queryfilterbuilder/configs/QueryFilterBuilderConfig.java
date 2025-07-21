@@ -1,10 +1,10 @@
 package io.github._0xorigin.queryfilterbuilder.configs;
 
 import io.github._0xorigin.queryfilterbuilder.FilterBuilder;
-import io.github._0xorigin.queryfilterbuilder.FilterParser;
+import io.github._0xorigin.queryfilterbuilder.FilterParserImp;
 import io.github._0xorigin.queryfilterbuilder.FilterPathGenerator;
 import io.github._0xorigin.queryfilterbuilder.QueryFilterBuilderExceptionHandler;
-import io.github._0xorigin.queryfilterbuilder.base.Parser;
+import io.github._0xorigin.queryfilterbuilder.base.FilterParser;
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.QueryFilterBuilder;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
@@ -21,8 +21,8 @@ import org.springframework.context.annotation.Configuration;
 public class QueryFilterBuilderConfig {
 
     @Bean
-    public Parser parser(QueryFilterBuilderProperties properties) {
-        return new FilterParser(properties);
+    public FilterParser filterParser(QueryFilterBuilderProperties properties) {
+        return new FilterParserImp(properties);
     }
 
     @Bean
@@ -42,7 +42,7 @@ public class QueryFilterBuilderConfig {
         FilterOperatorRegistry filterOperatorRegistry,
         QueryFilterBuilderProperties properties
     ) {
-        return new FilterBuilder<>(parser(properties), pathGenerator(entityManagerFactory, properties), filterRegistry, filterOperatorRegistry);
+        return new FilterBuilder<>(filterParser(properties), pathGenerator(entityManagerFactory, properties), filterRegistry, filterOperatorRegistry);
     }
 
     @Bean

@@ -28,12 +28,12 @@ class FilterParserTest {
     @Mock
     private QueryFilterBuilderProperties properties;
 
-    private FilterParser filterParser;
+    private FilterParserImp filterParser;
     private static final String FIELD_DELIMITER = "__";
 
     @BeforeEach
     void setUp() {
-        filterParser = new FilterParser(properties);
+        filterParser = new FilterParserImp(properties);
         ReflectionTestUtils.setField(filterParser, "FIELD_DELIMITER", FIELD_DELIMITER);
     }
 

@@ -5,8 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 
-@FunctionalInterface
-public interface Parser {
+public interface FilterParser {
 
     List<FilterWrapper> parse(HttpServletRequest request);
 

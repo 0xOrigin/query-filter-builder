@@ -1,6 +1,6 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.Parser;
+import io.github._0xorigin.queryfilterbuilder.base.FilterParser;
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.QueryFilterBuilder;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
@@ -27,13 +27,13 @@ import java.util.Optional;
 
 public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
 
-    private final Parser filterParser;
+    private final FilterParser filterParser;
     private final PathGenerator<T> filterPathGenerator;
     private final FilterRegistry filterRegistry;
     private final FilterOperatorRegistry filterOperatorRegistry;
 
     public FilterBuilder(
-        Parser filterParser,
+        FilterParser filterParser,
         PathGenerator<T> filterPathGenerator,
         FilterRegistry filterRegistry,
         FilterOperatorRegistry filterOperatorRegistry
