@@ -14,7 +14,8 @@ import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryFilterValue
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
 import jakarta.persistence.criteria.*;
-import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -22,21 +23,21 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
-
     private final FilterParser filterParser;
     private final PathGenerator<T> filterPathGenerator;
     private final FilterRegistry filterRegistry;
     private final FilterOperatorRegistry filterOperatorRegistry;
+    private final Logger log = LoggerFactory.getLogger(FilterBuilder.class);
 
     public FilterBuilder(
-        FilterParser filterParser,
-        PathGenerator<T> filterPathGenerator,
-        FilterRegistry filterRegistry,
-        FilterOperatorRegistry filterOperatorRegistry
+        final FilterParser filterParser,
+        final PathGenerator<T> filterPathGenerator,
+        final FilterRegistry filterRegistry,
+        final FilterOperatorRegistry filterOperatorRegistry
     ) {
         this.filterParser = filterParser;
         this.filterPathGenerator = filterPathGenerator;
@@ -45,28 +46,37 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     }
 
     @Override
-    public Specification<T> buildFilterSpecification(HttpServletRequest request, FilterContext<T> filterContext) {
-        BindingResult bindingResult = new BeanPropertyBindingResult(this, "queryFilterBuilder");
+    public Specification<T> buildFilterSpecification(final FilterContext<T> filterContext) {
+        final BindingResult bindingResult = getBindingResult();
         return (root, criteriaQuery, criteriaBuilder) -> {
-            List<Predicate> predicates = filterParser.parse(request).stream()
+            final Set<Predicate> predicates = getFilterWrappers(filterContext).stream()
                     .map(filterWrapper -> buildPredicateForWrapper(root, criteriaQuery, criteriaBuilder, bindingResult, filterContext, filterWrapper))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
-                    .toList();
+                    .collect(Collectors.toUnmodifiableSet());
+//            log.debug("Predicates: {}", predicates.size());
             throwClientSideExceptionIfInvalid(bindingResult);
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            return predicates.isEmpty() ? null : criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
 
+    private Set<FilterWrapper> getFilterWrappers(final FilterContext<T> filterContext) {
+        final Set<FilterWrapper> filterWrappers = new HashSet<>();
+        filterContext.getRequest().ifPresent(request -> filterWrappers.addAll(filterParser.parse(request)));
+        filterContext.getFilterRequests().ifPresent(filterRequests -> filterWrappers.addAll(filterParser.parse(filterRequests)));
+//        log.debug("FilterWrappers: {}", filterWrappers);
+        return filterWrappers;
+    }
+
     private Optional<Predicate> buildPredicateForWrapper(
-        Root<T> root,
-        CriteriaQuery<?> criteriaQuery,
-        CriteriaBuilder cb,
-        BindingResult bindingResult,
-        FilterContext<T> filterContext,
-        FilterWrapper filterWrapper
+        final Root<T> root,
+        final CriteriaQuery<?> criteriaQuery,
+        final CriteriaBuilder cb,
+        final BindingResult bindingResult,
+        final FilterContext<T> filterContext,
+        final FilterWrapper filterWrapper
     ) {
-        Optional<Predicate> customPredicate = buildCustomFieldPredicate(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper);
+        final Optional<Predicate> customPredicate = buildCustomFieldPredicate(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper);
         if (customPredicate.isPresent())
             return customPredicate;
 
@@ -77,19 +87,19 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     }
 
     private <K extends Comparable<? super K> & Serializable> Optional<Predicate> buildCustomFieldPredicate(
-        Root<T> root,
-        CriteriaQuery<?> criteriaQuery,
-        CriteriaBuilder cb,
-        BindingResult bindingResult,
-        FilterContext<T> filterContext,
-        FilterWrapper filterWrapper
+        final Root<T> root,
+        final CriteriaQuery<?> criteriaQuery,
+        final CriteriaBuilder cb,
+        final BindingResult bindingResult,
+        final FilterContext<T> filterContext,
+        final FilterWrapper filterWrapper
     ) {
-        CustomFilterWrapper<T, ?> customFilter = filterContext.getCustomFieldFilters().get(filterWrapper.originalFieldName());
-        if (customFilter == null)
+        if (!isValidCustomField(filterContext, filterWrapper))
             return Optional.empty();
 
-        FilterOperator filterOperator = filterOperatorRegistry.getOperator(Operator.EQ);
-        AbstractFilterField<? extends Comparable<?>> filterClass = getFieldFilter(customFilter.dataType());
+        final CustomFilterWrapper<T, ?> customFilter = filterContext.getCustomFieldFilters().get(filterWrapper.originalFieldName());
+        final AbstractFilterField<? extends Comparable<?>> filterClass = getFieldFilter(customFilter.dataType());
+        final FilterOperator filterOperator = filterOperatorRegistry.getOperator(Operator.EQ);
         FilterValidator.validateFilterFieldAndOperator(
             filterClass,
             filterOperator,
@@ -98,29 +108,49 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         );
         throwServerSideExceptionIfInvalid(bindingResult);
 
-        List<K> values = filterWrapper.values().stream()
+        final List<K> values = filterWrapper.values().stream()
                 .map(value -> (K) filterClass.safeCast(value, new ErrorWrapper(bindingResult, filterWrapper)))
                 .toList();
         return customFilter.customFilterFunction().apply(root, criteriaQuery, cb, values, new ErrorWrapper(bindingResult, filterWrapper));
     }
 
-    private boolean isValidFieldOperator(FilterContext<T> filterContext, FilterWrapper filterWrapper) {
-        return filterContext.getFieldOperators().containsKey(filterWrapper.field()) &&
-                filterContext.getFieldOperators().get(filterWrapper.field()).contains(filterWrapper.operator());
+    private boolean isValidFieldOperator(final FilterContext<T> filterContext, final FilterWrapper filterWrapper) {
+        final var fieldOperators = filterContext.getFieldOperators();
+        final var fieldSourceTypes = filterContext.getFieldSourceTypes();
+        final boolean isFieldAndItsOperatorExists = (
+            fieldOperators.containsKey(filterWrapper.field())
+            && fieldOperators.get(filterWrapper.field()).contains(filterWrapper.operator())
+        );
+        final boolean isCorrectSourceType = (
+            fieldSourceTypes.containsKey(filterWrapper.field())
+            && fieldSourceTypes.get(filterWrapper.field()).contains(filterWrapper.sourceType())
+        );
+        return isFieldAndItsOperatorExists && isCorrectSourceType;
+    }
+
+    private boolean isValidCustomField(final FilterContext<T> filterContext, final FilterWrapper filterWrapper) {
+        final var customFieldFilters = filterContext.getCustomFieldFilters();
+        final var fieldSourceTypes = filterContext.getFieldSourceTypes();
+        final boolean isFieldAndItsFunctionExists = customFieldFilters.containsKey(filterWrapper.field());
+        final boolean isCorrectSourceType = (
+            fieldSourceTypes.containsKey(filterWrapper.field())
+            && fieldSourceTypes.get(filterWrapper.field()).contains(filterWrapper.sourceType())
+        );
+        return isFieldAndItsFunctionExists && isCorrectSourceType;
     }
 
     private <K extends Comparable<? super K> & Serializable> Optional<Predicate> createPredicate(
-        Root<T> root,
-        CriteriaBuilder builder,
-        BindingResult bindingResult,
-        FilterWrapper filterWrapper
+        final Root<T> root,
+        final CriteriaBuilder builder,
+        final BindingResult bindingResult,
+        final FilterWrapper filterWrapper
     ) {
-        Expression<K> expression = getExpression(root, filterWrapper, bindingResult);
+        final Expression<K> expression = getExpression(root, filterWrapper, bindingResult);
         throwServerSideExceptionIfInvalid(bindingResult);
 
-        Class<? extends K> dataType = getFieldDataType(expression);
-        AbstractFilterField<? extends Comparable<?>> filterClass = getFieldFilter(dataType);
-        FilterOperator filterOperator = filterOperatorRegistry.getOperator(filterWrapper.operator());
+        final Class<? extends K> dataType = getFieldDataType(expression);
+        final AbstractFilterField<? extends Comparable<?>> filterClass = getFieldFilter(dataType);
+        final FilterOperator filterOperator = filterOperatorRegistry.getOperator(filterWrapper.operator());
 
         FilterValidator.validateFilterFieldAndOperator(
             filterClass,
@@ -130,70 +160,62 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         );
         throwServerSideExceptionIfInvalid(bindingResult);
 
-        List<K> values = filterWrapper.values()
+        final List<K> values = filterWrapper.values()
                 .stream()
                 .map(value -> (K) filterClass.safeCast(value, new ErrorWrapper(bindingResult, filterWrapper)))
                 .toList();
         return filterOperator.apply(expression, builder, values, new ErrorWrapper(bindingResult, filterWrapper));
     }
 
-    private <K extends Comparable<? super K> & Serializable> Expression<K> getExpression(Root<T> root, FilterWrapper filterWrapper, BindingResult bindingResult) {
+    private BindingResult getBindingResult() {
+        return new BeanPropertyBindingResult(this, "queryFilterBuilder");
+    }
+
+    private <K extends Comparable<? super K> & Serializable> Expression<K> getExpression(final Root<T> root, final FilterWrapper filterWrapper, final BindingResult bindingResult) {
         return filterPathGenerator.generate(root, filterWrapper.field(), new ErrorWrapper(bindingResult, filterWrapper));
     }
 
-    private <K extends Comparable<? super K> & Serializable> Class<? extends K> getFieldDataType(Expression<K> expression) {
+    private <K extends Comparable<? super K> & Serializable> Class<? extends K> getFieldDataType(final Expression<K> expression) {
         return expression.getJavaType();
     }
 
-    private <K extends Comparable<? super K> & Serializable> AbstractFilterField<? extends Comparable<?>> getFieldFilter(Class<K> dataType) {
+    private <K extends Comparable<? super K> & Serializable> AbstractFilterField<? extends Comparable<?>> getFieldFilter(final Class<K> dataType) {
         return filterRegistry.getFieldFilter(dataType);
     }
 
-    private void throwClientSideExceptionIfInvalid(BindingResult bindingResult) {
+    private MethodArgumentNotValidException getMethodArgumentNotValidException(final BindingResult bindingResult) {
         try {
-            if (!bindingResult.hasErrors())
-                return;
-
-            throw new InvalidQueryFilterValueException(
-                new MethodArgumentNotValidException(
-                    new MethodParameter(
-                        this.getClass()
-                            .getMethod(
-                                "buildFilterSpecification",
-                                HttpServletRequest.class,
-                                FilterContext.class
-                            ),
-                    0
-                    )
-                    ,bindingResult
-                )
+            return new MethodArgumentNotValidException(
+                new MethodParameter(
+                    this.getClass()
+                        .getMethod(
+                            "buildFilterSpecification",
+                            FilterContext.class
+                        ),
+                0
+                ),
+                bindingResult
             );
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void throwServerSideExceptionIfInvalid(BindingResult bindingResult) {
-        try {
-            if (!bindingResult.hasErrors())
-                return;
+    private void throwClientSideExceptionIfInvalid(final BindingResult bindingResult) {
+        if (!bindingResult.hasErrors())
+            return;
 
-            throw new InvalidFilterConfigurationException(
-                new MethodArgumentNotValidException(
-                    new MethodParameter(
-                        this.getClass()
-                            .getMethod(
-                                "buildFilterSpecification",
-                                HttpServletRequest.class,
-                                FilterContext.class
-                            ),
-                    0
-                    )
-                    ,bindingResult
-                )
-            );
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+        throw new InvalidQueryFilterValueException(
+            getMethodArgumentNotValidException(bindingResult)
+        );
+    }
+
+    private void throwServerSideExceptionIfInvalid(final BindingResult bindingResult) {
+        if (!bindingResult.hasErrors())
+            return;
+
+        throw new InvalidFilterConfigurationException(
+            getMethodArgumentNotValidException(bindingResult)
+        );
     }
 }

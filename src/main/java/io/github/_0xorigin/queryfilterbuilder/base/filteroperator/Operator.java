@@ -41,7 +41,7 @@ public enum Operator {
         return value;
     }
 
-    public static Operator fromValue(String value) {
+    public static Operator fromValue(String value){
         Operator operator = SYMBOL_MAP.get(value);
         if (operator == null) {
             throw new IllegalArgumentException("No enum constant with value: " + value);

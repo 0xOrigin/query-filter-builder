@@ -5,6 +5,7 @@ import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.function.CustomFilterFunction;
 import io.github._0xorigin.queryfilterbuilder.base.wrapper.CustomFilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -31,6 +32,9 @@ class FilterContextTest {
     @Mock
     private FilterRegistry filterRegistry;
 
+    @Mock
+    private HttpServletRequest request;
+
     @Nested
     class OperatorFilterTests {
 
@@ -41,7 +45,7 @@ class FilterContextTest {
             Operator[] operators = {Operator.EQ, Operator.GT, Operator.LT};
 
             // When
-            FilterContext<TestEntity> result = FilterContext.buildForType(TestEntity.class).addFilter(fieldName, operators).build();
+            FilterContext<TestEntity> result = FilterContext.buildForType(TestEntity.class).queryParam(request, builder -> builder.addFilter(fieldName, operators)).build();
 
             // Then
             Set<Operator> addedOperators = result.getFieldOperators().get(fieldName);
@@ -59,8 +63,10 @@ class FilterContextTest {
             // When
             FilterContext<TestEntity> result = FilterContext
                     .buildForType(TestEntity.class)
-                    .addFilter(fieldName, operators1)
-                    .addFilter(fieldName, operators2)
+                    .queryParam(request, builder -> {
+                        builder.addFilter(fieldName, operators1)
+                                .addFilter(fieldName, operators2);
+                    })
                     .build();
 
             // Then
@@ -83,7 +89,9 @@ class FilterContextTest {
                 // When
                 FilterContext<TestEntity> result = FilterContext
                         .buildForType(TestEntity.class)
-                        .addFilter(fieldName, String.class, mockFilterFunction)
+                        .queryParam(request, builder -> {
+                            builder.addFilter(fieldName, String.class, mockFilterFunction);
+                        })
                         .build();
 
                 // Then
@@ -106,8 +114,9 @@ class FilterContextTest {
                 // When
                 FilterContext<TestEntity> result = FilterContext
                         .buildForType(TestEntity.class)
-                        .addFilter(fieldName, String.class, mockFilterFunction)
-                        .addFilter(fieldName, Integer.class, newFilterFunction)
+                        .queryParam(request, builder -> builder.addFilter(fieldName, String.class, mockFilterFunction)
+                                .addFilter(fieldName, Integer.class, newFilterFunction)
+                        )
                         .build();
 
                 // Then
@@ -133,8 +142,11 @@ class FilterContextTest {
                 // When
                 FilterContext<TestEntity> result = FilterContext
                         .buildForType(TestEntity.class)
-                        .addFilter(fieldName1, operators1)
-                        .addFilter(fieldName2, String.class, mockFilterFunction)
+                        .queryParam(request, builder -> {
+                            builder.addFilter(fieldName1, operators1)
+                                    .addFilter(fieldName1, operators1)
+                                    .addFilter(fieldName2, String.class, mockFilterFunction);
+                        })
                         .build();
 
                 // Then
@@ -155,7 +167,7 @@ class FilterContextTest {
             String fieldName = "testField";
             FilterContext<TestEntity> result = FilterContext
                     .buildForType(TestEntity.class)
-                    .addFilter(fieldName, Operator.EQ)
+                    .queryParam(request, builder -> builder.addFilter(fieldName, Operator.EQ))
                     .build();
 
             // When
@@ -173,7 +185,7 @@ class FilterContextTest {
             try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
                 FilterContext<TestEntity> result = FilterContext
                         .buildForType(TestEntity.class)
-                        .addFilter(fieldName, String.class, mockFilterFunction)
+                        .queryParam(request, builder -> builder.addFilter(fieldName, String.class, mockFilterFunction))
                         .build();
 
                 // When

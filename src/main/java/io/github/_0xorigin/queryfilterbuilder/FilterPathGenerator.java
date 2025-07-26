@@ -22,7 +22,7 @@ public final class FilterPathGenerator<T> implements PathGenerator<T> {
     @Override
     public <K extends Comparable<? super K> & Serializable> Expression<K> generate(Root<T> root, String field, ErrorWrapper errorWrapper) {
         final String FIELD_DELIMITER = properties.queryParam().defaults().fieldDelimiter();
-        String[] parts = FilterUtils.splitWithEscapedDelimiter(field, FIELD_DELIMITER);
+        final String[] parts = FilterUtils.splitWithEscapedDelimiter(field, FIELD_DELIMITER);
         Path<T> path = root;
         Class<?> currentJavaType = root.getJavaType();
 

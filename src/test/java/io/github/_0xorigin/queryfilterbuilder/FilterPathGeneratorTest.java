@@ -1,5 +1,6 @@
 package io.github._0xorigin.queryfilterbuilder;
 
+import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
@@ -66,7 +67,7 @@ public class FilterPathGeneratorTest {
     void testGenerateSimplePath() {
         // Setup
         String field = "name";
-        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"));
+        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
         ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
         when(attribute.isAssociation()).thenReturn(false);
         when(root.get(field)).thenReturn(path);
@@ -84,7 +85,7 @@ public class FilterPathGeneratorTest {
     void testGenerateNestedPath() {
         // Setup
         String field = "user__department__name";
-        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"));
+        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
         ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
 
         // Mock association behavior
@@ -111,7 +112,7 @@ public class FilterPathGeneratorTest {
     void testGenerateWithAssociationEndingPath() {
         // Setup
         String field = "department";
-        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"));
+        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
         ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
         Class<?> idClass = Long.class; // Using Long as a common ID type
 
@@ -148,7 +149,7 @@ public class FilterPathGeneratorTest {
     void testGenerateWithInvalidPath() {
         // Setup
         String field = "invalidField";
-        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"));
+        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
         ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
         when(managedType.getAttribute(field)).thenThrow(new IllegalArgumentException("Invalid field"));
 
@@ -170,7 +171,7 @@ public class FilterPathGeneratorTest {
             delimiterField.set(filterPathGenerator, "##");
 
             String field = "user##name";
-            FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"));
+            FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
             ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
             when(attribute.isAssociation()).thenReturn(true).thenReturn(false);
             when(root.join("user", JoinType.LEFT)).thenReturn(join);

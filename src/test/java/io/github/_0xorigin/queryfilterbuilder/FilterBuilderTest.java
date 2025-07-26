@@ -2,6 +2,7 @@ package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.FilterParser;
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
+import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
@@ -112,7 +113,7 @@ class FilterBuilderTest {
             when(filterParser.parse(request)).thenReturn(Collections.emptyList());
             when(criteriaBuilder.conjunction()).thenReturn(mock(Predicate.class));
 
-            Specification result = filterBuilder.buildFilterSpecification(request, filterContext);
+            Specification result = filterBuilder.buildFilterSpecification(filterContext);
 
             assertNotNull(result);
             verify(criteriaBuilder).conjunction();
@@ -126,7 +127,7 @@ class FilterBuilderTest {
                 // Setup
                 String field = "field";
                 Operator operator = Operator.EQ;
-                FilterWrapper validFilter = new FilterWrapper(field, field, operator, List.of("value"));
+                FilterWrapper validFilter = new FilterWrapper(field, field, operator, List.of("value"), SourceType.QUERY_PARAM);
 
                 // Mock registries
                 mockedRegistry.when(() -> filterRegistry.getFieldFilter(String.class))
@@ -145,7 +146,7 @@ class FilterBuilderTest {
                 when(filterContext.getFieldOperators()).thenReturn(fieldOperators);
 
                 // Execute
-                Specification result = filterBuilder.buildFilterSpecification(request, filterContext);
+                Specification result = filterBuilder.buildFilterSpecification(filterContext);
 
                 // Verify
                 assertNotNull(result);
@@ -166,7 +167,7 @@ class FilterBuilderTest {
                 // Setup
                 String field = "customField";
                 Operator operator = Operator.EQ;
-                FilterWrapper customFilter = new FilterWrapper(field, field, operator, List.of("value"));
+                FilterWrapper customFilter = new FilterWrapper(field, field, operator, List.of("value"), SourceType.QUERY_PARAM);
 
                 // Mock registries
                 mockedRegistry.when(() -> filterRegistry.getFieldFilter(String.class))
@@ -189,7 +190,7 @@ class FilterBuilderTest {
 
                 when(customFilterWrapper.customFilterFunction()).thenReturn((r, q, cb, values, errors) -> Optional.of(predicate));
 
-                Specification result = filterBuilder.buildFilterSpecification(request, filterContext);
+                Specification result = filterBuilder.buildFilterSpecification(filterContext);
 
                 assertNotNull(result);
                 assertEquals(predicate, result);
@@ -199,7 +200,7 @@ class FilterBuilderTest {
         @Test
         void buildFilterPredicate_WithInvalidCustomFilter_ThrowsException() {
             String field = "customField";
-            FilterWrapper customFilter = new FilterWrapper(field, field, Operator.EQ, List.of("value"));
+            FilterWrapper customFilter = new FilterWrapper(field, field, Operator.EQ, List.of("value"), SourceType.QUERY_PARAM);
             CustomFilterWrapper<TestEntity, ?> customFilterWrapper = mock(CustomFilterWrapper.class);
             AbstractFilterField<?> filterField = mock(AbstractFilterField.class);
 
@@ -211,7 +212,7 @@ class FilterBuilderTest {
             doThrow(RuntimeException.class).when(filterValidator).validateFilterFieldAndOperator(any(), any(), any(), any());
 
             assertThrows(RuntimeException.class, () ->
-                    filterBuilder.buildFilterSpecification(request, filterContext)
+                    filterBuilder.buildFilterSpecification(filterContext)
             );
         }
     }
@@ -222,7 +223,7 @@ class FilterBuilderTest {
         @Test
         void buildFilterPredicate_WithInvalidPathGeneration_ThrowsException() {
             String field = "invalidField";
-            FilterWrapper filter = new FilterWrapper(field, field, Operator.EQ, List.of("value"));
+            FilterWrapper filter = new FilterWrapper(field, field, Operator.EQ, List.of("value"), SourceType.QUERY_PARAM);
             when(filterParser.parse(request)).thenReturn(List.of(filter));
             Map<String, Set<Operator>> fieldOperators = new HashMap<>();
             fieldOperators.put(field, Set.of(Operator.EQ));
@@ -232,7 +233,7 @@ class FilterBuilderTest {
                     .when(pathGenerator).generate(any(), any(), any());
 
             assertThrows(InvalidFilterConfigurationException.class, () ->
-                    filterBuilder.buildFilterSpecification(request, filterContext)
+                    filterBuilder.buildFilterSpecification(filterContext)
             );
         }
 

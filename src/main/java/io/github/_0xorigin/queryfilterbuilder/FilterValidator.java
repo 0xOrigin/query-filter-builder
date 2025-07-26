@@ -16,12 +16,12 @@ public final class FilterValidator {
     }
 
     public static void validateFilterFieldAndOperator(
-        AbstractFilterField<?> filterClass,
-        FilterOperator filterOperator,
-        FilterWrapper filterWrapper,
-        ErrorWrapper errorWrapper
+        final AbstractFilterField<?> filterClass,
+        final FilterOperator filterOperator,
+        final FilterWrapper filterWrapper,
+        final ErrorWrapper errorWrapper
     ) {
-        List<String> errorMessages = new ArrayList<>();
+        final List<String> errorMessages = new ArrayList<>();
 
         if (filterClass == null)
             errorMessages.add("Data type for field '" + filterWrapper.field() + "' is not supported.");
