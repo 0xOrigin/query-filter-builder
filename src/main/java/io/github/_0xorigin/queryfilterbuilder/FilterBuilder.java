@@ -24,7 +24,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     private final FilterParser filterParser;
@@ -49,23 +48,31 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     public Specification<T> buildFilterSpecification(final FilterContext<T> filterContext) {
         final BindingResult bindingResult = getBindingResult();
         return (root, criteriaQuery, criteriaBuilder) -> {
-            final Set<Predicate> predicates = getFilterWrappers(filterContext).stream()
+            final List<Predicate> predicates = getDistinctFilterWrappers(filterContext).stream()
                     .map(filterWrapper -> buildPredicateForWrapper(root, criteriaQuery, criteriaBuilder, bindingResult, filterContext, filterWrapper))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
-                    .collect(Collectors.toUnmodifiableSet());
-//            log.info("Predicates: {}", predicates.size());
+                    .toList();
+//            log.debug("Predicates: {}", predicates.size());
             throwClientSideExceptionIfInvalid(bindingResult);
             return predicates.isEmpty() ? null : criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
 
-    private Set<FilterWrapper> getFilterWrappers(final FilterContext<T> filterContext) {
-        final Set<FilterWrapper> filterWrappers = new HashSet<>();
-        filterContext.getRequest().ifPresent(request -> filterWrappers.addAll(filterParser.parse(request)));
-        filterContext.getFilterRequests().ifPresent(filterRequests -> filterWrappers.addAll(filterParser.parse(filterRequests)));
-//        log.info("FilterWrappers: {}", filterWrappers);
-        return filterWrappers;
+    private Collection<FilterWrapper> getDistinctFilterWrappers(final FilterContext<T> filterContext) {
+        final Map<String, FilterWrapper> filterWrappers = new LinkedHashMap<>();
+        filterContext.getRequest().ifPresent(request ->
+            filterParser.parse(request).forEach(filterWrapper ->
+                filterWrappers.compute(filterWrapper.field(), (k, currentValue) -> isValidFilterOrCustomFilterExists(filterContext, filterWrapper) ? filterWrapper : currentValue)
+            )
+        );
+        filterContext.getFilterRequests().ifPresent(filterRequests ->
+            filterParser.parse(filterRequests).forEach(filterWrapper ->
+                filterWrappers.compute(filterWrapper.originalFieldName(), (k, currentValue) -> isValidFilterOrCustomFilterExists(filterContext, filterWrapper) ? filterWrapper : currentValue)
+            )
+        );
+//        log.debug("FilterWrappers: {}", filterWrappers);
+        return filterWrappers.values();
     }
 
     private Optional<Predicate> buildPredicateForWrapper(
@@ -133,6 +140,10 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
             isFilterExists
             && customFilterHolder.sourceTypes().contains(filterWrapper.sourceType())
         );
+    }
+
+    private boolean isValidFilterOrCustomFilterExists(final FilterContext<T> filterContext, final FilterWrapper filterWrapper) {
+        return isValidFieldOperator(filterContext, filterWrapper) || isValidCustomField(filterContext, filterWrapper);
     }
 
     private <K extends Comparable<? super K> & Serializable> Optional<Predicate> createPredicate(
