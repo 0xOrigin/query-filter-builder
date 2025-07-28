@@ -54,7 +54,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toUnmodifiableSet());
-            log.info("Predicates: {}", predicates.size());
+//            log.info("Predicates: {}", predicates.size());
             throwClientSideExceptionIfInvalid(bindingResult);
             return predicates.isEmpty() ? null : criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
@@ -64,7 +64,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         final Set<FilterWrapper> filterWrappers = new HashSet<>();
         filterContext.getRequest().ifPresent(request -> filterWrappers.addAll(filterParser.parse(request)));
         filterContext.getFilterRequests().ifPresent(filterRequests -> filterWrappers.addAll(filterParser.parse(filterRequests)));
-        log.info("FilterWrappers: {}", filterWrappers);
+//        log.info("FilterWrappers: {}", filterWrappers);
         return filterWrappers;
     }
 
