@@ -1,4 +1,4 @@
-package io.github._0xorigin.queryfilterbuilder.base.dto;
+package io.github._0xorigin.queryfilterbuilder.base.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.validation.annotation.Validated;
@@ -7,7 +7,7 @@ import org.springframework.validation.annotation.Validated;
 public record FilterRequest(
     @NotBlank
     String field,
-    @NotBlank
     String operator,
+    @NotBlank
     String value
 ) {}

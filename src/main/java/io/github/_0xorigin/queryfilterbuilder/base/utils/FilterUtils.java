@@ -1,6 +1,6 @@
-package io.github._0xorigin.queryfilterbuilder.base.util;
+package io.github._0xorigin.queryfilterbuilder.base.utils;
 
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
 import org.springframework.lang.Nullable;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;

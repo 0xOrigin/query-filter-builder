@@ -1,7 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder.base;
 
-import io.github._0xorigin.queryfilterbuilder.base.dto.FilterRequest;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.dtos.FilterRequest;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;

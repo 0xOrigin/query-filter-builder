@@ -1,10 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder;
 
-import io.github._0xorigin.queryfilterbuilder.base.dto.FilterRequest;
+import io.github._0xorigin.queryfilterbuilder.base.dtos.FilterRequest;
 import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.function.CustomFilterFunction;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.CustomFilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.functions.CustomFilterFunction;
+import io.github._0xorigin.queryfilterbuilder.base.holders.CustomFilterHolder;
+import io.github._0xorigin.queryfilterbuilder.base.holders.FilterHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.lang.NonNull;
 
@@ -14,16 +15,14 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public final class FilterContext<T> {
-    private final Map<String, Set<Operator>> fieldOperators;
-    private final Map<String, CustomFilterWrapper<T, ?>> customFieldFilters;
-    private final Map<String, Set<SourceType>> fieldSourceTypes;
+    private final Map<String, FilterHolder> filters;
+    private final Map<String, CustomFilterHolder<T, ?>> customFilters;
     private final HttpServletRequest request;
     private final List<FilterRequest> filterRequests;
 
     private FilterContext(@NonNull final Builder<T> builder) {
-        this.fieldOperators = Map.copyOf(builder.getFieldOperators());
-        this.customFieldFilters = Map.copyOf(builder.getCustomFieldFilters());
-        this.fieldSourceTypes = Map.copyOf(builder.getFieldSourceTypes());
+        this.filters = Map.copyOf(builder.getFilters());
+        this.customFilters = Map.copyOf(builder.getCustomFilters());
         this.request = builder.getRequest().orElse(null);
         this.filterRequests = builder.getFilterRequests().orElse(null);
     }
@@ -37,16 +36,12 @@ public final class FilterContext<T> {
         return new Builder<>();
     }
 
-    public Map<String, Set<Operator>> getFieldOperators() {
-        return fieldOperators;
+    public Map<String, FilterHolder> getFilters() {
+        return filters;
     }
 
-    public Map<String, CustomFilterWrapper<T, ?>> getCustomFieldFilters() {
-        return customFieldFilters;
-    }
-
-    public Map<String, Set<SourceType>> getFieldSourceTypes() {
-        return fieldSourceTypes;
+    public Map<String, CustomFilterHolder<T, ?>> getCustomFilters() {
+        return customFilters;
     }
 
     public Optional<HttpServletRequest> getRequest() {
@@ -58,9 +53,8 @@ public final class FilterContext<T> {
     }
 
     public static final class Builder<T> {
-        private final Map<String, Set<Operator>> fieldOperators = new HashMap<>();
-        private final Map<String, CustomFilterWrapper<T, ?>> customFieldFilters = new HashMap<>();
-        private final Map<String, Set<SourceType>> fieldSourceTypes = new HashMap<>();
+        private final Map<String, FilterHolder> filters = new HashMap<>();
+        private final Map<String, CustomFilterHolder<T, ?>> customFilters = new HashMap<>();
         private HttpServletRequest request;
         private List<FilterRequest> filterRequests;
 
@@ -90,16 +84,12 @@ public final class FilterContext<T> {
             return this;
         }
 
-        private Map<String, Set<Operator>> getFieldOperators() {
-            return fieldOperators;
+        private Map<String, FilterHolder> getFilters() {
+            return filters;
         }
 
-        private Map<String, CustomFilterWrapper<T, ?>> getCustomFieldFilters() {
-            return customFieldFilters;
-        }
-
-        private Map<String, Set<SourceType>> getFieldSourceTypes() {
-            return fieldSourceTypes;
+        private Map<String, CustomFilterHolder<T, ?>> getCustomFilters() {
+            return customFilters;
         }
 
         private Optional<HttpServletRequest> getRequest() {
@@ -135,8 +125,10 @@ public final class FilterContext<T> {
                     .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
             if (operatorsSet.isEmpty())
                 return this;
-            builder.getFieldOperators().computeIfAbsent(fieldName, k -> EnumSet.noneOf(Operator.class)).addAll(operatorsSet);
-            builder.getFieldSourceTypes().computeIfAbsent(fieldName, k -> EnumSet.noneOf(SourceType.class)).add(sourceType);
+            var filterHolder = builder.getFilters()
+                    .computeIfAbsent(fieldName, k -> new FilterHolder(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class)));
+            filterHolder.operators().addAll(operatorsSet);
+            filterHolder.sourceTypes().add(sourceType);
             return this;
         }
 
@@ -148,8 +140,10 @@ public final class FilterContext<T> {
             Objects.requireNonNull(fieldName, "Field name must not be null");
             Objects.requireNonNull(dataType, "Data type must not be null");
             Objects.requireNonNull(filterFunction, "Filter function must not be null");
-            builder.getCustomFieldFilters().put(fieldName, new CustomFilterWrapper<>(dataType, filterFunction));
-            builder.getFieldSourceTypes().computeIfAbsent(fieldName, k -> EnumSet.noneOf(SourceType.class)).add(sourceType);
+
+            var customFilterHolder = builder.getCustomFilters()
+                    .computeIfAbsent(fieldName, k -> new CustomFilterHolder<>(dataType, filterFunction, EnumSet.noneOf(SourceType.class)));
+            customFilterHolder.sourceTypes().add(sourceType);
             return this;
         }
     }

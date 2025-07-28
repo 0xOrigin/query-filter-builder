@@ -1,8 +1,8 @@
 package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
-import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.persistence.criteria.*;
 import jakarta.persistence.metamodel.*;

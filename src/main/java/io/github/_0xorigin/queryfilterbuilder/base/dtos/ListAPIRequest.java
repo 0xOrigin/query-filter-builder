@@ -1,4 +1,4 @@
-package io.github._0xorigin.queryfilterbuilder.base.dto;
+package io.github._0xorigin.queryfilterbuilder.base.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;

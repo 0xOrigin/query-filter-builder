@@ -6,8 +6,8 @@ import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.CustomFilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.holders.CustomFilterHolder;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurationException;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
@@ -143,7 +143,6 @@ class FilterBuilderTest {
 
                 Map<String, Set<Operator>> fieldOperators = new HashMap<>();
                 fieldOperators.put(field, Set.of(operator));
-                when(filterContext.getFieldOperators()).thenReturn(fieldOperators);
 
                 // Execute
                 Specification result = filterBuilder.buildFilterSpecification(filterContext);
@@ -181,14 +180,13 @@ class FilterBuilderTest {
                 when(path.getJavaType()).thenReturn((Class) String.class);
                 when(criteriaBuilder.and(any())).thenReturn(predicate);
 
-                CustomFilterWrapper<TestEntity, ?> customFilterWrapper = mock(CustomFilterWrapper.class);
-                Map<String, CustomFilterWrapper<TestEntity, ?>> customFilters = new HashMap<>();
-                customFilters.put("customField", customFilterWrapper);
+                CustomFilterHolder<TestEntity, ?> customFilterHolder = mock(CustomFilterHolder.class);
+                Map<String, CustomFilterHolder<TestEntity, ?>> customFilters = new HashMap<>();
+                customFilters.put("customField", customFilterHolder);
 
                 when(filterParser.parse(request)).thenReturn(List.of(customFilter));
-                when(filterContext.getCustomFieldFilters()).thenReturn(customFilters);
 
-                when(customFilterWrapper.customFilterFunction()).thenReturn((r, q, cb, values, errors) -> Optional.of(predicate));
+                when(customFilterHolder.customFilterFunction()).thenReturn((r, q, cb, values, errors) -> Optional.of(predicate));
 
                 Specification result = filterBuilder.buildFilterSpecification(filterContext);
 
@@ -201,14 +199,13 @@ class FilterBuilderTest {
         void buildFilterPredicate_WithInvalidCustomFilter_ThrowsException() {
             String field = "customField";
             FilterWrapper customFilter = new FilterWrapper(field, field, Operator.EQ, List.of("value"), SourceType.QUERY_PARAM);
-            CustomFilterWrapper<TestEntity, ?> customFilterWrapper = mock(CustomFilterWrapper.class);
+            CustomFilterHolder<TestEntity, ?> customFilterHolder = mock(CustomFilterHolder.class);
             AbstractFilterField<?> filterField = mock(AbstractFilterField.class);
 
-            Map<String, CustomFilterWrapper<TestEntity, ?>> customFilters = new HashMap<>();
-            customFilters.put(field, customFilterWrapper);
+            Map<String, CustomFilterHolder<TestEntity, ?>> customFilters = new HashMap<>();
+            customFilters.put(field, customFilterHolder);
 
             when(filterParser.parse(request)).thenReturn(List.of(customFilter));
-            when(filterContext.getCustomFieldFilters()).thenReturn(customFilters);
             doThrow(RuntimeException.class).when(filterValidator).validateFilterFieldAndOperator(any(), any(), any(), any());
 
             assertThrows(RuntimeException.class, () ->
@@ -227,7 +224,6 @@ class FilterBuilderTest {
             when(filterParser.parse(request)).thenReturn(List.of(filter));
             Map<String, Set<Operator>> fieldOperators = new HashMap<>();
             fieldOperators.put(field, Set.of(Operator.EQ));
-            when(filterContext.getFieldOperators()).thenReturn(fieldOperators);
 
             doThrow(InvalidFilterConfigurationException.class)
                     .when(pathGenerator).generate(any(), any(), any());

@@ -2,9 +2,9 @@ package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
-import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 
 import java.util.ArrayList;
 import java.util.List;

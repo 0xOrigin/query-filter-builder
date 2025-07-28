@@ -1,7 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder.base.filterfield;
 
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 
 import java.io.Serializable;
 

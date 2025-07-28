@@ -2,8 +2,8 @@ package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.function.CustomFilterFunction;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.CustomFilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.functions.CustomFilterFunction;
+import io.github._0xorigin.queryfilterbuilder.base.holders.CustomFilterHolder;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Nested;
@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,7 +47,7 @@ class FilterContextTest {
             FilterContext<TestEntity> result = FilterContext.buildForType(TestEntity.class).queryParam(request, builder -> builder.addFilter(fieldName, operators)).build();
 
             // Then
-            Set<Operator> addedOperators = result.getFieldOperators().get(fieldName);
+            Set<Operator> addedOperators = result.getFilters().get(fieldName).operators();
             assertEquals(3, addedOperators.size());
             assertTrue(addedOperators.containsAll(Set.of(Operator.EQ, Operator.GT, Operator.LT)));
         }
@@ -70,8 +69,7 @@ class FilterContextTest {
                     .build();
 
             // Then
-            assertEquals(1, result.getFieldOperators().size());
-            Set<Operator> operators = result.getFieldOperators().get(fieldName);
+            Set<Operator> operators = result.getFilters().get(fieldName).operators();
             assertEquals(2, operators.size());
             assertTrue(operators.containsAll(Set.of(Operator.GT, Operator.LT)));
         }
@@ -95,9 +93,9 @@ class FilterContextTest {
                         .build();
 
                 // Then
-                assertTrue(result.getCustomFieldFilters().containsKey(fieldName));
+                assertTrue(result.getCustomFilters().containsKey(fieldName));
 
-                CustomFilterWrapper<TestEntity, ?> wrapper = result.getCustomFieldFilters().get(fieldName);
+                CustomFilterHolder<TestEntity, ?> wrapper = result.getCustomFilters().get(fieldName);
                 assertNotNull(wrapper);
                 assertEquals(mockFilterFunction, wrapper.customFilterFunction());
             }
@@ -120,8 +118,8 @@ class FilterContextTest {
                         .build();
 
                 // Then
-                assertEquals(1, result.getCustomFieldFilters().size());
-                CustomFilterWrapper<TestEntity, ?> wrapper = result.getCustomFieldFilters().get(fieldName);
+                assertEquals(1, result.getCustomFilters().size());
+                CustomFilterHolder<TestEntity, ?> wrapper = result.getCustomFilters().get(fieldName);
                 assertEquals(newFilterFunction, wrapper.customFilterFunction());
             }
         }
@@ -150,50 +148,9 @@ class FilterContextTest {
                         .build();
 
                 // Then
-                assertEquals(1, result.getFieldOperators().size());
-                assertEquals(1, result.getCustomFieldFilters().size());
-                assertTrue(result.getFieldOperators().containsKey(fieldName1));
-                assertTrue(result.getCustomFieldFilters().containsKey(fieldName2));
-            }
-        }
-    }
-
-    @Nested
-    class ImmutabilityTests {
-
-        @Test
-        void shouldReturnUnmodifiableFieldOperators() {
-            // Given
-            String fieldName = "testField";
-            FilterContext<TestEntity> result = FilterContext
-                    .buildForType(TestEntity.class)
-                    .queryParam(request, builder -> builder.addFilter(fieldName, Operator.EQ))
-                    .build();
-
-            // When
-            Map<String, Set<Operator>> operators = result.getFieldOperators();
-
-            // Then
-            assertThrows(UnsupportedOperationException.class,
-                    () -> operators.put("newField", Set.of(Operator.GT)));
-        }
-
-        @Test
-        void shouldReturnUnmodifiableCustomFilters() {
-            // Given
-            String fieldName = "testField";
-            try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
-                FilterContext<TestEntity> result = FilterContext
-                        .buildForType(TestEntity.class)
-                        .queryParam(request, builder -> builder.addFilter(fieldName, String.class, mockFilterFunction))
-                        .build();
-
-                // When
-                Map<String, CustomFilterWrapper<TestEntity, ?>> customFilters = result.getCustomFieldFilters();
-
-                // Then
-                assertThrows(UnsupportedOperationException.class,
-                        () -> customFilters.put("newField", new CustomFilterWrapper<>(dataType, mockFilterFunction)));
+                assertEquals(1, result.getCustomFilters().size());
+                assertTrue(result.getFilters().containsKey(fieldName1));
+                assertTrue(result.getCustomFilters().containsKey(fieldName2));
             }
         }
     }

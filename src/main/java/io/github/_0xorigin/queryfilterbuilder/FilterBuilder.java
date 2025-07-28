@@ -6,9 +6,9 @@ import io.github._0xorigin.queryfilterbuilder.base.QueryFilterBuilder;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.CustomFilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.holders.CustomFilterHolder;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurationException;
 import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryFilterValueException;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
@@ -54,7 +54,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toUnmodifiableSet());
-//            log.debug("Predicates: {}", predicates.size());
+            log.info("Predicates: {}", predicates.size());
             throwClientSideExceptionIfInvalid(bindingResult);
             return predicates.isEmpty() ? null : criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
@@ -64,7 +64,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         final Set<FilterWrapper> filterWrappers = new HashSet<>();
         filterContext.getRequest().ifPresent(request -> filterWrappers.addAll(filterParser.parse(request)));
         filterContext.getFilterRequests().ifPresent(filterRequests -> filterWrappers.addAll(filterParser.parse(filterRequests)));
-//        log.debug("FilterWrappers: {}", filterWrappers);
+        log.info("FilterWrappers: {}", filterWrappers);
         return filterWrappers;
     }
 
@@ -76,9 +76,9 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         final FilterContext<T> filterContext,
         final FilterWrapper filterWrapper
     ) {
-        final Optional<Predicate> customPredicate = buildCustomFieldPredicate(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper);
-        if (customPredicate.isPresent())
-            return customPredicate;
+        final Optional<Predicate> customFilterPredicate = buildCustomFilterPredicate(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper);
+        if (customFilterPredicate.isPresent())
+            return customFilterPredicate;
 
         if (isValidFieldOperator(filterContext, filterWrapper))
             return createPredicate(root, cb, bindingResult, filterWrapper);
@@ -86,7 +86,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         return Optional.empty();
     }
 
-    private <K extends Comparable<? super K> & Serializable> Optional<Predicate> buildCustomFieldPredicate(
+    private <K extends Comparable<? super K> & Serializable> Optional<Predicate> buildCustomFilterPredicate(
         final Root<T> root,
         final CriteriaQuery<?> criteriaQuery,
         final CriteriaBuilder cb,
@@ -97,7 +97,7 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
         if (!isValidCustomField(filterContext, filterWrapper))
             return Optional.empty();
 
-        final CustomFilterWrapper<T, ?> customFilter = filterContext.getCustomFieldFilters().get(filterWrapper.originalFieldName());
+        final CustomFilterHolder<T, ?> customFilter = filterContext.getCustomFilters().get(filterWrapper.originalFieldName());
         final AbstractFilterField<? extends Comparable<?>> filterClass = getFieldFilter(customFilter.dataType());
         final FilterOperator filterOperator = filterOperatorRegistry.getOperator(Operator.EQ);
         FilterValidator.validateFilterFieldAndOperator(
@@ -115,28 +115,24 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     }
 
     private boolean isValidFieldOperator(final FilterContext<T> filterContext, final FilterWrapper filterWrapper) {
-        final var fieldOperators = filterContext.getFieldOperators();
-        final var fieldSourceTypes = filterContext.getFieldSourceTypes();
-        final boolean isFieldAndItsOperatorExists = (
-            fieldOperators.containsKey(filterWrapper.field())
-            && fieldOperators.get(filterWrapper.field()).contains(filterWrapper.operator())
+        final var filters = filterContext.getFilters();
+        final boolean isFilterExists = filters.containsKey(filterWrapper.field());
+        final var filterHolder = filters.get(filterWrapper.field());
+        return (
+            isFilterExists
+            && filterHolder.operators().contains(filterWrapper.operator())
+            && filterHolder.sourceTypes().contains(filterWrapper.sourceType())
         );
-        final boolean isCorrectSourceType = (
-            fieldSourceTypes.containsKey(filterWrapper.field())
-            && fieldSourceTypes.get(filterWrapper.field()).contains(filterWrapper.sourceType())
-        );
-        return isFieldAndItsOperatorExists && isCorrectSourceType;
     }
 
     private boolean isValidCustomField(final FilterContext<T> filterContext, final FilterWrapper filterWrapper) {
-        final var customFieldFilters = filterContext.getCustomFieldFilters();
-        final var fieldSourceTypes = filterContext.getFieldSourceTypes();
-        final boolean isFieldAndItsFunctionExists = customFieldFilters.containsKey(filterWrapper.field());
-        final boolean isCorrectSourceType = (
-            fieldSourceTypes.containsKey(filterWrapper.field())
-            && fieldSourceTypes.get(filterWrapper.field()).contains(filterWrapper.sourceType())
+        final var customFilters = filterContext.getCustomFilters();
+        final boolean isFilterExists = customFilters.containsKey(filterWrapper.originalFieldName());
+        final var customFilterHolder = customFilters.get(filterWrapper.originalFieldName());
+        return (
+            isFilterExists
+            && customFilterHolder.sourceTypes().contains(filterWrapper.sourceType())
         );
-        return isFieldAndItsFunctionExists && isCorrectSourceType;
     }
 
     private <K extends Comparable<? super K> & Serializable> Optional<Predicate> createPredicate(

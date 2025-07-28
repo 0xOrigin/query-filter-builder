@@ -1,8 +1,8 @@
 package io.github._0xorigin.queryfilterbuilder.operators;
 
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
-import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;

@@ -1,4 +1,4 @@
-package io.github._0xorigin.queryfilterbuilder.base.wrapper;
+package io.github._0xorigin.queryfilterbuilder.base.wrappers;
 
 import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;

@@ -1,11 +1,11 @@
 package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.FilterParser;
-import io.github._0xorigin.queryfilterbuilder.base.dto.FilterRequest;
+import io.github._0xorigin.queryfilterbuilder.base.dtos.FilterRequest;
 import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.util.FilterUtils;
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;

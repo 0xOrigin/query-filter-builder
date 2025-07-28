@@ -1,6 +1,6 @@
 package io.github._0xorigin.queryfilterbuilder.base;
 
-import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Root;
 
