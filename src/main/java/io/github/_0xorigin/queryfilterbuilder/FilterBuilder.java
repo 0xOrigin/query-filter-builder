@@ -78,17 +78,17 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
     private Optional<Predicate> buildPredicateForWrapper(
         final Root<T> root,
         final CriteriaQuery<?> criteriaQuery,
-        final CriteriaBuilder cb,
+        final CriteriaBuilder criteriaBuilder,
         final BindingResult bindingResult,
         final FilterContext<T> filterContext,
         final FilterWrapper filterWrapper
     ) {
-        final Optional<Predicate> customFilterPredicate = buildCustomFilterPredicate(root, criteriaQuery, cb, bindingResult, filterContext, filterWrapper);
+        final Optional<Predicate> customFilterPredicate = buildCustomFilterPredicate(root, criteriaQuery, criteriaBuilder, bindingResult, filterContext, filterWrapper);
         if (customFilterPredicate.isPresent())
             return customFilterPredicate;
 
         if (isValidFieldOperator(filterContext, filterWrapper))
-            return createPredicate(root, cb, bindingResult, filterWrapper);
+            return createPredicate(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, bindingResult);
 
         return Optional.empty();
     }
@@ -148,11 +148,13 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
 
     private <K extends Comparable<? super K> & Serializable> Optional<Predicate> createPredicate(
         final Root<T> root,
-        final CriteriaBuilder builder,
-        final BindingResult bindingResult,
-        final FilterWrapper filterWrapper
+        final CriteriaQuery<?> criteriaQuery,
+        final CriteriaBuilder criteriaBuilder,
+        final FilterContext<T> filterContext,
+        final FilterWrapper filterWrapper,
+        final BindingResult bindingResult
     ) {
-        final Expression<K> expression = getExpression(root, filterWrapper, bindingResult);
+        Expression<K> expression = getExpression(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, bindingResult);
         throwServerSideExceptionIfInvalid(bindingResult);
 
         final Class<? extends K> dataType = getFieldDataType(expression);
@@ -171,15 +173,24 @@ public final class FilterBuilder<T> implements QueryFilterBuilder<T> {
                 .stream()
                 .map(value -> (K) filterClass.safeCast(value, new ErrorWrapper(bindingResult, filterWrapper)))
                 .toList();
-        return filterOperator.apply(expression, builder, values, new ErrorWrapper(bindingResult, filterWrapper));
+        return filterOperator.apply(expression, criteriaBuilder, values, new ErrorWrapper(bindingResult, filterWrapper));
     }
 
     private BindingResult getBindingResult() {
         return new BeanPropertyBindingResult(this, "queryFilterBuilder");
     }
 
-    private <K extends Comparable<? super K> & Serializable> Expression<K> getExpression(final Root<T> root, final FilterWrapper filterWrapper, final BindingResult bindingResult) {
-        return filterPathGenerator.generate(root, filterWrapper.field(), new ErrorWrapper(bindingResult, filterWrapper));
+    private <K extends Comparable<? super K> & Serializable> Expression<K> getExpression(
+        final Root<T> root,
+        final CriteriaQuery<?> criteriaQuery,
+        final CriteriaBuilder criteriaBuilder,
+        final FilterContext<T> filterContext,
+        final FilterWrapper filterWrapper,
+        final BindingResult bindingResult
+    ) {
+        var filterHolder = filterContext.getFilters().get(filterWrapper.field());
+        Optional<Expression<K>> providerFunction = filterHolder.getExpression(root, criteriaQuery, criteriaBuilder);
+        return providerFunction.orElse(filterPathGenerator.generate(root, filterWrapper.field(), new ErrorWrapper(bindingResult, filterWrapper)));
     }
 
     private <K extends Comparable<? super K> & Serializable> Class<? extends K> getFieldDataType(final Expression<K> expression) {
