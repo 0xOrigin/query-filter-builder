@@ -1,4 +1,4 @@
-package io.github._0xorigin.queryfilterbuilder.fields;
+package io.github._0xorigin.queryfilterbuilder.filters;
 
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFilterField;
 

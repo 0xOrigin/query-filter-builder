@@ -1,11 +1,12 @@
-package io.github._0xorigin.queryfilterbuilder.fields;
+package io.github._0xorigin.queryfilterbuilder.filters;
 
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
 import java.util.Set;
+import java.util.UUID;
 
-public final class CharacterFilter extends AbstractFilterField<Character> {
+public final class UuidFilter extends AbstractFilterField<UUID> {
 
     {
         this.setSupportedOperators(
@@ -17,12 +18,12 @@ public final class CharacterFilter extends AbstractFilterField<Character> {
     }
 
     @Override
-    public Character cast(Object value) {
-        return value.toString().charAt(0);
+    public UUID cast(Object value) {
+        return UUID.fromString(value.toString());
     }
 
     @Override
-    public Class<Character> getDataType() {
-        return Character.class;
+    public Class<UUID> getDataType() {
+        return UUID.class;
     }
 }

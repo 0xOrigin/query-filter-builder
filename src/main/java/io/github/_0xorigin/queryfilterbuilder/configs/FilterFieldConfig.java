@@ -1,11 +1,21 @@
 package io.github._0xorigin.queryfilterbuilder.configs;
 
-import io.github._0xorigin.queryfilterbuilder.fields.*;
+import io.github._0xorigin.queryfilterbuilder.filters.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class FilterFieldConfig {
+
+    @Bean
+    public BigDecimalFilter bigDecimalFilter() {
+        return new BigDecimalFilter();
+    }
+
+    @Bean
+    public BigIntegerFilter bigIntegerFilter() {
+        return new BigIntegerFilter();
+    }
 
     @Bean
     public BooleanFilter booleanFilter() {
