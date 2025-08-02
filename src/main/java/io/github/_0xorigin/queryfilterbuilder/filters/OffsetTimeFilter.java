@@ -7,8 +7,8 @@ import java.time.OffsetTime;
 public final class OffsetTimeFilter extends AbstractTemporalFilterField<OffsetTime> {
 
     @Override
-    public OffsetTime cast(Object value) {
-        return OffsetTime.parse(value.toString());
+    public OffsetTime cast(String value) {
+        return OffsetTime.parse(value);
     }
 
     @Override

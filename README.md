@@ -91,7 +91,7 @@ public class UserSpecification implements Specification<User> {
         return queryFilterBuilder.buildFilterPredicate(root, query, cb, filterContext);
     }
 
-    private Predicate search(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder cb, List<?> values, ErrorWrapper errorWrapper) {
+    private Predicate search(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder cb, List<?> values, ErrorWrapper filterErrorWrapper) {
         return cb.or(cb.equal(root.get("firstName"), values.get(0)), cb.equal(root.get("lastName"), values.get(0)));
     }
 

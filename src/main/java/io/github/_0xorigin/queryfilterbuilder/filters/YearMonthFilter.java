@@ -7,8 +7,8 @@ import java.time.YearMonth;
 public final class YearMonthFilter extends AbstractTemporalFilterField<YearMonth> {
 
     @Override
-    public YearMonth cast(Object value) {
-        return YearMonth.parse(value.toString());
+    public YearMonth cast(String value) {
+        return YearMonth.parse(value);
     }
 
     @Override

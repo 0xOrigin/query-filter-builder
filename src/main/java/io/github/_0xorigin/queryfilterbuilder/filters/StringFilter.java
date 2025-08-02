@@ -18,8 +18,8 @@ public final class StringFilter extends AbstractFilterField<String> {
     }
 
     @Override
-    public String cast(Object value) {
-        return value.toString();
+    public String cast(String value) {
+        return value;
     }
 
     @Override

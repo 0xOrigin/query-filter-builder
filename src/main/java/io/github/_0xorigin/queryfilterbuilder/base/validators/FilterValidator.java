@@ -1,9 +1,9 @@
-package io.github._0xorigin.queryfilterbuilder;
+package io.github._0xorigin.queryfilterbuilder.base.validators;
 
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
 import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
-import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 
 import java.util.ArrayList;
@@ -16,20 +16,20 @@ public final class FilterValidator {
     }
 
     public static void validateFilterFieldAndOperator(
-        final AbstractFilterField<?> filterClass,
+        final AbstractFilterField<?> filterField,
         final FilterOperator filterOperator,
         final FilterWrapper filterWrapper,
-        final ErrorWrapper errorWrapper
+        final FilterErrorWrapper filterErrorWrapper
     ) {
         final List<String> errorMessages = new ArrayList<>();
 
-        if (filterClass == null)
+        if (filterField == null)
             errorMessages.add("Data type for field '" + filterWrapper.field() + "' is not supported.");
 
         if (filterOperator == null)
             errorMessages.add("Operator '" + filterWrapper.operator().getValue() + "' is not a valid operator.");
 
-        if (filterClass != null && !filterClass.getSupportedOperators().contains(filterWrapper.operator()))
+        if (filterField != null && !filterField.getSupportedOperators().contains(filterWrapper.operator()))
             errorMessages.add(
                     "Operator '" + filterWrapper.operator().getValue() +
                     "' is not a valid operator for the type of field '" +
@@ -38,9 +38,10 @@ public final class FilterValidator {
 
         for (String errorMessage : errorMessages) {
             FilterUtils.addError(
-                errorWrapper,
+                filterErrorWrapper.bindingResult(),
                 FilterUtils.generateFieldError(
-                    errorWrapper,
+                    filterErrorWrapper.bindingResult(),
+                    filterWrapper.originalFieldName(),
                     filterWrapper.values().toString(),
                     errorMessage
                 )

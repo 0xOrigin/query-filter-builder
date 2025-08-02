@@ -5,8 +5,8 @@ import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFil
 public final class ByteFilter extends AbstractNumberFilterField<Byte> {
 
     @Override
-    public Byte cast(Object value) {
-        return Byte.parseByte(value.toString());
+    public Byte cast(String value) {
+        return Byte.parseByte(value);
     }
 
     @Override

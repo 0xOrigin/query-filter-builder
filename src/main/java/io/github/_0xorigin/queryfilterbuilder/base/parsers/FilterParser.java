@@ -1,4 +1,4 @@
-package io.github._0xorigin.queryfilterbuilder.base;
+package io.github._0xorigin.queryfilterbuilder.base.parsers;
 
 import io.github._0xorigin.queryfilterbuilder.base.dtos.FilterRequest;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
@@ -8,8 +8,8 @@ import java.util.List;
 
 public interface FilterParser {
 
-    List<FilterWrapper> parse(final HttpServletRequest request);
+    List<FilterWrapper> parse(HttpServletRequest request);
 
-    List<FilterWrapper> parse(final List<FilterRequest> filterRequests);
+    List<FilterWrapper> parse(List<FilterRequest> filterRequests);
 
 }

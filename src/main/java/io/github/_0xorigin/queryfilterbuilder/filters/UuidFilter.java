@@ -18,8 +18,8 @@ public final class UuidFilter extends AbstractFilterField<UUID> {
     }
 
     @Override
-    public UUID cast(Object value) {
-        return UUID.fromString(value.toString());
+    public UUID cast(String value) {
+        return UUID.fromString(value);
     }
 
     @Override

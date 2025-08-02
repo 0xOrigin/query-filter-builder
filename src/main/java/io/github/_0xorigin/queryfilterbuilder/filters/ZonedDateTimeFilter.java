@@ -7,8 +7,8 @@ import java.time.ZonedDateTime;
 public final class ZonedDateTimeFilter extends AbstractTemporalFilterField<ZonedDateTime> {
 
     @Override
-    public ZonedDateTime cast(Object value) {
-        return ZonedDateTime.parse(value.toString());
+    public ZonedDateTime cast(String value) {
+        return ZonedDateTime.parse(value);
     }
 
     @Override

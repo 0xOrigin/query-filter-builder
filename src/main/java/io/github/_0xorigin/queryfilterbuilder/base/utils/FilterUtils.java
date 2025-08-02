@@ -1,9 +1,13 @@
 package io.github._0xorigin.queryfilterbuilder.base.utils;
 
-import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.holders.ErrorHolder;
+import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurationException;
+import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryFilterValueException;
 import org.springframework.lang.Nullable;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,55 +20,54 @@ public final class FilterUtils {
     }
 
     public static FieldError generateFieldError(
-            ErrorWrapper errorWrapper,
-            String value,
-            boolean bindingFailure,
-            @Nullable String[] codes,
-            @Nullable Object[] arguments,
-            @Nullable String defaultMessage
+        BindingResult bindingResult,
+        String fieldName,
+        String value,
+        boolean bindingFailure,
+        @Nullable String[] codes,
+        @Nullable Object[] arguments,
+        @Nullable String defaultMessage
     ) {
-        return new FieldError(
-            errorWrapper.bindingResult().getObjectName(),
-            errorWrapper.filterWrapper().originalFieldName(),
-            value,
-            bindingFailure,
-            codes,
-            arguments,
-            defaultMessage
-        );
+        return new FieldError(bindingResult.getObjectName(), fieldName, value, bindingFailure, codes, arguments, defaultMessage);
     }
 
-    public static FieldError generateFieldError(ErrorWrapper errorWrapper, String value, String defaultMessage) {
-        return generateFieldError(
-            errorWrapper,
-            value,
-            false,
-            null,
-            null,
-            defaultMessage
-        );
+    public static FieldError generateFieldError(BindingResult bindingResult, String fieldName, String value, String defaultMessage) {
+        return generateFieldError(bindingResult, fieldName, value, false, null, null, defaultMessage);
     }
 
-    public static FieldError generateFieldError(ErrorWrapper errorWrapper, String value, String defaultMessage, String messagePrefix) {
-        return generateFieldError(
-            errorWrapper,
-            value,
-            false,
-            null,
-            null,
-            messagePrefix + defaultMessage
-        );
+    public static FieldError generateFieldError(BindingResult bindingResult, String fieldName, String value, String defaultMessage, String messagePrefix) {
+        return generateFieldError(bindingResult, fieldName, value, false, null, null, messagePrefix + " " + defaultMessage);
     }
 
-    public static void addError(ErrorWrapper errorWrapper, ObjectError error) {
-        errorWrapper
-            .bindingResult()
-            .addError(error);
+    public static void addError(BindingResult bindingResult, ObjectError error) {
+        bindingResult.addError(error);
     }
 
     public static String[] splitWithEscapedDelimiter(String value, String delimiter) {
         Pattern pattern = Pattern.compile(Pattern.quote(delimiter));
         return pattern.split(value);
+    }
+
+    private static MethodArgumentNotValidException getMethodArgumentNotValidException(final ErrorHolder errorHolder) {
+        return new MethodArgumentNotValidException(errorHolder.methodParameter(), errorHolder.bindingResult());
+    }
+
+    public static void throwClientSideExceptionIfInvalid(final ErrorHolder errorHolder) {
+        if (!errorHolder.bindingResult().hasErrors())
+            return;
+
+        throw new InvalidQueryFilterValueException(
+            getMethodArgumentNotValidException(errorHolder)
+        );
+    }
+
+    public static void throwServerSideExceptionIfInvalid(final ErrorHolder errorHolder) {
+        if (!errorHolder.bindingResult().hasErrors())
+            return;
+
+        throw new InvalidFilterConfigurationException(
+            getMethodArgumentNotValidException(errorHolder)
+        );
     }
 
     public static boolean isContainNulls(List<?> values) {

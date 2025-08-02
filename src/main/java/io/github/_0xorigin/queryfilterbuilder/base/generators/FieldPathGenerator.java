@@ -1,26 +1,25 @@
-package io.github._0xorigin.queryfilterbuilder;
+package io.github._0xorigin.queryfilterbuilder.base.generators;
 
-import io.github._0xorigin.queryfilterbuilder.base.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
-import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.persistence.criteria.*;
 import jakarta.persistence.metamodel.*;
+import org.springframework.validation.BindingResult;
 
 import java.io.Serializable;
 
-public final class FilterPathGenerator<T> implements PathGenerator<T> {
+public final class FieldPathGenerator<T> implements PathGenerator<T> {
 
     private final Metamodel metamodel;
     private final QueryFilterBuilderProperties properties;
 
-    public FilterPathGenerator(Metamodel metamodel, QueryFilterBuilderProperties properties) {
+    public FieldPathGenerator(Metamodel metamodel, QueryFilterBuilderProperties properties) {
         this.metamodel = metamodel;
         this.properties = properties;
     }
 
     @Override
-    public <K extends Comparable<? super K> & Serializable> Expression<K> generate(Root<T> root, String field, ErrorWrapper errorWrapper) {
+    public <K extends Comparable<? super K> & Serializable> Expression<K> generate(Root<T> root, String field, String originalFieldName, BindingResult bindingResult) {
         final String FIELD_DELIMITER = properties.queryParam().defaults().fieldDelimiter();
         final String[] parts = FilterUtils.splitWithEscapedDelimiter(field, FIELD_DELIMITER);
         Path<T> path = root;
@@ -58,10 +57,11 @@ public final class FilterPathGenerator<T> implements PathGenerator<T> {
             return path.get(finalPart).get(idAttribute.getName());
         } catch (IllegalStateException | IllegalArgumentException e) {
             FilterUtils.addError(
-                errorWrapper,
+                bindingResult,
                 FilterUtils.generateFieldError(
-                    errorWrapper,
-                    errorWrapper.filterWrapper().values().toString().replace("[", "").replace("]", ""),
+                    bindingResult,
+                    originalFieldName,
+                    "",
                     e.getLocalizedMessage()
                 )
             );

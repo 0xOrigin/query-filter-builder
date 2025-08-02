@@ -5,8 +5,8 @@ import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFil
 public final class DoubleFilter extends AbstractNumberFilterField<Double> {
 
     @Override
-    public Double cast(Object value) {
-        return Double.parseDouble(value.toString());
+    public Double cast(String value) {
+        return Double.parseDouble(value);
     }
 
     @Override

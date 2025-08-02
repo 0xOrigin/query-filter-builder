@@ -17,8 +17,8 @@ public final class CharacterFilter extends AbstractFilterField<Character> {
     }
 
     @Override
-    public Character cast(Object value) {
-        return value.toString().charAt(0);
+    public Character cast(String value) {
+        return value.charAt(0);
     }
 
     @Override

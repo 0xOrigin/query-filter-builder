@@ -7,8 +7,8 @@ import java.time.LocalDate;
 public final class LocalDateFilter extends AbstractTemporalFilterField<LocalDate> {
 
     @Override
-    public LocalDate cast(Object value) {
-        return LocalDate.parse(value.toString());
+    public LocalDate cast(String value) {
+        return LocalDate.parse(value);
     }
 
     @Override

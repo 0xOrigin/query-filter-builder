@@ -2,8 +2,11 @@ package io.github._0xorigin.queryfilterbuilder.exceptions;
 
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
-public class InvalidFilterConfigurationException extends RuntimeException {
+import java.io.Serial;
 
+public class InvalidFilterConfigurationException extends RuntimeException {
+    @Serial
+    private static final long serialVersionUID = -5807320529587725676L;
     private final MethodArgumentNotValidException methodArgumentNotValidException;
 
     public InvalidFilterConfigurationException(String message) {
@@ -34,5 +37,4 @@ public class InvalidFilterConfigurationException extends RuntimeException {
     public MethodArgumentNotValidException getMethodArgumentNotValidException() {
         return methodArgumentNotValidException;
     }
-
 }

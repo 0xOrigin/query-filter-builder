@@ -5,8 +5,8 @@ import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFil
 public final class IntegerFilter extends AbstractNumberFilterField<Integer> {
 
     @Override
-    public Integer cast(Object value) {
-        return Integer.parseInt(value.toString());
+    public Integer cast(String value) {
+        return Integer.parseInt(value);
     }
 
     @Override

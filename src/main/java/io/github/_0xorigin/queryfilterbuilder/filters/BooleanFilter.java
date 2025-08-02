@@ -16,8 +16,8 @@ public final class BooleanFilter extends AbstractFilterField<Boolean> {
     }
 
     @Override
-    public Boolean cast(Object value) {
-        return !value.equals("null") ? Boolean.valueOf(value.toString()) : null;
+    public Boolean cast(String value) {
+        return !value.equals("null") ? Boolean.valueOf(value) : null;
     }
 
     @Override

@@ -7,8 +7,8 @@ import java.math.BigDecimal;
 public final class BigDecimalFilter extends AbstractNumberFilterField<BigDecimal> {
 
     @Override
-    public BigDecimal cast(Object value) {
-        return new BigDecimal(value.toString());
+    public BigDecimal cast(String value) {
+        return new BigDecimal(value);
     }
 
     @Override

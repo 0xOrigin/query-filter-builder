@@ -4,7 +4,7 @@ import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterFie
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.functions.CustomFilterFunction;
 import io.github._0xorigin.queryfilterbuilder.base.holders.CustomFilterHolder;
-import io.github._0xorigin.queryfilterbuilder.registries.FilterRegistry;
+import io.github._0xorigin.queryfilterbuilder.registries.FilterFieldRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ class FilterContextTest {
     private Class<String> dataType;
 
     @Mock
-    private FilterRegistry filterRegistry;
+    private FilterFieldRegistry filterFieldRegistry;
 
     @Mock
     private HttpServletRequest request;
@@ -82,7 +82,7 @@ class FilterContextTest {
         void shouldAddCustomFilter() {
             // Given
             String fieldName = "customField";
-            try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
+            try (MockedStatic<FilterFieldRegistry> filterRegistry = mockStatic(FilterFieldRegistry.class)) {
 
                 // When
                 FilterContext<TestEntity> result = FilterContext
@@ -105,7 +105,7 @@ class FilterContextTest {
         void shouldOverwriteExistingCustomFilter() {
             // Given
             String fieldName = "customField";
-            try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
+            try (MockedStatic<FilterFieldRegistry> filterRegistry = mockStatic(FilterFieldRegistry.class)) {
 
                 CustomFilterFunction<TestEntity> newFilterFunction = mock(CustomFilterFunction.class);
 
@@ -135,7 +135,7 @@ class FilterContextTest {
             String fieldName2 = "field2";
             Operator[] operators1 = {Operator.EQ};
 
-            try (MockedStatic<FilterRegistry> filterRegistry = mockStatic(FilterRegistry.class)) {
+            try (MockedStatic<FilterFieldRegistry> filterRegistry = mockStatic(FilterFieldRegistry.class)) {
 
                 // When
                 FilterContext<TestEntity> result = FilterContext

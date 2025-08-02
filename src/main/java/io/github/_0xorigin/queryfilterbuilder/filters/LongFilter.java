@@ -5,8 +5,8 @@ import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFil
 public final class LongFilter extends AbstractNumberFilterField<Long> {
 
     @Override
-    public Long cast(Object value) {
-        return Long.parseLong(value.toString());
+    public Long cast(String value) {
+        return Long.parseLong(value);
     }
 
     @Override

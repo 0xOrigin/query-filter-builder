@@ -3,7 +3,7 @@ package io.github._0xorigin.queryfilterbuilder.operators;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
-import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
@@ -15,15 +15,16 @@ import java.util.Optional;
 public final class Between implements FilterOperator {
 
     @Override
-    public <T extends Comparable<? super T> & Serializable> Optional<Predicate> apply(Expression<T> expression, CriteriaBuilder cb, List<T> values, ErrorWrapper errorWrapper) {
+    public <T extends Comparable<? super T> & Serializable> Optional<Predicate> apply(Expression<T> expression, CriteriaBuilder cb, List<T> values, FilterErrorWrapper filterErrorWrapper) {
         if (FilterUtils.isNotValidList(values))
             return Optional.empty();
 
         if (values.size() != 2) {
             FilterUtils.addError(
-                errorWrapper,
+                filterErrorWrapper.bindingResult(),
                 FilterUtils.generateFieldError(
-                    errorWrapper,
+                    filterErrorWrapper.bindingResult(),
+                    filterErrorWrapper.filterWrapper().originalFieldName(),
                     values.toString(),
                     "Value must be a List with exactly 2 elements for " + Operator.BETWEEN.getValue() + " operator."
                 )

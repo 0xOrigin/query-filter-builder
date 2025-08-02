@@ -2,7 +2,8 @@ package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.wrappers.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.generators.FieldPathGenerator;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.persistence.criteria.*;
@@ -17,12 +18,13 @@ import org.springframework.validation.BindingResult;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class FilterPathGeneratorTest {
+public class FieldPathGeneratorTest {
 
     @Mock
     private Metamodel metamodel;
@@ -49,15 +51,15 @@ public class FilterPathGeneratorTest {
     private QueryFilterBuilderProperties properties;
 
     private BindingResult bindingResult;
-    private FilterPathGenerator<Object> filterPathGenerator;
+    private FieldPathGenerator<Object> fieldPathGenerator;
 
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
-        filterPathGenerator = new FilterPathGenerator<>(metamodel, properties);
+        fieldPathGenerator = new FieldPathGenerator<>(metamodel, properties);
         bindingResult = new BeanPropertyBindingResult(this, "queryFilterBuilder");
-        Field delimiterField = FilterPathGenerator.class.getDeclaredField("FIELD_DELIMITER");
+        Field delimiterField = FieldPathGenerator.class.getDeclaredField("FIELD_DELIMITER");
         delimiterField.setAccessible(true);
-        delimiterField.set(filterPathGenerator, "__");
+        delimiterField.set(fieldPathGenerator, "__");
 
         when(metamodel.managedType(any())).thenReturn(managedType);
         when(managedType.getAttribute(anyString())).thenReturn((Attribute) attribute);
@@ -67,26 +69,26 @@ public class FilterPathGeneratorTest {
     void testGenerateSimplePath() {
         // Setup
         String field = "name";
-        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
-        ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
+        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM, Optional.empty());
+        FilterErrorWrapper filterErrorWrapper = new FilterErrorWrapper(bindingResult, filterWrapper);
         when(attribute.isAssociation()).thenReturn(false);
         when(root.get(field)).thenReturn(path);
 
         // Execute
-        Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+        Expression<?> result = fieldPathGenerator.generate(root, field, field, bindingResult);
 
         // Verify
         assertNotNull(result);
         verify(root).get(field);
-        assertFalse(errorWrapper.bindingResult().hasErrors());
+        assertFalse(filterErrorWrapper.bindingResult().hasErrors());
     }
 
     @Test
     void testGenerateNestedPath() {
         // Setup
         String field = "user__department__name";
-        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
-        ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
+        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM, Optional.empty());
+        FilterErrorWrapper filterErrorWrapper = new FilterErrorWrapper(bindingResult, filterWrapper);
 
         // Mock association behavior
         when(attribute.isAssociation())
@@ -99,7 +101,7 @@ public class FilterPathGeneratorTest {
         when(join.get("name")).thenReturn(path);
 
         // Execute
-        Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+        Expression<?> result = fieldPathGenerator.generate(root, field, field, bindingResult);
 
         // Verify
         assertNotNull(result);
@@ -112,8 +114,8 @@ public class FilterPathGeneratorTest {
     void testGenerateWithAssociationEndingPath() {
         // Setup
         String field = "department";
-        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
-        ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
+        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM, Optional.empty());
+        FilterErrorWrapper filterErrorWrapper = new FilterErrorWrapper(bindingResult, filterWrapper);
         Class<?> idClass = Long.class; // Using Long as a common ID type
 
         // Mock metamodel chain
@@ -136,55 +138,55 @@ public class FilterPathGeneratorTest {
         when(path.get("id")).thenReturn(path);
 
         // Execute
-        Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+        Expression<?> result = fieldPathGenerator.generate(root, field, field, bindingResult);
 
         // Verify
         assertNotNull(result);
         verify(root).get(field);
         verify(path).get("id");
-        assertFalse(errorWrapper.bindingResult().hasErrors());
+        assertFalse(filterErrorWrapper.bindingResult().hasErrors());
     }
 
     @Test
     void testGenerateWithInvalidPath() {
         // Setup
         String field = "invalidField";
-        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
-        ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
+        FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM, Optional.empty());
+        FilterErrorWrapper filterErrorWrapper = new FilterErrorWrapper(bindingResult, filterWrapper);
         when(managedType.getAttribute(field)).thenThrow(new IllegalArgumentException("Invalid field"));
 
         // Execute
-        Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+        Expression<?> result = fieldPathGenerator.generate(root, field, field, bindingResult);
 
         // Verify
         assertNull(result);
-        assertTrue(errorWrapper.bindingResult().hasErrors());
-        assertEquals(1, errorWrapper.bindingResult().getAllErrors().size());
+        assertTrue(filterErrorWrapper.bindingResult().hasErrors());
+        assertEquals(1, filterErrorWrapper.bindingResult().getAllErrors().size());
     }
 
     @Test
     void testGenerateWithCustomFieldDelimiter() {
         // Setup using reflection to set custom delimiter
         try {
-            Field delimiterField = FilterPathGenerator.class.getDeclaredField("FIELD_DELIMITER");
+            Field delimiterField = FieldPathGenerator.class.getDeclaredField("FIELD_DELIMITER");
             delimiterField.setAccessible(true);
-            delimiterField.set(filterPathGenerator, "##");
+            delimiterField.set(fieldPathGenerator, "##");
 
             String field = "user##name";
-            FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM);
-            ErrorWrapper errorWrapper = new ErrorWrapper(bindingResult, filterWrapper);
+            FilterWrapper filterWrapper = new FilterWrapper(field, field, Operator.EQ, Collections.singletonList("testValue"), SourceType.QUERY_PARAM, Optional.empty());
+            FilterErrorWrapper filterErrorWrapper = new FilterErrorWrapper(bindingResult, filterWrapper);
             when(attribute.isAssociation()).thenReturn(true).thenReturn(false);
             when(root.join("user", JoinType.LEFT)).thenReturn(join);
             when(join.get("name")).thenReturn(path);
 
             // Execute
-            Expression<?> result = filterPathGenerator.generate(root, field, errorWrapper);
+            Expression<?> result = fieldPathGenerator.generate(root, field, field, bindingResult);
 
             // Verify
             assertNotNull(result);
             verify(root).join("user", JoinType.LEFT);
             verify(join).get("name");
-            assertFalse(errorWrapper.bindingResult().hasErrors());
+            assertFalse(filterErrorWrapper.bindingResult().hasErrors());
 
         } catch (Exception e) {
             fail("Failed to set custom delimiter: " + e.getMessage());

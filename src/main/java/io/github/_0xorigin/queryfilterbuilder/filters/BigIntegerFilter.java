@@ -7,8 +7,8 @@ import java.math.BigInteger;
 public final class BigIntegerFilter extends AbstractNumberFilterField<BigInteger> {
 
     @Override
-    public BigInteger cast(Object value) {
-        return new BigInteger(value.toString());
+    public BigInteger cast(String value) {
+        return new BigInteger(value);
     }
 
     @Override

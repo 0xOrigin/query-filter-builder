@@ -5,8 +5,8 @@ import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFil
 public final class ShortFilter extends AbstractNumberFilterField<Short> {
 
     @Override
-    public Short cast(Object value) {
-        return Short.parseShort(value.toString());
+    public Short cast(String value) {
+        return Short.parseShort(value);
     }
 
     @Override

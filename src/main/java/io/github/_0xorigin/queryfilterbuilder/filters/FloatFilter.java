@@ -5,8 +5,8 @@ import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractNumberFil
 public final class FloatFilter extends AbstractNumberFilterField<Float> {
 
     @Override
-    public Float cast(Object value) {
-        return Float.parseFloat(value.toString());
+    public Float cast(String value) {
+        return Float.parseFloat(value);
     }
 
     @Override

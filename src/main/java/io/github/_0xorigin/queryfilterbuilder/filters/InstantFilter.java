@@ -7,8 +7,8 @@ import java.time.Instant;
 public final class InstantFilter extends AbstractTemporalFilterField<Instant> {
 
     @Override
-    public Instant cast(Object value) {
-        return Instant.parse(value.toString());
+    public Instant cast(String value) {
+        return Instant.parse(value);
     }
 
     @Override
