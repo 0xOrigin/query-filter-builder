@@ -20,7 +20,7 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
 
     @Override
     public <K extends Comparable<? super K> & Serializable> Expression<K> generate(Root<T> root, String field, String originalFieldName, BindingResult bindingResult) {
-        final String FIELD_DELIMITER = properties.queryParam().defaults().fieldDelimiter();
+        final String FIELD_DELIMITER = properties.defaults().fieldDelimiter();
         final String[] parts = FilterUtils.splitWithEscapedDelimiter(field, FIELD_DELIMITER);
         Path<T> path = root;
         Class<?> currentJavaType = root.getJavaType();

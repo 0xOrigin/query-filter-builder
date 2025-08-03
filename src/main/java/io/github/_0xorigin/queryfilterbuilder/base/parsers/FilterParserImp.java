@@ -21,19 +21,15 @@ public final class FilterParserImp implements FilterParser {
         this.properties = properties;
     }
 
-    public Map<String, String[]> getRequestQueryParams(HttpServletRequest request) {
-        return request.getParameterMap();
-    }
-
     @Override
     public List<FilterWrapper> parse(@NonNull final HttpServletRequest httpServletRequest) {
-        final String FIELD_DELIMITER = properties.queryParam().defaults().fieldDelimiter();
+        final String FIELD_DELIMITER = properties.defaults().fieldDelimiter();
         return getRequestQueryParams(httpServletRequest)
                 .entrySet()
                 .stream()
                 .map(entry -> {
-                    String paramName = entry.getKey(); // e.g., "user__manager__name__icontains" or "user__manager__name"
-                    String paramValue = entry.getValue().length > 0 ? entry.getValue()[0] : "";
+                    String paramName = entry.getKey(); // e.g., "user.manager.name.icontains" or "user.manager.name"
+                    String paramValue = getParamValue(entry.getValue());
 
                     String[] parts = FilterUtils.splitWithEscapedDelimiter(paramName, FIELD_DELIMITER);
                     String operatorPart = parts[parts.length - 1];
@@ -84,5 +80,13 @@ public final class FilterParserImp implements FilterParser {
                     );
                 })
                 .toList();
+    }
+
+    private Map<String, String[]> getRequestQueryParams(HttpServletRequest request) {
+        return request.getParameterMap();
+    }
+
+    private String getParamValue(String[] values) {
+        return values.length > 0 ? values[0] : "";
     }
 }

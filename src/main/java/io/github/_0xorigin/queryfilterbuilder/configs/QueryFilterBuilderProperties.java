@@ -9,21 +9,18 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "query-filter-builder")
 public record QueryFilterBuilderProperties(
-    @NotNull
-    @NonNull
-    QueryParam queryParam,
-
-    RequestBody requestBody
+    @NotNull @NonNull Defaults defaults,
+    @NotNull @NonNull QueryParam queryParam
 ) {
-    public record QueryParam(
-        QueryParamDefaults defaults
+    public record Defaults(
+        @NotBlank @NonNull String fieldDelimiter
     ) {}
 
-    public record RequestBody() {}
+    public record QueryParam(
+        @NotNull @NonNull QueryParamDefaults defaults
+    ) {}
 
     public record QueryParamDefaults(
-        @NotBlank
-        @NonNull
-        String fieldDelimiter
+        @NotBlank @NonNull String sortParameter
     ) {}
 }

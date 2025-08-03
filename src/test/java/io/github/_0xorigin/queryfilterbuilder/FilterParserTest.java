@@ -53,19 +53,6 @@ class FilterParserTest {
             // Then
             assertTrue(result.isEmpty());
         }
-
-        @Test
-        void shouldGetCorrectRequestQueryParams() {
-            // Given
-            Map<String, String[]> params = new HashMap<>();
-            when(request.getParameterMap()).thenReturn(params);
-
-            // When
-            Map<String, String[]> result = filterParser.getRequestQueryParams(request);
-
-            // Then
-            assertEquals(params, result);
-        }
     }
 
     @Nested

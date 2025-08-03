@@ -126,8 +126,13 @@ public final class FilterContext<T> {
                     .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
             if (operatorsSet.isEmpty())
                 return this;
+
             var filterHolder = builder.getFilters()
-                    .computeIfAbsent(fieldName, k -> new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.empty()));
+                .compute(fieldName, (key, existingHolder) -> (
+                    existingHolder != null ?
+                        new FilterHolder<>(EnumSet.copyOf(existingHolder.operators()), EnumSet.copyOf(existingHolder.sourceTypes()), existingHolder.expressionProviderFunction()) :
+                        new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.empty())
+                ));
             filterHolder.operators().addAll(operatorsSet);
             filterHolder.sourceTypes().add(sourceType);
             return this;
@@ -146,24 +151,33 @@ public final class FilterContext<T> {
                     .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
             if (operatorsSet.isEmpty())
                 return this;
+
             var filterHolder = builder.getFilters()
-                    .computeIfAbsent(fieldName, k -> new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.of(expressionProviderFunction)));
+                .compute(fieldName, (key, existingHolder) -> (
+                    existingHolder != null ?
+                        new FilterHolder<>(EnumSet.copyOf(existingHolder.operators()), EnumSet.copyOf(existingHolder.sourceTypes()), existingHolder.expressionProviderFunction()) :
+                        new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.of(expressionProviderFunction))
+                ));
             filterHolder.operators().addAll(operatorsSet);
             filterHolder.sourceTypes().add(sourceType);
             return this;
         }
 
-        public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
-            @NonNull final String fieldName,
+        public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addCustomFilter(
+            @NonNull final String filterName,
             @NonNull final Class<K> dataTypeForInput,
             @NonNull final CustomFilterFunction<T> filterFunction
         ) {
-            Objects.requireNonNull(fieldName, "Field name must not be null");
-            Objects.requireNonNull(dataTypeForInput, "Data type must not be null");
+            Objects.requireNonNull(filterName, "Filter name must not be null");
+            Objects.requireNonNull(dataTypeForInput, "Data type for input must not be null");
             Objects.requireNonNull(filterFunction, "Filter function must not be null");
 
             var customFilterHolder = builder.getCustomFilters()
-                    .computeIfAbsent(fieldName, k -> new CustomFilterHolder<>(dataTypeForInput, filterFunction, EnumSet.noneOf(SourceType.class)));
+                .compute(filterName, (key, existingHolder) -> (
+                    existingHolder != null ?
+                        new CustomFilterHolder<>(existingHolder.dataType(), existingHolder.customFilterFunction(), EnumSet.copyOf(existingHolder.sourceTypes())) :
+                        new CustomFilterHolder<>(dataTypeForInput, filterFunction, EnumSet.noneOf(SourceType.class))
+                ));
             customFilterHolder.sourceTypes().add(sourceType);
             return this;
         }

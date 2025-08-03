@@ -88,7 +88,7 @@ class FilterContextTest {
                 FilterContext<TestEntity> result = FilterContext
                         .buildForType(TestEntity.class)
                         .queryParam(request, builder -> {
-                            builder.addFilter(fieldName, String.class, mockFilterFunction);
+                            builder.addCustomFilter(fieldName, String.class, mockFilterFunction);
                         })
                         .build();
 
@@ -112,8 +112,8 @@ class FilterContextTest {
                 // When
                 FilterContext<TestEntity> result = FilterContext
                         .buildForType(TestEntity.class)
-                        .queryParam(request, builder -> builder.addFilter(fieldName, String.class, mockFilterFunction)
-                                .addFilter(fieldName, Integer.class, newFilterFunction)
+                        .queryParam(request, builder -> builder.addCustomFilter(fieldName, String.class, mockFilterFunction)
+                                .addCustomFilter(fieldName, Integer.class, newFilterFunction)
                         )
                         .build();
 
@@ -143,7 +143,7 @@ class FilterContextTest {
                         .queryParam(request, builder -> {
                             builder.addFilter(fieldName1, operators1)
                                     .addFilter(fieldName1, operators1)
-                                    .addFilter(fieldName2, String.class, mockFilterFunction);
+                                    .addCustomFilter(fieldName2, String.class, mockFilterFunction);
                         })
                         .build();
 

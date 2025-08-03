@@ -21,18 +21,12 @@ public final class SortParserImp implements SortParser {
         this.properties = properties;
     }
 
-    public Map<String, String[]> getRequestQueryParams(HttpServletRequest request) {
-        return request.getParameterMap();
-    }
-
     @Override
     public List<SortWrapper> parse(@NonNull final HttpServletRequest request) {
-        final String sortParameterName = "sort";
-        final Map<String, String[]> requestQueryParams = getRequestQueryParams(request);
-        final String sort = requestQueryParams.getOrDefault(sortParameterName, new String[0])[0];
+        final String sort = getSortParamValue(request);
 
         return Arrays.stream(sort.split(","))
-                .map(String::trim)
+                .filter(sortItem -> !sortItem.isBlank())
                 .map(sortItem -> {
                     boolean isDescending = sortItem.startsWith("-");
                     Sort.Direction direction = isDescending ? Sort.Direction.DESC : Sort.Direction.ASC;
@@ -44,6 +38,34 @@ public final class SortParserImp implements SortParser {
 
     @Override
     public List<SortWrapper> parse(@NonNull final List<SortRequest> sortRequests) {
-        return List.of();
+        return sortRequests
+                .stream()
+                .map(sortRequest -> {
+                    Sort.Direction direction;
+                    try {
+                        direction = Sort.Direction.valueOf(String.valueOf(sortRequest.direction()));
+                    } catch (IllegalArgumentException e) {
+                        // If the direction is not valid, default to ASC
+                        direction = Sort.Direction.ASC;
+                    }
+                    return new SortWrapper(
+                        sortRequest.field(),
+                        sortRequest.field(),
+                        direction,
+                        SourceType.REQUEST_BODY,
+                        Optional.empty()
+                    );
+                })
+                .toList();
+    }
+
+    private Map<String, String[]> getRequestQueryParams(HttpServletRequest request) {
+        return request.getParameterMap();
+    }
+
+    private String getSortParamValue(HttpServletRequest request) {
+        final String SORT_PARAMETER = properties.queryParam().defaults().sortParameter();
+        final String[] sortValues = getRequestQueryParams(request).getOrDefault(SORT_PARAMETER, new String[0]);
+        return sortValues.length > 0 ? sortValues[0] : "";
     }
 }

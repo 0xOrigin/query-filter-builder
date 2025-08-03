@@ -13,7 +13,6 @@ import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public final class SortContext<T> {
     private final Map<String, SortHolder<T, ?>> sorts;
@@ -115,25 +114,75 @@ public final class SortContext<T> {
             this.sourceType = sourceType;
         }
 
-        public SortConfigurer<T> addSort(
+        public SortConfigurer<T> addAscSort(@NonNull final String fieldName) {
+            return addSort(fieldName, Sort.Direction.ASC);
+        }
+
+        public SortConfigurer<T> addDescSort(@NonNull final String fieldName) {
+            return addSort(fieldName, Sort.Direction.DESC);
+        }
+
+        public SortConfigurer<T> addSorts(@NonNull final String fieldName) {
+            return addSort(fieldName, Sort.Direction.ASC, Sort.Direction.DESC);
+        }
+
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addAscSort(
+            @NonNull final String fieldName,
+            @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
+        ) {
+            return addSort(fieldName, expressionProviderFunction, Sort.Direction.ASC);
+        }
+
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addDescSort(
+            @NonNull final String fieldName,
+            @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
+        ) {
+            return addSort(fieldName, expressionProviderFunction, Sort.Direction.DESC);
+        }
+
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSorts(
+            @NonNull final String fieldName,
+            @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
+        ) {
+            return addSort(fieldName, expressionProviderFunction, Sort.Direction.ASC, Sort.Direction.DESC);
+        }
+
+        public SortConfigurer<T> addCustomSort(
+            @NonNull final String sortName,
+            @NonNull final CustomSortFunction<T> sortFunction
+        ) {
+            Objects.requireNonNull(sortName, "Sort name must not be null");
+            Objects.requireNonNull(sortFunction, "Sort function must not be null");
+
+            var customSortHolder = builder.getCustomSorts()
+                .compute(sortName, (key, existingHolder) -> (
+                    existingHolder != null ?
+                        new CustomSortHolder<>(existingHolder.customSortFunction(), EnumSet.copyOf(existingHolder.sourceTypes())) :
+                        new CustomSortHolder<>(sortFunction, EnumSet.noneOf(SourceType.class))
+                ));
+            customSortHolder.sourceTypes().add(sourceType);
+            return this;
+        }
+
+        private SortConfigurer<T> addSort(
             @NonNull final String fieldName,
             @NonNull Sort.Direction... directions
         ) {
             Objects.requireNonNull(fieldName, "Field name must not be null");
             Objects.requireNonNull(directions, "Directions must not be null");
-            EnumSet<Sort.Direction> directionsSet = Arrays.stream(directions)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toCollection(() -> EnumSet.noneOf(Sort.Direction.class)));
-            if (directionsSet.isEmpty())
-                return this;
+
             var sortHolder = builder.getSorts()
-                    .computeIfAbsent(fieldName, k -> new SortHolder<>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.empty()));
-            sortHolder.directions().addAll(directionsSet);
+                .compute(fieldName, (key, existingHolder) -> (
+                    existingHolder != null ?
+                        new SortHolder<>(EnumSet.copyOf(existingHolder.directions()), EnumSet.copyOf(existingHolder.sourceTypes()), existingHolder.expressionProviderFunction()) :
+                        new SortHolder<>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.empty())
+                ));
+            sortHolder.directions().addAll(Arrays.stream(directions).toList());
             sortHolder.sourceTypes().add(sourceType);
             return this;
         }
 
-        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSort(
+        private <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSort(
             @NonNull final String fieldName,
             @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
             @NonNull Sort.Direction... directions
@@ -141,28 +190,15 @@ public final class SortContext<T> {
             Objects.requireNonNull(fieldName, "Field name must not be null");
             Objects.requireNonNull(expressionProviderFunction, "Expression provider function must not be null");
             Objects.requireNonNull(directions, "Directions must not be null");
-            EnumSet<Sort.Direction> directionsSet = Arrays.stream(directions)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toCollection(() -> EnumSet.noneOf(Sort.Direction.class)));
-            if (directionsSet.isEmpty())
-                return this;
+
             var sortHolder = builder.getSorts()
-                    .computeIfAbsent(fieldName, k -> new SortHolder<>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.of(expressionProviderFunction)));
-            sortHolder.directions().addAll(directionsSet);
+                .compute(fieldName, (key, existingHolder) -> (
+                    existingHolder != null ?
+                        new SortHolder<>(EnumSet.copyOf(existingHolder.directions()), EnumSet.copyOf(existingHolder.sourceTypes()), existingHolder.expressionProviderFunction()) :
+                        new SortHolder<>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.of(expressionProviderFunction))
+                ));
+            sortHolder.directions().addAll(Arrays.stream(directions).toList());
             sortHolder.sourceTypes().add(sourceType);
-            return this;
-        }
-
-        public SortConfigurer<T> addSort(
-            @NonNull final String fieldName,
-            @NonNull final CustomSortFunction<T> sortFunction
-        ) {
-            Objects.requireNonNull(fieldName, "Field name must not be null");
-            Objects.requireNonNull(sortFunction, "Sort function must not be null");
-
-            var customSortHolder = builder.getCustomSorts()
-                    .computeIfAbsent(fieldName, k -> new CustomSortHolder<>(sortFunction, EnumSet.noneOf(SourceType.class)));
-            customSortHolder.sourceTypes().add(sourceType);
             return this;
         }
     }
