@@ -210,7 +210,6 @@ class QueryFilterBuilderImpTest {
             customFilters.put(field, customFilterHolder);
 
             when(filterParser.parse(request)).thenReturn(List.of(customFilter));
-            doThrow(RuntimeException.class).when(filterValidator).validateFilterFieldAndOperator(any(), any(), any(), any());
 
             assertThrows(RuntimeException.class, () ->
                     queryFilterBuilderImp.buildFilterSpecification(filterContext)

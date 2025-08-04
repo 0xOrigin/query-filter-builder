@@ -1,9 +1,9 @@
 package io.github._0xorigin.queryfilterbuilder;
 
+import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
 import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurationException;
 import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryFilterValueException;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
 @Order
 public class QueryFilterBuilderExceptionHandler {
 
-    private final MessageSource messageSource;
+    private final LocalizationService localizationService;
 
-    public QueryFilterBuilderExceptionHandler(MessageSource messageSource) {
-        this.messageSource = messageSource;
+    public QueryFilterBuilderExceptionHandler(LocalizationService localizationService) {
+        this.localizationService = localizationService;
     }
 
     @ExceptionHandler(InvalidQueryFilterValueException.class)

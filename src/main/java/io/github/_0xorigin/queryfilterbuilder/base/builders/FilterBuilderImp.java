@@ -14,6 +14,7 @@ import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.validators.FilterValidator;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterFieldRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import jakarta.persistence.criteria.*;
@@ -28,18 +29,21 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
     private final FilterParser filterParser;
     private final FilterFieldRegistry filterFieldRegistry;
     private final FilterOperatorRegistry filterOperatorRegistry;
+    private final LocalizationService localizationService;
     private final Logger log = LoggerFactory.getLogger(FilterBuilderImp.class);
 
     public FilterBuilderImp(
         final PathGenerator<T> fieldPathGenerator,
         final FilterParser filterParser,
         final FilterFieldRegistry filterFieldRegistry,
-        final FilterOperatorRegistry filterOperatorRegistry
+        final FilterOperatorRegistry filterOperatorRegistry,
+        final LocalizationService localizationService
     ) {
         this.fieldPathGenerator = fieldPathGenerator;
         this.filterParser = filterParser;
         this.filterFieldRegistry = filterFieldRegistry;
         this.filterOperatorRegistry = filterOperatorRegistry;
+        this.localizationService = localizationService;
     }
 
     @Override
@@ -100,7 +104,8 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
             filterField,
             filterOperator,
             filterWrapper,
-            new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper)
+            new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper),
+            localizationService
         );
         FilterUtils.throwServerSideExceptionIfInvalid(errorHolder);
 
@@ -127,7 +132,8 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
             filterField,
             filterOperator,
             filterWrapper,
-            new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper)
+            new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper),
+            localizationService
         );
         FilterUtils.throwServerSideExceptionIfInvalid(errorHolder);
 
