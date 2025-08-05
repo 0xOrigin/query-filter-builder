@@ -27,14 +27,26 @@ public final class FilterValidator {
         final List<String> errorMessages = new ArrayList<>();
 
         if (filterField == null)
-            errorMessages.add(localizationService.getMessage(MessageKey.DATA_TYPE_NOT_SUPPORTED.getCode(), null, filterWrapper.field()));
+            errorMessages.add(
+                localizationService.getMessage(MessageKey.DATA_TYPE_NOT_SUPPORTED.getCode())
+            );
 
         if (filterOperator == null)
-            errorMessages.add(localizationService.getMessage(MessageKey.OPERATOR_NOT_VALID.getCode(), null, filterWrapper.operator().getValue()));
+            errorMessages.add(
+                localizationService.getMessage(
+                    MessageKey.OPERATOR_NOT_VALID.getCode(),
+                    null,
+                    localizationService.getMessage(filterWrapper.operator().getValue())
+                )
+            );
 
         if (filterField != null && !filterField.getSupportedOperators().contains(filterWrapper.operator()))
             errorMessages.add(
-                localizationService.getMessage(MessageKey.OPERATOR_NOT_SUPPORTED.getCode(), null, filterWrapper.operator().getValue(), filterWrapper.field())
+                localizationService.getMessage(
+                    MessageKey.OPERATOR_NOT_SUPPORTED.getCode(),
+                    null,
+                    localizationService.getMessage(filterWrapper.operator().getValue())
+                )
             );
 
         for (String errorMessage : errorMessages) {
