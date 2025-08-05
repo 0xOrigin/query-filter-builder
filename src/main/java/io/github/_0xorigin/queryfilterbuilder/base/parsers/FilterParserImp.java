@@ -37,10 +37,11 @@ public final class FilterParserImp implements FilterParser {
                     Operator operator;
                     String fieldPath;
 
-                    try {
-                        operator = Operator.fromValue(operatorPart);
+                    Optional<Operator> operatorOptional = Operator.fromValue(operatorPart);
+                    if (operatorOptional.isPresent()) {
+                        operator = operatorOptional.get();
                         fieldPath = String.join(FIELD_DELIMITER, Arrays.copyOf(parts, parts.length - 1));
-                    } catch (IllegalArgumentException e) {
+                    } else {
                         // If not a valid operator, treat the whole as a field with EQUAL as the default operator
                         operator = Operator.EQ;
                         fieldPath = paramName; // Entire paramName is treated as the field
@@ -63,13 +64,8 @@ public final class FilterParserImp implements FilterParser {
         return filterRequests
                 .stream()
                 .map(filterRequest -> {
-                    Operator operator;
-                    try {
-                        operator = Operator.fromValue(filterRequest.operator());
-                    } catch (IllegalArgumentException e) {
-                        // If not a valid operator, treat the whole as a field with EQUAL as the default operator
-                        operator = Operator.EQ;
-                    }
+                    Operator operator = Operator.fromValue(filterRequest.operator())
+                            .orElse(Operator.EQ); // If not a valid operator, treat the whole as a field with EQUAL as the default operator
                     return new FilterWrapper(
                         filterRequest.field(),
                         filterRequest.field(),

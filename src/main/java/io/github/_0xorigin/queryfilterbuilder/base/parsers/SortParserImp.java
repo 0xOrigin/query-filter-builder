@@ -43,7 +43,7 @@ public final class SortParserImp implements SortParser {
                 .map(sortRequest -> {
                     Sort.Direction direction;
                     try {
-                        direction = Sort.Direction.valueOf(String.valueOf(sortRequest.direction()));
+                        direction = Sort.Direction.valueOf(String.valueOf(sortRequest.direction()).toUpperCase(Locale.US));
                     } catch (IllegalArgumentException e) {
                         // If the direction is not valid, default to ASC
                         direction = Sort.Direction.ASC;

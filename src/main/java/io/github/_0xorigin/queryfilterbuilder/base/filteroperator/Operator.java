@@ -2,6 +2,7 @@ package io.github._0xorigin.queryfilterbuilder.base.filteroperator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public enum Operator {
 
@@ -29,7 +30,7 @@ public enum Operator {
 
     static {
         for (Operator operator : Operator.values()) {
-            SYMBOL_MAP.put(operator.getValue(), operator);
+            SYMBOL_MAP.put(transformValue(operator.getValue()), operator);
         }
     }
 
@@ -41,12 +42,11 @@ public enum Operator {
         return value;
     }
 
-    public static Operator fromValue(String value){
-        Operator operator = SYMBOL_MAP.get(value);
-        if (operator == null) {
-            throw new IllegalArgumentException("No enum constant with value: " + value);
-        }
+    public static Optional<Operator> fromValue(String value){
+        return Optional.ofNullable(SYMBOL_MAP.get(transformValue(value)));
+    }
 
-        return operator;
+    private static String transformValue(String value) {
+        return value.toLowerCase();
     }
 }
