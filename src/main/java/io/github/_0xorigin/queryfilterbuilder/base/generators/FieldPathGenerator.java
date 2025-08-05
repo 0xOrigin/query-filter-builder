@@ -55,15 +55,12 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
             EntityType<?> associatedEntity = metamodel.entity(finalAttribute.getJavaType());
             SingularAttribute<?, ?> idAttribute = associatedEntity.getId(associatedEntity.getIdType().getJavaType());
             return path.get(finalPart).get(idAttribute.getName());
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            FilterUtils.addError(
+        } catch (IllegalStateException | IllegalArgumentException exception) {
+            FilterUtils.addFieldError(
                 bindingResult,
-                FilterUtils.generateFieldError(
-                    bindingResult,
-                    originalFieldName,
-                    "",
-                    e.getLocalizedMessage()
-                )
+                originalFieldName,
+                "",
+                exception.getLocalizedMessage()
             );
             return null;
         }

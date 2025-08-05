@@ -50,14 +50,11 @@ public final class FilterValidator {
             );
 
         for (String errorMessage : errorMessages) {
-            FilterUtils.addError(
+            FilterUtils.addFieldError(
                 filterErrorWrapper.bindingResult(),
-                FilterUtils.generateFieldError(
-                    filterErrorWrapper.bindingResult(),
-                    filterWrapper.originalFieldName(),
-                    filterWrapper.values().toString(),
-                    errorMessage
-                )
+                filterWrapper.originalFieldName(),
+                filterWrapper.values().toString(),
+                errorMessage
             );
         }
     }

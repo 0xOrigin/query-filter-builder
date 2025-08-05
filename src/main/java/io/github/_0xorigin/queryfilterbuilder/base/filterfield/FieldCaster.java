@@ -14,14 +14,11 @@ public interface FieldCaster<T extends Comparable<? super T> & Serializable> {
         try {
             return cast(value);
         } catch (RuntimeException exception) {
-            FilterUtils.addError(
+            FilterUtils.addFieldError(
                 filterErrorWrapper.bindingResult(),
-                FilterUtils.generateFieldError(
-                    filterErrorWrapper.bindingResult(),
-                    filterErrorWrapper.filterWrapper().originalFieldName(),
-                    value,
-                    exception.getLocalizedMessage()
-                )
+                filterErrorWrapper.filterWrapper().originalFieldName(),
+                value,
+                exception.getLocalizedMessage()
             );
             return null;
         }

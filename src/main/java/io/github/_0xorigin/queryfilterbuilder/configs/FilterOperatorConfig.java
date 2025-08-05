@@ -1,5 +1,6 @@
 package io.github._0xorigin.queryfilterbuilder.configs;
 
+import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
 import io.github._0xorigin.queryfilterbuilder.operators.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,8 +9,8 @@ import org.springframework.context.annotation.Configuration;
 public class FilterOperatorConfig {
 
     @Bean
-    public Between between() {
-        return new Between();
+    public Between between(LocalizationService localizationService) {
+        return new Between(localizationService);
     }
 
     @Bean
@@ -78,8 +79,8 @@ public class FilterOperatorConfig {
     }
 
     @Bean
-    public NotBetween notBetween() {
-        return new NotBetween();
+    public NotBetween notBetween(LocalizationService localizationService) {
+        return new NotBetween(localizationService);
     }
 
     @Bean

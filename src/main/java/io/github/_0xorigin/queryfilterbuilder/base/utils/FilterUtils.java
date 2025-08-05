@@ -35,12 +35,12 @@ public final class FilterUtils {
         return generateFieldError(bindingResult, fieldName, value, false, null, null, defaultMessage);
     }
 
-    public static FieldError generateFieldError(BindingResult bindingResult, String fieldName, String value, String defaultMessage, String messagePrefix) {
-        return generateFieldError(bindingResult, fieldName, value, false, null, null, messagePrefix + " " + defaultMessage);
+    public static void addFieldError(BindingResult bindingResult, String fieldName, String value, String defaultMessage) {
+        bindingResult.addError(generateFieldError(bindingResult, fieldName, value, defaultMessage));
     }
 
-    public static void addError(BindingResult bindingResult, ObjectError error) {
-        bindingResult.addError(error);
+    public static void addError(BindingResult bindingResult, ObjectError objectError) {
+        bindingResult.addError(objectError);
     }
 
     public static String[] splitWithEscapedDelimiter(String value, String delimiter) {

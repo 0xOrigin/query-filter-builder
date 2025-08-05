@@ -1,7 +1,9 @@
 package io.github._0xorigin.queryfilterbuilder.operators;
 
+import io.github._0xorigin.queryfilterbuilder.base.enums.MessageKey;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
 import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -14,19 +16,26 @@ import java.util.Optional;
 
 public final class NotBetween implements FilterOperator {
 
+    private final LocalizationService localizationService;
+
+    public NotBetween(LocalizationService localizationService) {
+        this.localizationService = localizationService;
+    }
+
     @Override
     public <T extends Comparable<? super T> & Serializable> Optional<Predicate> apply(Expression<T> expression, CriteriaBuilder cb, List<T> values, FilterErrorWrapper filterErrorWrapper) {
         if (FilterUtils.isNotValidList(values))
             return Optional.empty();
 
         if (values.size() != 2) {
-            FilterUtils.addError(
+            FilterUtils.addFieldError(
                 filterErrorWrapper.bindingResult(),
-                FilterUtils.generateFieldError(
-                    filterErrorWrapper.bindingResult(),
-                    filterErrorWrapper.filterWrapper().originalFieldName(),
-                    values.toString(),
-                    "Value must be a List with exactly 2 elements for " + Operator.NOT_BETWEEN.getValue() + " operator."
+                filterErrorWrapper.filterWrapper().originalFieldName(),
+                values.toString(),
+                localizationService.getMessage(
+                    MessageKey.VALUE_MUST_EXACTLY_TWO_ELEMENTS.getCode(),
+                    null,
+                    localizationService.getMessage(Operator.NOT_BETWEEN.getValue())
                 )
             );
 
