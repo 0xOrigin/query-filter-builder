@@ -7,8 +7,8 @@ import java.util.Set;
 
 public final class BooleanFilter extends AbstractFilterField<Boolean> {
 
-    {
-        this.setSupportedOperators(
+    public BooleanFilter() {
+        setSupportedOperators(
             Set.of(
                 Operator.EQ, Operator.NEQ, Operator.IS_NULL, Operator.IS_NOT_NULL
             )

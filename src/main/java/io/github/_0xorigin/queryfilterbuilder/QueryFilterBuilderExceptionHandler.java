@@ -34,8 +34,8 @@ public class QueryFilterBuilderExceptionHandler {
                 .getBindingResult()
                 .getAllErrors()
                 .stream()
-                .filter(error -> error instanceof FieldError)
-                .map(error -> (FieldError) error)
+                .filter(FieldError.class::isInstance)
+                .map(FieldError.class::cast)
                 .collect(Collectors.groupingBy(
                         FieldError::getField,
                         Collectors.mapping(FieldError::getDefaultMessage, Collectors.toList())
@@ -53,8 +53,8 @@ public class QueryFilterBuilderExceptionHandler {
                 .getBindingResult()
                 .getAllErrors()
                 .stream()
-                .filter(error -> error instanceof FieldError)
-                .map(error -> (FieldError) error)
+                .filter(FieldError.class::isInstance)
+                .map(FieldError.class::cast)
                 .collect(Collectors.groupingBy(
                         FieldError::getField,
                         Collectors.mapping(FieldError::getDefaultMessage, Collectors.toList())
