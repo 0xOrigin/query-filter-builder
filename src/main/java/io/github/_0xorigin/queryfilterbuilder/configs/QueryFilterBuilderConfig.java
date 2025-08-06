@@ -42,8 +42,8 @@ public class QueryFilterBuilderConfig {
     }
 
     @Bean
-    public <T> PathGenerator<T> pathGenerator(EntityManagerFactory entityManagerFactory, QueryFilterBuilderProperties properties) {
-        return new FieldPathGenerator<>(metamodel(entityManagerFactory), properties);
+    public <T> PathGenerator<T> pathGenerator(Metamodel metamodel, QueryFilterBuilderProperties properties) {
+        return new FieldPathGenerator<>(metamodel, properties);
     }
 
     @Bean
@@ -67,14 +67,9 @@ public class QueryFilterBuilderConfig {
 
     @Bean
     public <T> QueryFilterBuilder<T> queryFilterBuilder(
-        EntityManagerFactory entityManagerFactory,
-        FilterFieldRegistry filterFieldRegistry,
-        FilterOperatorRegistry filterOperatorRegistry,
-        QueryFilterBuilderProperties properties,
-        LocalizationService localizationService
+        FilterBuilder<T> filterBuilder,
+        SortBuilder<T> sortBuilder
     ) {
-        FilterBuilder<T> filterBuilder = filterBuilder(pathGenerator(entityManagerFactory, properties), filterParser(properties), filterFieldRegistry, filterOperatorRegistry, localizationService);
-        SortBuilder<T> sortBuilder = sortBuilder(pathGenerator(entityManagerFactory, properties), sortParser(properties));
         return new QueryFilterBuilderImp<>(filterBuilder, sortBuilder);
     }
 
