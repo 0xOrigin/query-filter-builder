@@ -6,6 +6,7 @@ import io.github._0xorigin.queryfilterbuilder.base.functions.CustomSortFunction;
 import io.github._0xorigin.queryfilterbuilder.base.functions.ExpressionProviderFunction;
 import io.github._0xorigin.queryfilterbuilder.base.holders.CustomSortHolder;
 import io.github._0xorigin.queryfilterbuilder.base.holders.SortHolder;
+import jakarta.persistence.Entity;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
@@ -29,10 +30,13 @@ public final class SortContext<T> {
 
     public static <T> Builder<T> buildForType(@NonNull Class<T> type) {
         Objects.requireNonNull(type, "Type must not be null");
+        if (!type.isAnnotationPresent(Entity.class)) {
+            throw new IllegalArgumentException("Class " + type.getName() + " is not a JPA Entity");
+        }
         return builder();
     }
 
-    public static <T> Builder<T> builder() {
+    private static <T> Builder<T> builder() {
         return new Builder<>();
     }
 
