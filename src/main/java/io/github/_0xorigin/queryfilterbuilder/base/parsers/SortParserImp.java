@@ -40,6 +40,7 @@ public final class SortParserImp implements SortParser {
     public List<SortWrapper> parse(@NonNull final List<SortRequest> sortRequests) {
         return sortRequests
                 .stream()
+                .filter(sortRequest -> sortRequest.field() != null && !sortRequest.field().isBlank())
                 .map(sortRequest -> {
                     Sort.Direction direction;
                     try {

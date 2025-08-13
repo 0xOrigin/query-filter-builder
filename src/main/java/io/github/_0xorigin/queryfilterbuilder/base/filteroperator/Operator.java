@@ -47,6 +47,6 @@ public enum Operator {
     }
 
     private static String transformValue(String value) {
-        return value.toLowerCase();
+        return String.valueOf(value).toLowerCase();
     }
 }

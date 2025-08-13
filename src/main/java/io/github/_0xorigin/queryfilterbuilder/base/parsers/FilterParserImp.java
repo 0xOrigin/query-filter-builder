@@ -63,6 +63,7 @@ public final class FilterParserImp implements FilterParser {
     public List<FilterWrapper> parse(@NonNull final List<FilterRequest> filterRequests) {
         return filterRequests
                 .stream()
+                .filter(filterRequest -> filterRequest.field() != null && !filterRequest.field().isBlank())
                 .map(filterRequest -> {
                     Operator operator = Operator.fromValue(filterRequest.operator())
                             .orElse(Operator.EQ); // If not a valid operator, treat the whole as a field with EQUAL as the default operator
