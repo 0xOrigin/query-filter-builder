@@ -69,10 +69,11 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
         final SortWrapper sortWrapper,
         final ErrorHolder errorHolder
     ) {
-        if (sortWrapper.sortType().isEmpty())
+        final Optional<SortType> sortType = sortWrapper.sortType();
+        if (sortType.isEmpty())
             return Optional.empty();
 
-        return switch (sortWrapper.sortType().get()) {
+        return switch (sortType.get()) {
             case NORMAL -> buildSortOrder(root, criteriaQuery, criteriaBuilder, sortContext, sortWrapper, errorHolder);
             case CUSTOM -> buildCustomSortOrder(root, criteriaQuery, criteriaBuilder, sortContext, sortWrapper, errorHolder);
             default -> Optional.empty();

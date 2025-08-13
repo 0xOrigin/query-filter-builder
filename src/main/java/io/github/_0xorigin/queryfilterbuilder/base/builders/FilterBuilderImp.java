@@ -72,10 +72,11 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         final FilterWrapper filterWrapper,
         final ErrorHolder errorHolder
     ) {
-        if (filterWrapper.filterType().isEmpty())
+        final Optional<FilterType> filterType = filterWrapper.filterType();
+        if (filterType.isEmpty())
             return Optional.empty();
 
-        return switch (filterWrapper.filterType().get()) {
+        return switch (filterType.get()) {
             case NORMAL -> buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, errorHolder);
             case CUSTOM -> buildCustomFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, errorHolder);
             default -> Optional.empty();
