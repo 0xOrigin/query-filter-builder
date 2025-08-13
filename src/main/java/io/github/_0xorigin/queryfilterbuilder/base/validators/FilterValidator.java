@@ -35,7 +35,6 @@ public final class FilterValidator {
             errorMessages.add(
                 localizationService.getMessage(
                     MessageKey.OPERATOR_NOT_VALID.getCode(),
-                    null,
                     localizationService.getMessage(filterWrapper.operator().getValue())
                 )
             );
@@ -44,7 +43,6 @@ public final class FilterValidator {
             errorMessages.add(
                 localizationService.getMessage(
                     MessageKey.OPERATOR_NOT_SUPPORTED.getCode(),
-                    null,
                     localizationService.getMessage(filterWrapper.operator().getValue())
                 )
             );

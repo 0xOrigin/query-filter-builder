@@ -1,7 +1,6 @@
 package io.github._0xorigin.queryfilterbuilder.configs;
 
 import io.github._0xorigin.queryfilterbuilder.QueryFilterBuilder;
-import io.github._0xorigin.queryfilterbuilder.QueryFilterBuilderExceptionHandler;
 import io.github._0xorigin.queryfilterbuilder.QueryFilterBuilderImp;
 import io.github._0xorigin.queryfilterbuilder.base.builders.FilterBuilder;
 import io.github._0xorigin.queryfilterbuilder.base.builders.FilterBuilderImp;
@@ -71,10 +70,5 @@ public class QueryFilterBuilderConfig {
         SortBuilder<T> sortBuilder
     ) {
         return new QueryFilterBuilderImp<>(filterBuilder, sortBuilder);
-    }
-
-    @Bean
-    public QueryFilterBuilderExceptionHandler queryFilterBuilderExceptionHandler(LocalizationService localizationService) {
-        return new QueryFilterBuilderExceptionHandler(localizationService);
     }
 }

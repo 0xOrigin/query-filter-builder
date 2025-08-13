@@ -34,7 +34,6 @@ public final class Between implements FilterOperator {
                 values.toString(),
                 localizationService.getMessage(
                     MessageKey.VALUE_MUST_EXACTLY_TWO_ELEMENTS.getCode(),
-                    null,
                     localizationService.getMessage(Operator.BETWEEN.getValue())
                 )
             );

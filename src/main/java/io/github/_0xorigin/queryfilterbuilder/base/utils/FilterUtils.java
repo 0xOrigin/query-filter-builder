@@ -1,8 +1,8 @@
 package io.github._0xorigin.queryfilterbuilder.base.utils;
 
 import io.github._0xorigin.queryfilterbuilder.base.holders.ErrorHolder;
-import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurationException;
-import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryFilterValueException;
+import io.github._0xorigin.queryfilterbuilder.exceptions.QueryBuilderConfigurationException;
+import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryParameterException;
 import org.springframework.lang.Nullable;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -56,7 +56,7 @@ public final class FilterUtils {
         if (!errorHolder.bindingResult().hasErrors())
             return;
 
-        throw new InvalidQueryFilterValueException(
+        throw new InvalidQueryParameterException(
             getMethodArgumentNotValidException(errorHolder)
         );
     }
@@ -65,7 +65,7 @@ public final class FilterUtils {
         if (!errorHolder.bindingResult().hasErrors())
             return;
 
-        throw new InvalidFilterConfigurationException(
+        throw new QueryBuilderConfigurationException(
             getMethodArgumentNotValidException(errorHolder)
         );
     }

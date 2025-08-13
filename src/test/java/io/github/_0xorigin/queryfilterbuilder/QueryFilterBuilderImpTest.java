@@ -11,7 +11,7 @@ import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import io.github._0xorigin.queryfilterbuilder.base.holders.CustomFilterHolder;
 import io.github._0xorigin.queryfilterbuilder.base.validators.FilterValidator;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidFilterConfigurationException;
+import io.github._0xorigin.queryfilterbuilder.exceptions.QueryBuilderConfigurationException;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterFieldRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import jakarta.persistence.criteria.*;
@@ -228,7 +228,7 @@ class QueryFilterBuilderImpTest {
             Map<String, Set<Operator>> fieldOperators = new HashMap<>();
             fieldOperators.put(field, Set.of(Operator.EQ));
 
-            assertThrows(InvalidFilterConfigurationException.class, () ->
+            assertThrows(QueryBuilderConfigurationException.class, () ->
                     queryFilterBuilderImp.buildFilterSpecification(filterContext)
             );
         }
