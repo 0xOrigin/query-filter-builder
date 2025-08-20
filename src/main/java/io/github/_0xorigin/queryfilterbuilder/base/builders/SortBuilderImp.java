@@ -13,6 +13,7 @@ import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.NonNull;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -35,7 +36,7 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
     }
 
     @Override
-    public Collection<SortWrapper> getDistinctSortWrappers(final SortContext<T> sortContext) {
+    public Collection<SortWrapper> getDistinctSortWrappers(@NonNull final SortContext<T> sortContext) {
         final Map<String, SortWrapper> sortWrappers = new LinkedHashMap<>();
         sortContext.getRequest().ifPresent(request ->
             sortParser.parse(request).forEach(sortWrapper ->

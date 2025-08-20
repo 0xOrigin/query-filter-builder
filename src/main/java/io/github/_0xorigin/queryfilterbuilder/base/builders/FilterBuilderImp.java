@@ -10,16 +10,17 @@ import io.github._0xorigin.queryfilterbuilder.base.generators.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.holders.CustomFilterHolder;
 import io.github._0xorigin.queryfilterbuilder.base.holders.ErrorHolder;
 import io.github._0xorigin.queryfilterbuilder.base.parsers.FilterParser;
+import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
 import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.validators.FilterValidator;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterFieldRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 
 import java.io.Serializable;
 import java.util.*;
@@ -47,7 +48,7 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
     }
 
     @Override
-    public Collection<FilterWrapper> getDistinctFilterWrappers(final FilterContext<T> filterContext) {
+    public Collection<FilterWrapper> getDistinctFilterWrappers(@NonNull final FilterContext<T> filterContext) {
         final Map<String, FilterWrapper> filterWrappers = new LinkedHashMap<>();
         filterContext.getRequest().ifPresent(request ->
             filterParser.parse(request).forEach(filterWrapper ->

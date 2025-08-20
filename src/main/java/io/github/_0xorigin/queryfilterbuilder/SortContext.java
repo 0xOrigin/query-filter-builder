@@ -21,23 +21,23 @@ public final class SortContext<T> {
     private final HttpServletRequest request;
     private final List<SortRequest> sortRequests;
 
-    private SortContext(@NonNull final Builder<T> builder) {
-        this.sorts = Map.copyOf(builder.getSorts());
-        this.customSorts = Map.copyOf(builder.getCustomSorts());
-        this.request = builder.getRequest().orElse(null);
-        this.sortRequests = builder.getSortRequests().orElse(null);
+    private SortContext(@NonNull final SourceBuilder<T> sourceBuilder) {
+        this.sorts = Map.copyOf(sourceBuilder.getTemplate().getSorts());
+        this.customSorts = Map.copyOf(sourceBuilder.getTemplate().getCustomSorts());
+        this.request = sourceBuilder.getRequest().orElse(null);
+        this.sortRequests = sourceBuilder.getSortRequests().orElse(null);
     }
 
-    public static <T> Builder<T> buildForType(@NonNull Class<T> type) {
+    public static <T> TemplateBuilder<T> buildTemplateForType(@NonNull final Class<T> type) {
         Objects.requireNonNull(type, "Type must not be null");
         if (!type.isAnnotationPresent(Entity.class)) {
             throw new IllegalArgumentException("Class " + type.getName() + " is not a JPA Entity");
         }
-        return builder();
+        return templateBuilder();
     }
 
-    private static <T> Builder<T> builder() {
-        return new Builder<>();
+    private static <T> TemplateBuilder<T> templateBuilder() {
+        return new TemplateBuilder<>();
     }
 
     public Map<String, SortHolder<T, ?>> getSorts() {
@@ -56,33 +56,81 @@ public final class SortContext<T> {
         return Optional.ofNullable(sortRequests);
     }
 
-    public static final class Builder<T> {
-        private final Map<String, SortHolder<T, ?>> sorts = new HashMap<>();
-        private final Map<String, CustomSortHolder<T>> customSorts = new HashMap<>();
+    public static final class SourceBuilder<T> {
+        private final Template<T> template;
         private HttpServletRequest request;
         private List<SortRequest> sortRequests;
 
-        private Builder() {}
+        private SourceBuilder(@NonNull final Template<T> template) {
+            this.template = template;
+        }
 
-        public Builder<T> queryParam(
-            @NonNull final HttpServletRequest request,
-            @NonNull final Consumer<SortConfigurer<T>> configurer
-        ) {
+        public SourceBuilder<T> withQuerySource(@NonNull final HttpServletRequest request) {
             Objects.requireNonNull(request, "HttpServletRequest must not be null");
+            this.request = request;
+            return this;
+        }
+
+        public SourceBuilder<T> withBodySource(@NonNull final List<SortRequest> sortRequests) {
+            Objects.requireNonNull(sortRequests, "SortRequests must not be null");
+            this.sortRequests = sortRequests;
+            return this;
+        }
+
+        public SortContext<T> buildSortContext() {
+            return new SortContext<>(this);
+        }
+
+        private Template<T> getTemplate() {
+            return template;
+        }
+
+        private Optional<HttpServletRequest> getRequest() {
+            return Optional.ofNullable(request);
+        }
+
+        private Optional<List<SortRequest>> getSortRequests() {
+            return Optional.ofNullable(sortRequests);
+        }
+    }
+
+    public static final class Template<T> {
+        private final Map<String, SortHolder<T, ?>> sorts;
+        private final Map<String, CustomSortHolder<T>> customSorts;
+
+        private Template(TemplateBuilder<T> templateBuilder) {
+            this.sorts = Map.copyOf(templateBuilder.getSorts());
+            this.customSorts = Map.copyOf(templateBuilder.getCustomSorts());
+        }
+
+        private Map<String, SortHolder<T, ?>> getSorts() {
+            return sorts;
+        }
+
+        private Map<String, CustomSortHolder<T>> getCustomSorts() {
+            return customSorts;
+        }
+
+        public SourceBuilder<T> newSourceBuilder() {
+            return new SourceBuilder<>(this);
+        }
+    }
+
+    public static final class TemplateBuilder<T> {
+        private final Map<String, SortHolder<T, ?>> sorts = new HashMap<>();
+        private final Map<String, CustomSortHolder<T>> customSorts = new HashMap<>();
+
+        private TemplateBuilder() {}
+
+        public TemplateBuilder<T> queryParam(@NonNull final Consumer<SortConfigurer<T>> configurer) {
             Objects.requireNonNull(configurer, "Consumer for SortConfigurer must not be null");
-            this.request = Optional.ofNullable(this.request).orElse(request);
             SortConfigurer<T> sortConfigurer = new SortConfigurer<>(this, SourceType.QUERY_PARAM);
             configurer.accept(sortConfigurer);
             return this;
         }
 
-        public Builder<T> requestBody(
-            @NonNull final List<SortRequest> sorts,
-            @NonNull final Consumer<SortConfigurer<T>> configurer
-        ) {
-            Objects.requireNonNull(sorts, "SortRequest list must not be null");
+        public TemplateBuilder<T> requestBody(@NonNull final Consumer<SortConfigurer<T>> configurer) {
             Objects.requireNonNull(configurer, "Consumer for SortConfigurer must not be null");
-            this.sortRequests = Optional.ofNullable(this.sortRequests).orElse(sorts);
             SortConfigurer<T> sortConfigurer = new SortConfigurer<>(this, SourceType.REQUEST_BODY);
             configurer.accept(sortConfigurer);
             return this;
@@ -96,25 +144,17 @@ public final class SortContext<T> {
             return customSorts;
         }
 
-        private Optional<HttpServletRequest> getRequest() {
-            return Optional.ofNullable(request);
-        }
-
-        private Optional<List<SortRequest>> getSortRequests() {
-            return Optional.ofNullable(sortRequests);
-        }
-
-        public SortContext<T> build() {
-            return new SortContext<>(this);
+        public Template<T> buildTemplate() {
+            return new Template<>(this);
         }
     }
 
     public static class SortConfigurer<T> {
-        private final Builder<T> builder;
+        private final TemplateBuilder<T> templateBuilder;
         private final SourceType sourceType;
 
-        private SortConfigurer(@NonNull Builder<T> builder, @NonNull SourceType sourceType) {
-            this.builder = builder;
+        private SortConfigurer(@NonNull TemplateBuilder<T> templateBuilder, @NonNull SourceType sourceType) {
+            this.templateBuilder = templateBuilder;
             this.sourceType = sourceType;
         }
 
@@ -158,10 +198,10 @@ public final class SortContext<T> {
             Objects.requireNonNull(sortName, "Sort name must not be null");
             Objects.requireNonNull(sortFunction, "Sort function must not be null");
 
-            var customSortHolder = builder.getCustomSorts()
+            var customSortHolder = templateBuilder.getCustomSorts()
                 .compute(sortName, (key, existingHolder) -> (
                     existingHolder != null ?
-                        new CustomSortHolder<>(existingHolder.customSortFunction(), EnumSet.copyOf(existingHolder.sourceTypes())) :
+                        existingHolder :
                         new CustomSortHolder<>(sortFunction, EnumSet.noneOf(SourceType.class))
                 ));
             customSortHolder.sourceTypes().add(sourceType);
@@ -175,10 +215,10 @@ public final class SortContext<T> {
             Objects.requireNonNull(fieldName, "Field name must not be null");
             Objects.requireNonNull(directions, "Directions must not be null");
 
-            var sortHolder = builder.getSorts()
+            var sortHolder = templateBuilder.getSorts()
                 .compute(fieldName, (key, existingHolder) -> (
                     existingHolder != null ?
-                        new SortHolder<>(EnumSet.copyOf(existingHolder.directions()), EnumSet.copyOf(existingHolder.sourceTypes()), existingHolder.expressionProviderFunction()) :
+                        existingHolder :
                         new SortHolder<>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.empty())
                 ));
             sortHolder.directions().addAll(Arrays.stream(directions).toList());
@@ -195,10 +235,10 @@ public final class SortContext<T> {
             Objects.requireNonNull(expressionProviderFunction, "Expression provider function must not be null");
             Objects.requireNonNull(directions, "Directions must not be null");
 
-            var sortHolder = builder.getSorts()
+            var sortHolder = templateBuilder.getSorts()
                 .compute(fieldName, (key, existingHolder) -> (
                     existingHolder != null ?
-                        new SortHolder<>(EnumSet.copyOf(existingHolder.directions()), EnumSet.copyOf(existingHolder.sourceTypes()), existingHolder.expressionProviderFunction()) :
+                        new SortHolder<>(EnumSet.copyOf(existingHolder.directions()), EnumSet.copyOf(existingHolder.sourceTypes()), Optional.of(expressionProviderFunction)) :
                         new SortHolder<>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.of(expressionProviderFunction))
                 ));
             sortHolder.directions().addAll(Arrays.stream(directions).toList());

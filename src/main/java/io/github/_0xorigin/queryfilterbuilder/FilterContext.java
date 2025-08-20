@@ -22,23 +22,23 @@ public final class FilterContext<T> {
     private final HttpServletRequest request;
     private final List<FilterRequest> filterRequests;
 
-    private FilterContext(@NonNull final Builder<T> builder) {
-        this.filters = Map.copyOf(builder.getFilters());
-        this.customFilters = Map.copyOf(builder.getCustomFilters());
-        this.request = builder.getRequest().orElse(null);
-        this.filterRequests = builder.getFilterRequests().orElse(null);
+    private FilterContext(@NonNull final SourceBuilder<T> sourceBuilder) {
+        this.filters = Map.copyOf(sourceBuilder.getTemplate().getFilters());
+        this.customFilters = Map.copyOf(sourceBuilder.getTemplate().getCustomFilters());
+        this.request = sourceBuilder.getRequest().orElse(null);
+        this.filterRequests = sourceBuilder.getFilterRequests().orElse(null);
     }
 
-    public static <T> Builder<T> buildForType(@NonNull Class<T> type) {
+    public static <T> TemplateBuilder<T> buildTemplateForType(@NonNull final Class<T> type) {
         Objects.requireNonNull(type, "Type must not be null");
         if (!type.isAnnotationPresent(Entity.class)) {
             throw new IllegalArgumentException("Class " + type.getName() + " is not a JPA Entity");
         }
-        return builder();
+        return templateBuilder();
     }
 
-    private static <T> Builder<T> builder() {
-        return new Builder<>();
+    private static <T> TemplateBuilder<T> templateBuilder() {
+        return new TemplateBuilder<>();
     }
 
     public Map<String, FilterHolder<T, ?>> getFilters() {
@@ -57,33 +57,81 @@ public final class FilterContext<T> {
         return Optional.ofNullable(filterRequests);
     }
 
-    public static final class Builder<T> {
-        private final Map<String, FilterHolder<T, ?>> filters = new HashMap<>();
-        private final Map<String, CustomFilterHolder<T, ?>> customFilters = new HashMap<>();
+    public static final class SourceBuilder<T> {
+        private final Template<T> template;
         private HttpServletRequest request;
         private List<FilterRequest> filterRequests;
 
-        private Builder() {}
+        private SourceBuilder(@NonNull final Template<T> template) {
+            this.template = template;
+        }
 
-        public Builder<T> queryParam(
-            @NonNull final HttpServletRequest request,
-            @NonNull final Consumer<FilterConfigurer<T>> configurer
-        ) {
+        public SourceBuilder<T> withQuerySource(@NonNull final HttpServletRequest request) {
             Objects.requireNonNull(request, "HttpServletRequest must not be null");
+            this.request = request;
+            return this;
+        }
+
+        public SourceBuilder<T> withBodySource(@NonNull final List<FilterRequest> filterRequests) {
+            Objects.requireNonNull(filterRequests, "FilterRequests must not be null");
+            this.filterRequests = filterRequests;
+            return this;
+        }
+
+        public FilterContext<T> buildFilterContext() {
+            return new FilterContext<>(this);
+        }
+
+        private Template<T> getTemplate() {
+            return template;
+        }
+
+        private Optional<HttpServletRequest> getRequest() {
+            return Optional.ofNullable(request);
+        }
+
+        private Optional<List<FilterRequest>> getFilterRequests() {
+            return Optional.ofNullable(filterRequests);
+        }
+    }
+
+    public static final class Template<T> {
+        private final Map<String, FilterHolder<T, ?>> filters;
+        private final Map<String, CustomFilterHolder<T, ?>> customFilters;
+
+        private Template(TemplateBuilder<T> templateBuilder) {
+            this.filters = Map.copyOf(templateBuilder.getFilters());
+            this.customFilters = Map.copyOf(templateBuilder.getCustomFilters());
+        }
+
+        private Map<String, FilterHolder<T, ?>> getFilters() {
+            return filters;
+        }
+
+        private Map<String, CustomFilterHolder<T, ?>> getCustomFilters() {
+            return customFilters;
+        }
+
+        public SourceBuilder<T> newSourceBuilder() {
+            return new SourceBuilder<>(this);
+        }
+    }
+
+    public static final class TemplateBuilder<T> {
+        private final Map<String, FilterHolder<T, ?>> filters = new HashMap<>();
+        private final Map<String, CustomFilterHolder<T, ?>> customFilters = new HashMap<>();
+
+        private TemplateBuilder() {}
+
+        public TemplateBuilder<T> queryParam(@NonNull final Consumer<FilterConfigurer<T>> configurer) {
             Objects.requireNonNull(configurer, "Consumer for FilterConfigurer must not be null");
-            this.request = Optional.ofNullable(this.request).orElse(request);
             FilterConfigurer<T> filterConfigurer = new FilterConfigurer<>(this, SourceType.QUERY_PARAM);
             configurer.accept(filterConfigurer);
             return this;
         }
 
-        public Builder<T> requestBody(
-            @NonNull final List<FilterRequest> filters,
-            @NonNull final Consumer<FilterConfigurer<T>> configurer
-        ) {
-            Objects.requireNonNull(filters, "FilterRequest list must not be null");
+        public TemplateBuilder<T> requestBody(@NonNull final Consumer<FilterConfigurer<T>> configurer) {
             Objects.requireNonNull(configurer, "Consumer for FilterConfigurer must not be null");
-            this.filterRequests = Optional.ofNullable(this.filterRequests).orElse(filters);
             FilterConfigurer<T> filterConfigurer = new FilterConfigurer<>(this, SourceType.REQUEST_BODY);
             configurer.accept(filterConfigurer);
             return this;
@@ -97,25 +145,17 @@ public final class FilterContext<T> {
             return customFilters;
         }
 
-        private Optional<HttpServletRequest> getRequest() {
-            return Optional.ofNullable(request);
-        }
-
-        private Optional<List<FilterRequest>> getFilterRequests() {
-            return Optional.ofNullable(filterRequests);
-        }
-
-        public FilterContext<T> build() {
-            return new FilterContext<>(this);
+        public Template<T> buildTemplate() {
+            return new Template<>(this);
         }
     }
 
     public static class FilterConfigurer<T> {
-        private final Builder<T> builder;
+        private final TemplateBuilder<T> templateBuilder;
         private final SourceType sourceType;
 
-        private FilterConfigurer(@NonNull Builder<T> builder, @NonNull SourceType sourceType) {
-            this.builder = builder;
+        private FilterConfigurer(@NonNull TemplateBuilder<T> templateBuilder, @NonNull SourceType sourceType) {
+            this.templateBuilder = templateBuilder;
             this.sourceType = sourceType;
         }
 
@@ -131,10 +171,10 @@ public final class FilterContext<T> {
             if (operatorsSet.isEmpty())
                 return this;
 
-            var filterHolder = builder.getFilters()
+            var filterHolder = templateBuilder.getFilters()
                 .compute(fieldName, (key, existingHolder) -> (
                     existingHolder != null ?
-                        new FilterHolder<>(EnumSet.copyOf(existingHolder.operators()), EnumSet.copyOf(existingHolder.sourceTypes()), existingHolder.expressionProviderFunction()) :
+                        existingHolder :
                         new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.empty())
                 ));
             filterHolder.operators().addAll(operatorsSet);
@@ -156,10 +196,10 @@ public final class FilterContext<T> {
             if (operatorsSet.isEmpty())
                 return this;
 
-            var filterHolder = builder.getFilters()
+            var filterHolder = templateBuilder.getFilters()
                 .compute(fieldName, (key, existingHolder) -> (
                     existingHolder != null ?
-                        new FilterHolder<>(EnumSet.copyOf(existingHolder.operators()), EnumSet.copyOf(existingHolder.sourceTypes()), existingHolder.expressionProviderFunction()) :
+                        new FilterHolder<>(EnumSet.copyOf(existingHolder.operators()), EnumSet.copyOf(existingHolder.sourceTypes()), Optional.of(expressionProviderFunction)) :
                         new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.of(expressionProviderFunction))
                 ));
             filterHolder.operators().addAll(operatorsSet);
@@ -176,12 +216,16 @@ public final class FilterContext<T> {
             Objects.requireNonNull(dataTypeForInput, "Data type for input must not be null");
             Objects.requireNonNull(filterFunction, "Filter function must not be null");
 
-            var customFilterHolder = builder.getCustomFilters()
-                .compute(filterName, (key, existingHolder) -> (
-                    existingHolder != null ?
-                        new CustomFilterHolder<>(existingHolder.dataType(), existingHolder.customFilterFunction(), EnumSet.copyOf(existingHolder.sourceTypes())) :
-                        new CustomFilterHolder<>(dataTypeForInput, filterFunction, EnumSet.noneOf(SourceType.class))
-                ));
+            var customFilterHolder = templateBuilder.getCustomFilters()
+                .compute(filterName, (key, existingHolder) -> {
+                    if (existingHolder == null)
+                        return new CustomFilterHolder<>(dataTypeForInput, filterFunction, EnumSet.noneOf(SourceType.class));
+
+                    if (!existingHolder.dataType().equals(dataTypeForInput))
+                        throw new IllegalArgumentException("Changing data type or filter function for existing custom filter is not allowed: " + filterName);
+
+                    return existingHolder;
+                });
             customFilterHolder.sourceTypes().add(sourceType);
             return this;
         }

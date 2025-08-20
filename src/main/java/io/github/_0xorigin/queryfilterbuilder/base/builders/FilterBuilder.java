@@ -7,13 +7,14 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import org.springframework.lang.NonNull;
 
 import java.util.Collection;
 import java.util.Optional;
 
 public interface FilterBuilder<T> {
 
-    Collection<FilterWrapper> getDistinctFilterWrappers(FilterContext<T> filterContext);
+    Collection<FilterWrapper> getDistinctFilterWrappers(@NonNull FilterContext<T> filterContext);
 
     Optional<Predicate> buildPredicateForWrapper(Root<T> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder, FilterContext<T> filterContext, FilterWrapper filterWrapper, ErrorHolder errorHolder);
 

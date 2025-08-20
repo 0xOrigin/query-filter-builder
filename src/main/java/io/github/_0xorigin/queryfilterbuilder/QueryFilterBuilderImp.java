@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.lang.NonNull;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 
@@ -28,7 +29,8 @@ public final class QueryFilterBuilderImp<T> implements QueryFilterBuilder<T> {
     }
 
     @Override
-    public Specification<T> buildFilterSpecification(final FilterContext<T> filterContext) {
+    public Specification<T> buildFilterSpecification(@NonNull final FilterContext<T> filterContext) {
+        Objects.requireNonNull(filterContext, "FilterContext must not be null");
         final ErrorHolder errorHolder = new ErrorHolder(getBindingResult(), getFilterMethodParameter());
         return (root, criteriaQuery, criteriaBuilder) -> {
             final List<Predicate> predicates = filterBuilder.getDistinctFilterWrappers(filterContext).stream()
@@ -43,7 +45,8 @@ public final class QueryFilterBuilderImp<T> implements QueryFilterBuilder<T> {
     }
 
     @Override
-    public Specification<T> buildSortSpecification(final SortContext<T> sortContext) {
+    public Specification<T> buildSortSpecification(@NonNull final SortContext<T> sortContext) {
+        Objects.requireNonNull(sortContext, "SortContext must not be null");
         final ErrorHolder errorHolder = new ErrorHolder(getBindingResult(), getSortMethodParameter());
         return (root, criteriaQuery, criteriaBuilder) -> {
             final List<Order> orders = sortBuilder.getDistinctSortWrappers(sortContext).stream()

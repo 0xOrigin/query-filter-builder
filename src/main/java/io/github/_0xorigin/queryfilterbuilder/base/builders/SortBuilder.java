@@ -7,13 +7,14 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Root;
+import org.springframework.lang.NonNull;
 
 import java.util.Collection;
 import java.util.Optional;
 
 public interface SortBuilder<T> {
 
-    Collection<SortWrapper> getDistinctSortWrappers(SortContext<T> sortContext);
+    Collection<SortWrapper> getDistinctSortWrappers(@NonNull SortContext<T> sortContext);
 
     Optional<Order> buildOrderForWrapper(Root<T> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder, SortContext<T> sortContext, SortWrapper sortWrapper, ErrorHolder errorHolder);
 
