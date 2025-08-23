@@ -169,7 +169,7 @@ public final class FilterContext<T> {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
             if (operatorsSet.isEmpty())
-                return this;
+                throw new IllegalArgumentException("Operators must not be empty");
 
             var filterHolder = templateBuilder.getFilters()
                 .compute(fieldName, (key, existingHolder) -> (
@@ -194,7 +194,7 @@ public final class FilterContext<T> {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
             if (operatorsSet.isEmpty())
-                return this;
+                throw new IllegalArgumentException("Operators must not be empty");
 
             var filterHolder = templateBuilder.getFilters()
                 .compute(fieldName, (key, existingHolder) -> (
