@@ -1,10 +1,14 @@
 package io.github._0xorigin.queryfilterbuilder.registries;
 
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
+import io.github._0xorigin.queryfilterbuilder.configs.FilterFieldConfig;
+import io.github._0xorigin.queryfilterbuilder.configs.FilterFieldRegistryConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
@@ -12,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SpringBootTest(classes = {FilterFieldConfig.class, FilterFieldRegistryConfig.class})
 @ExtendWith(MockitoExtension.class)
 class FilterFieldRegistryTest {
 
@@ -20,6 +25,9 @@ class FilterFieldRegistryTest {
 
     @Mock
     private AbstractFilterField<Integer> integerFilterField;
+
+    @Autowired
+    private FilterFieldRegistry registry;
 
     @Test
     void givenNonEmptyInjectedList_whenConstructed_thenPopulatesMapCorrectly() {
@@ -105,5 +113,14 @@ class FilterFieldRegistryTest {
         assertThat(filterFields)
             .hasSize(3)
             .withFailMessage("Injected list should contain 3 filter fields");
+    }
+
+    @Test
+    void filterFieldRegistry_autowired_shouldContainAllFilterFields() {
+        final var NUMBER_FILTER_FIELDS = 21;
+        var filterFields = registry.getFilterFields();
+        assertThat(filterFields)
+            .isNotNull()
+            .hasSize(NUMBER_FILTER_FIELDS);
     }
 }

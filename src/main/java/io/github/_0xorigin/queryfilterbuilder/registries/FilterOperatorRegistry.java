@@ -22,4 +22,8 @@ public final class FilterOperatorRegistry {
     public FilterOperator getOperator(Operator operator) {
         return operatorMap.get(operator);
     }
+
+    public Map<Operator, FilterOperator> getOperators() {
+        return operatorMap;
+    }
 }

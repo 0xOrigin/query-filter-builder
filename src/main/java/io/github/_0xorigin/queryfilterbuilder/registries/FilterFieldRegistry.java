@@ -3,6 +3,7 @@ package io.github._0xorigin.queryfilterbuilder.registries;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,5 +22,9 @@ public final class FilterFieldRegistry {
 
     public <K extends Comparable<? super K> & Serializable> AbstractFilterField<? extends Comparable<?>> getFilterField(Class<K> dataType) {
         return filterFields.get(dataType);
+    }
+
+    public Map<Class<? extends Comparable<?>>, AbstractFilterField<? extends Comparable<?>>> getFilterFields() {
+        return Collections.unmodifiableMap(filterFields);
     }
 }
