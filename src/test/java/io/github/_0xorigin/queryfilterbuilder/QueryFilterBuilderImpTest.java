@@ -1,238 +1,179 @@
 package io.github._0xorigin.queryfilterbuilder;
 
 import io.github._0xorigin.queryfilterbuilder.base.builders.FilterBuilder;
-import io.github._0xorigin.queryfilterbuilder.base.parsers.FilterParser;
-import io.github._0xorigin.queryfilterbuilder.base.generators.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.builders.SortBuilder;
-import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
-import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
-import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
-import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-import io.github._0xorigin.queryfilterbuilder.base.holders.CustomFilterHolder;
-import io.github._0xorigin.queryfilterbuilder.base.validators.FilterValidator;
+import io.github._0xorigin.queryfilterbuilder.base.holders.ErrorHolder;
+import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.exceptions.QueryBuilderConfigurationException;
-import io.github._0xorigin.queryfilterbuilder.registries.FilterFieldRegistry;
-import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.SortWrapper;
+import io.github._0xorigin.queryfilterbuilder.entities.User;
+import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryParameterException;
 import jakarta.persistence.criteria.*;
-import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class QueryFilterBuilderImpTest {
 
     @Mock
-    private FilterParser filterParser;
+    private FilterBuilder<User> filterBuilder;
 
     @Mock
-    private Path<Object> path;
+    private SortBuilder<User> sortBuilder;
 
     @Mock
-    private Predicate predicate;
+    private Root<User> root;
 
     @Mock
-    private PathGenerator<TestEntity> pathGenerator;
-
-    @Mock
-    private FilterValidator filterValidator;
-
-    @Mock
-    private FilterFieldRegistry filterFieldRegistry;
-
-    @Mock
-    private FilterOperatorRegistry filterOperatorRegistry;
-
-    @Mock
-    private AbstractFilterField<String> filterField;
-
-    @Mock
-    private Root<TestEntity> root;
-
-    @Mock
-    private CriteriaQuery<?> criteriaQuery;
+    private CriteriaQuery<User> criteriaQuery;
 
     @Mock
     private CriteriaBuilder criteriaBuilder;
 
     @Mock
-    private FilterContext<TestEntity> filterContext;
+    private Predicate predicate;
 
     @Mock
-    private FilterOperator filterOperator;
+    private Order order;
 
-    @Mock
-    private HttpServletRequest request;
+    @InjectMocks
+    private QueryFilterBuilderImp<User> queryFilterBuilder;
 
-    private QueryFilterBuilderImp<TestEntity> queryFilterBuilderImp;
+    private final FilterContext<User> filterContext = getFilterContext();
+    private final SortContext<User> sortContext = getSortContext();
 
-    private FilterBuilder<TestEntity> filterBuilder;
-
-    private SortBuilder<TestEntity> sortBuilder;
-
-    private static class TestEntity {
-
-        private String field;
-        private Integer numericField;
-
-        public String getField() {
-            return field;
-        }
-
-        public void setField(String field) {
-            this.field = field;
-        }
-
-        public Integer getNumericField() {
-            return numericField;
-        }
-
-        public void setNumericField(Integer numericField) {
-            this.numericField = numericField;
-        }
+    private FilterContext<User> getFilterContext() {
+        return FilterContext.buildTemplateForType(User.class)
+            .buildTemplate()
+            .newSourceBuilder()
+            .buildFilterContext();
     }
 
-    @BeforeEach
-    void setUp() {
-        queryFilterBuilderImp = new QueryFilterBuilderImp<>(filterBuilder, sortBuilder);
-        when(filterOperator.apply(any(), any(), any(), any())).thenReturn(Optional.of(predicate));
+    private SortContext<User> getSortContext() {
+        return SortContext.buildTemplateForType(User.class)
+            .buildTemplate()
+            .newSourceBuilder()
+            .buildSortContext();
     }
 
-    @Nested
-    class BasicFilterTests {
-
-        @Test
-        void buildFilterPredicate_WithNoFilters_ReturnConjunction() {
-            when(filterParser.parse(request)).thenReturn(Collections.emptyList());
-            when(criteriaBuilder.conjunction()).thenReturn(mock(Predicate.class));
-
-            Specification result = queryFilterBuilderImp.buildFilterSpecification(filterContext);
-
-            assertNotNull(result);
-            verify(criteriaBuilder).conjunction();
-            verify(filterParser).parse(request);
-        }
-
-        @Test
-        void buildFilterPredicate_WithValidFilter_ReturnsPredicate() {
-            try (MockedStatic<FilterFieldRegistry> mockedRegistry = mockStatic(FilterFieldRegistry.class);
-                 MockedStatic<FilterOperatorRegistry> mockedOperatorRegistry = mockStatic(FilterOperatorRegistry.class)) {
-                // Setup
-                String field = "field";
-                Operator operator = Operator.EQ;
-                FilterWrapper validFilter = new FilterWrapper(field, field, operator, List.of("value"), SourceType.QUERY_PARAM, Optional.empty());
-
-                // Mock registries
-                mockedRegistry.when(() -> filterFieldRegistry.getFilterField(String.class))
-                        .thenReturn(filterField);
-                mockedOperatorRegistry.when(() -> filterOperatorRegistry.getOperator(operator))
-                        .thenReturn(filterOperator);
-
-                // Mock other dependencies
-                when(filterParser.parse(request)).thenReturn(List.of(validFilter));
-                when(path.getJavaType()).thenReturn((Class) String.class);
-                when(criteriaBuilder.and(any())).thenReturn(predicate);
-
-                Map<String, Set<Operator>> fieldOperators = new HashMap<>();
-                fieldOperators.put(field, Set.of(operator));
-
-                // Execute
-                Specification result = queryFilterBuilderImp.buildFilterSpecification(filterContext);
-
-                // Verify
-                assertNotNull(result);
-                verify(filterParser).parse(request);
-                verify(filterField).cast(any());
-            }
-        }
+    @Test
+    void buildFilterSpecification_WhenFilterContextIsNull_ThrowsNullPointerException() {
+        assertThatThrownBy(() -> queryFilterBuilder.buildFilterSpecification(null))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessage("FilterContext must not be null");
     }
 
-    @Nested
-    class CustomFilterTests {
-
-        @Test
-        void buildFilterPredicate_WithCustomFilter_ReturnsPredicate() {
-            try (MockedStatic<FilterFieldRegistry> mockedRegistry = mockStatic(FilterFieldRegistry.class);
-                 MockedStatic<FilterOperatorRegistry> mockedOperatorRegistry = mockStatic(FilterOperatorRegistry.class)) {
-                // Setup
-                String field = "customField";
-                Operator operator = Operator.EQ;
-                FilterWrapper customFilter = new FilterWrapper(field, field, operator, List.of("value"), SourceType.QUERY_PARAM, Optional.empty());
-
-                // Mock registries
-                mockedRegistry.when(() -> filterFieldRegistry.getFilterField(String.class))
-                        .thenReturn(filterField);
-                mockedOperatorRegistry.when(() -> filterOperatorRegistry.getOperator(operator))
-                        .thenReturn(filterOperator);
-
-                // Mock other dependencies
-                when(filterParser.parse(request)).thenReturn(List.of(customFilter));
-                when(path.getJavaType()).thenReturn((Class) String.class);
-                when(criteriaBuilder.and(any())).thenReturn(predicate);
-
-                CustomFilterHolder<TestEntity, ?> customFilterHolder = mock(CustomFilterHolder.class);
-                Map<String, CustomFilterHolder<TestEntity, ?>> customFilters = new HashMap<>();
-                customFilters.put("customField", customFilterHolder);
-
-                when(filterParser.parse(request)).thenReturn(List.of(customFilter));
-
-                when(customFilterHolder.customFilterFunction()).thenReturn((r, q, cb, values, errors) -> Optional.of(predicate));
-
-                Specification result = queryFilterBuilderImp.buildFilterSpecification(filterContext);
-
-                assertNotNull(result);
-                assertEquals(predicate, result);
-            }
-        }
-
-        @Test
-        void buildFilterPredicate_WithInvalidCustomFilter_ThrowsException() {
-            String field = "customField";
-            FilterWrapper customFilter = new FilterWrapper(field, field, Operator.EQ, List.of("value"), SourceType.QUERY_PARAM, Optional.empty());
-            CustomFilterHolder<TestEntity, ?> customFilterHolder = mock(CustomFilterHolder.class);
-            AbstractFilterField<?> filterField = mock(AbstractFilterField.class);
-
-            Map<String, CustomFilterHolder<TestEntity, ?>> customFilters = new HashMap<>();
-            customFilters.put(field, customFilterHolder);
-
-            when(filterParser.parse(request)).thenReturn(List.of(customFilter));
-
-            assertThrows(RuntimeException.class, () ->
-                    queryFilterBuilderImp.buildFilterSpecification(filterContext)
-            );
-        }
+    @Test
+    void buildSortSpecification_WhenSortContextIsNull_ThrowsNullPointerException() {
+        assertThatThrownBy(() -> queryFilterBuilder.buildSortSpecification(null))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessage("SortContext must not be null");
     }
 
-    @Nested
-    class ValidationTests {
+    @Test
+    void buildFilterSpecification_WhenNoPredicates_ReturnsNullPredicate() {
+        when(filterBuilder.getDistinctFilterWrappers(filterContext)).thenReturn(List.of());
 
-        @Test
-        void buildFilterPredicate_WithInvalidPathGeneration_ThrowsException() {
-            String field = "invalidField";
-            FilterWrapper filter = new FilterWrapper(field, field, Operator.EQ, List.of("value"), SourceType.QUERY_PARAM, Optional.empty());
-            when(filterParser.parse(request)).thenReturn(List.of(filter));
-            Map<String, Set<Operator>> fieldOperators = new HashMap<>();
-            fieldOperators.put(field, Set.of(Operator.EQ));
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        Predicate result = specification.toPredicate(root, criteriaQuery, criteriaBuilder);
 
-            assertThrows(QueryBuilderConfigurationException.class, () ->
-                    queryFilterBuilderImp.buildFilterSpecification(filterContext)
-            );
-        }
-
+        assertThat(result).isNull();
+        verify(filterBuilder).getDistinctFilterWrappers(filterContext);
+        verifyNoMoreInteractions(filterBuilder, sortBuilder, criteriaBuilder);
     }
 
+    @Test
+    void buildFilterSpecification_WhenPredicatesExist_ReturnsCombinedPredicate() {
+        var filterWrapper = mock(FilterWrapper.class);
+        when(filterBuilder.getDistinctFilterWrappers(filterContext)).thenReturn(List.of(filterWrapper));
+        when(filterBuilder.buildPredicateForWrapper(any(), any(), any(), any(), any(), any())).thenReturn(Optional.of(predicate));
+        when(criteriaBuilder.and(any(Predicate[].class))).thenReturn(predicate);
+
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        Predicate result = specification.toPredicate(root, criteriaQuery, criteriaBuilder);
+
+        assertThat(result).isEqualTo(predicate);
+        verify(filterBuilder).getDistinctFilterWrappers(filterContext);
+        verify(criteriaBuilder).and(predicate);
+        verifyNoInteractions(sortBuilder);
+    }
+
+    @Test
+    void buildFilterSpecification_WhenErrorHolderHasErrors_ThrowsClientSideException() {
+        var filterWrapper = mock(FilterWrapper.class);
+        when(filterBuilder.getDistinctFilterWrappers(filterContext)).thenReturn(List.of(filterWrapper));
+        when(filterBuilder.buildPredicateForWrapper(any(), any(), any(), any(), any(), any())).thenAnswer(invocation -> {
+           ErrorHolder errorHolder = invocation.getArgument(5);
+           FilterUtils.addFieldError(errorHolder.bindingResult(), "isActive", "true", "Invalid value");
+           return Optional.empty();
+        });
+
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+
+        assertThatThrownBy(() -> specification.toPredicate(root, criteriaQuery, criteriaBuilder))
+            .isInstanceOf(InvalidQueryParameterException.class);
+        verify(filterBuilder).getDistinctFilterWrappers(filterContext);
+        verifyNoInteractions(sortBuilder);
+    }
+
+    // Success scenarios for buildSortSpecification
+    @Test
+    void buildSortSpecification_WhenNoOrders_SetsEmptyOrderList() {
+        when(sortBuilder.getDistinctSortWrappers(sortContext)).thenReturn(List.of());
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+
+        Predicate result = specification.toPredicate(root, criteriaQuery, criteriaBuilder);
+
+        assertThat(result).isNull();
+        verify(sortBuilder).getDistinctSortWrappers(sortContext);
+        verify(criteriaQuery).orderBy(List.of());
+        verifyNoMoreInteractions(sortBuilder, filterBuilder, criteriaBuilder);
+    }
+
+    @Test
+    void buildSortSpecification_WhenOrdersExist_SetsOrderList() {
+        var sortWrapper = mock(SortWrapper.class);
+        when(sortBuilder.getDistinctSortWrappers(sortContext)).thenReturn(List.of(sortWrapper));
+        when(sortBuilder.buildOrderForWrapper(any(), any(), any(), any(), any(), any())).thenReturn(Optional.of(order));
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+
+        Predicate result = specification.toPredicate(root, criteriaQuery, criteriaBuilder);
+
+        assertThat(result).isNull();
+        verify(sortBuilder).getDistinctSortWrappers(sortContext);
+        verify(criteriaQuery).orderBy(List.of(order));
+        verifyNoInteractions(filterBuilder);
+    }
+
+    @Test
+    void buildSortSpecification_WhenErrorHolderHasErrors_ThrowsClientSideException() {
+        SortWrapper sortWrapper = mock(SortWrapper.class);
+        when(sortBuilder.getDistinctSortWrappers(sortContext)).thenReturn(List.of(sortWrapper));
+        when(sortBuilder.buildOrderForWrapper(any(), any(), any(), any(), any(), any())).thenAnswer(invocation -> {
+            ErrorHolder errorHolder = invocation.getArgument(5);
+            FilterUtils.addFieldError(errorHolder.bindingResult(), "isActive", "true", "Invalid value");
+            return Optional.empty();
+        });
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+
+        assertThatThrownBy(() -> specification.toPredicate(root, criteriaQuery, criteriaBuilder))
+            .isInstanceOf(InvalidQueryParameterException.class);
+        verify(sortBuilder).getDistinctSortWrappers(sortContext);
+        verifyNoInteractions(filterBuilder);
+    }
 }
