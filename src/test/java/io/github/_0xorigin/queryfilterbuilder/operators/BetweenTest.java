@@ -1,196 +1,93 @@
-//package io.github._0xorigin.queryfilterbuilder.operators;
-//
-//import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
-//import io.github._0xorigin.queryfilterbuilder.base.wrapper.FilterWrapper;
-//import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
-//import jakarta.persistence.criteria.CriteriaBuilder;
-//import jakarta.persistence.criteria.Expression;
-//import jakarta.persistence.criteria.Path;
-//import jakarta.persistence.criteria.Predicate;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//import org.mockito.junit.jupiter.MockitoSettings;
-//import org.mockito.quality.Strictness;
-//import org.springframework.validation.BeanPropertyBindingResult;
-//import org.springframework.validation.BindingResult;
-//import org.springframework.validation.FieldError;
-//
-//import java.sql.Time;
-//import java.sql.Timestamp;
-//import java.time.*;
-//import java.util.*;
-//
-//import static org.junit.jupiter.api.Assertions.*;
-//import static org.mockito.ArgumentMatchers.any;
-//import static org.mockito.ArgumentMatchers.eq;
-//import static org.mockito.Mockito.verify;
-//import static org.mockito.Mockito.when;
-//
-//@ExtendWith(MockitoExtension.class)
-//@MockitoSettings(strictness = Strictness.LENIENT)
-//class BetweenTest {
-//
-//    @Mock
-//    private Expression<String> expression;
-//
-//    @Mock
-//    private CriteriaBuilder cb;
-//
-//    @Mock
-//    private Predicate predicate;
-//
-//    private Between between;
-//
-//    private BindingResult bindingResult;
-//    private ErrorWrapper errorWrapper;
-//
-//    @BeforeEach
-//    void setUp() {
-//        between = new Between();
-//        bindingResult = new BeanPropertyBindingResult(expression, "expression");
-//        errorWrapper = new ErrorWrapper(bindingResult, null);
-//    }
-//
-//    @Test
-//    void apply_WithNullValues_ReturnsPredicate() {
-//        List<String> values = Arrays.asList(null, null);
-//        when(cb.conjunction()).thenReturn(predicate);
-//
-//        Optional<Predicate> result = between.apply(expression, cb, values, errorWrapper);
-//
-//        assertNotNull(result);
-//        verify(cb).conjunction();
-//        assertFalse(errorWrapper.bindingResult().hasErrors());
-//    }
-//
-//    @Test
-//    void apply_WithEmptyList_ReturnsPredicate() {
-//        List<String> values = Collections.emptyList();
-//        when(cb.conjunction()).thenReturn(predicate);
-//
-//        Optional<Predicate> result = between.apply(expression, cb, values, errorWrapper);
-//
-//        assertNotNull(result);
-//        verify(cb).conjunction();
-//        assertFalse(errorWrapper.bindingResult().hasErrors());
-//    }
-//
-//    @Test
-//    void apply_WithIncorrectNumberOfValues_ReturnsNull() {
-//        List<String> values = Arrays.asList(1, 2, 3);
-//
-//        errorWrapper = new ErrorWrapper(bindingResult, new FilterWrapper("", "", Operator.BETWEEN, values));
-//        Predicate result = between.apply(expression, cb, values, errorWrapper);
-//
-//        assertNull(result);
-//        assertTrue(errorWrapper.bindingResult().hasErrors());
-//        FieldError error = errorWrapper.bindingResult().getFieldErrors().get(0);
-//        assertTrue(Objects.requireNonNull(error.getDefaultMessage()).contains("exactly 2 elements"));
-//    }
-//
-//    @Test
-//    void apply_WithNumericValues_ReturnsPredicate() {
-//        List<Integer> values = Arrays.asList(1, 10);
-//        when(path.getJavaType()).thenReturn((Class) Integer.class);
-//        when(path.as(Comparable.class)).thenReturn((Expression<Comparable>) path);
-//        when(cb.between(any(), any(Comparable.class), any(Comparable.class))).thenReturn(predicate);
-//
-//        Predicate result = between.apply(path, cb, values, errorWrapper);
-//
-//        assertNotNull(result);
-//        verify(cb).between((Expression<Integer>) path, 1, 10);
-//        assertFalse(errorWrapper.bindingResult().hasErrors());
-//    }
-//
-//    @Test
-//    void apply_WithLocalDateValues_ReturnsPredicate() {
-//        LocalDate start = LocalDate.of(2024, 1, 1);
-//        LocalDate end = LocalDate.of(2024, 12, 31);
-//        List<LocalDate> values = Arrays.asList(start, end);
-//
-//        when(path.getJavaType()).thenReturn((Class) LocalDate.class);
-//        when(cb.between(any(), any(Date.class), any(Date.class))).thenReturn(predicate);
-//
-//        Predicate result = between.apply(path, cb, values, errorWrapper);
-//
-//        assertNotNull(result);
-//        verify(cb).between(
-//                any(),
-//                eq(Date.from(start.atStartOfDay(ZoneId.systemDefault()).toInstant())),
-//                eq(Date.from(end.atStartOfDay(ZoneId.systemDefault()).toInstant()))
-//        );
-//        assertFalse(errorWrapper.bindingResult().hasErrors());
-//    }
-//
-//    @Test
-//    void apply_WithLocalDateTimeValues_ReturnsPredicate() {
-//        LocalDateTime start = LocalDateTime.of(2024, 1, 1, 0, 0, 1);
-//        LocalDateTime end = LocalDateTime.of(2024, 12, 31, 23, 59, 59);
-//        List<LocalDateTime> values = Arrays.asList(start, end);
-//
-//        when(path.getJavaType()).thenReturn((Class) LocalDateTime.class);
-//        when(cb.between(any(), any(Timestamp.class), any(Timestamp.class))).thenReturn(predicate);
-//
-//        errorWrapper = new ErrorWrapper(bindingResult, new FilterWrapper("", "", Operator.BETWEEN, values));
-//        Predicate result = between.apply(path, cb, values, errorWrapper);
-//
-//        assertNotNull(result);
-//        verify(cb).between(
-//                any(),
-//                eq(Timestamp.from(start.atZone(ZoneId.systemDefault()).toInstant())),
-//                eq(Timestamp.from(end.atZone(ZoneId.systemDefault()).toInstant()))
-//        );
-//        assertFalse(errorWrapper.bindingResult().hasErrors());
-//    }
-//
-//    @Test
-//    void apply_WithLocalTimeValues_ReturnsPredicate() {
-//        LocalTime start = LocalTime.of(9, 0, 1);
-//        LocalTime end = LocalTime.of(17, 0, 1);
-//        List<LocalTime> values = Arrays.asList(start, end);
-//
-//        when(path.getJavaType()).thenReturn((Class) LocalTime.class);
-//        when(cb.between(any(), any(Time.class), any(Time.class))).thenReturn(predicate);
-//
-//        errorWrapper = new ErrorWrapper(bindingResult, new FilterWrapper("", "", Operator.BETWEEN, values));
-//        Predicate result = between.apply(path, cb, values, errorWrapper);
-//
-//        assertNotNull(result);
-//        verify(cb).between(any(), eq(Time.valueOf(start)), eq(Time.valueOf(end)));
-//        assertFalse(errorWrapper.bindingResult().hasErrors());
-//    }
-//
-//    @Test
-//    void apply_WithTimestampValues_ReturnsPredicate() {
-//        Timestamp start = Timestamp.valueOf("2024-01-01 00:00:00");
-//        Timestamp end = Timestamp.valueOf("2024-12-31 23:59:59");
-//        List<Timestamp> values = Arrays.asList(start, end);
-//
-//        when(path.getJavaType()).thenReturn((Class) Timestamp.class);
-//        when(cb.between(any(), any(Timestamp.class), any(Timestamp.class))).thenReturn(predicate);
-//
-//        Predicate result = between.apply(path, cb, values, errorWrapper);
-//
-//        assertNotNull(result);
-//        verify(cb).between(any(), eq(start), eq(end));
-//        assertFalse(errorWrapper.bindingResult().hasErrors());
-//    }
-//
-//    @Test
-//    void apply_WithStringValues_ReturnsPredicate() {
-//        List<String> values = Arrays.asList("A", "Z");
-//        when(path.getJavaType()).thenReturn((Class) String.class);
-//        when(path.as(Comparable.class)).thenReturn((Expression<Comparable>) path);
-//        when(cb.between(any(), any(Comparable.class), any(Comparable.class))).thenReturn(predicate);
-//
-//        Predicate result = between.apply(path, cb, values, errorWrapper);
-//
-//        assertNotNull(result);
-//        verify(cb).between((Expression<String>) path, "A", "Z");
-//        assertFalse(errorWrapper.bindingResult().hasErrors());
-//    }
-//
-//}
+package io.github._0xorigin.queryfilterbuilder.operators;
+
+import io.github._0xorigin.queryfilterbuilder.base.enums.MessageKey;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.validation.BindingResult;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class BetweenTest {
+
+    @Mock
+    private LocalizationService localizationService;
+
+    @Mock
+    private CriteriaBuilder criteriaBuilder;
+
+    @Mock
+    private Predicate predicate;
+
+    @Mock
+    private FilterErrorWrapper filterErrorWrapper;
+
+    @Mock
+    private BindingResult bindingResult;
+
+    @InjectMocks
+    private Between between;
+
+    @Test
+    void apply_validListWithTwoElements_returnsPredicate() {
+        List<Integer> values = List.of(1, 10);
+        Expression<Integer> expression = mock(Expression.class);
+        when(criteriaBuilder.between(expression, values.get(0), values.get(1))).thenReturn(predicate);
+
+        Optional<Predicate> result = between.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+
+        assertThat(result).isPresent().contains(predicate);
+        verify(criteriaBuilder).between(expression, values.get(0), values.get(1));
+        verifyNoInteractions(bindingResult);
+    }
+
+    @Test
+    void apply_invalidList_returnsEmptyOptional() {
+        List<String> values = List.of();
+        Expression<String> expression = mock(Expression.class);
+
+        Optional<Predicate> result = between.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+
+        assertThat(result).isEmpty();
+        verifyNoInteractions(criteriaBuilder, bindingResult);
+    }
+
+    @Test
+    void apply_listWithWrongSize_addsErrorAndReturnsEmptyOptional() {
+        var values = List.of(1, 10, 100);
+        Expression<Integer> expression = mock(Expression.class);
+        when(filterErrorWrapper.bindingResult()).thenReturn(bindingResult);
+        when(bindingResult.getObjectName()).thenReturn("test");
+        when(filterErrorWrapper.filterWrapper()).thenReturn(mock(FilterWrapper.class));
+        when(filterErrorWrapper.filterWrapper().originalFieldName()).thenReturn("fieldName");
+        when(localizationService.getMessage(Operator.BETWEEN.getValue())).thenReturn("between");
+        when(localizationService.getMessage(MessageKey.VALUE_MUST_EXACTLY_TWO_ELEMENTS.getCode(), "between"))
+            .thenReturn("Value must have exactly two elements for between operator");
+
+        Optional<Predicate> result = between.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+
+        assertThat(result).isEmpty();
+        verify(filterErrorWrapper.bindingResult()).addError(any());
+        verify(localizationService).getMessage(MessageKey.VALUE_MUST_EXACTLY_TWO_ELEMENTS.getCode(), "between");
+        verifyNoInteractions(criteriaBuilder);
+    }
+
+    @Test
+    void getOperatorConstant_returnsBetweenOperator() {
+        assertThat(between.getOperatorConstant()).isEqualTo(Operator.BETWEEN);
+    }
+}
