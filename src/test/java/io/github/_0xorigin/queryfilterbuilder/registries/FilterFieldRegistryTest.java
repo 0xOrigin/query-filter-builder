@@ -27,7 +27,7 @@ class FilterFieldRegistryTest {
     private AbstractFilterField<Integer> integerFilterField;
 
     @Autowired
-    private FilterFieldRegistry registry;
+    private FilterFieldRegistry realRegistry;
 
     @Test
     void givenNonEmptyInjectedList_whenConstructed_thenPopulatesMapCorrectly() {
@@ -118,7 +118,7 @@ class FilterFieldRegistryTest {
     @Test
     void filterFieldRegistry_autowired_shouldContainAllFilterFields() {
         final var NUMBER_FILTER_FIELDS = 21;
-        var filterFields = registry.getFilterFields();
+        var filterFields = realRegistry.getFilterFields();
         assertThat(filterFields)
             .isNotNull()
             .hasSize(NUMBER_FILTER_FIELDS);

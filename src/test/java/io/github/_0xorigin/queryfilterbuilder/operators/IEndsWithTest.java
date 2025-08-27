@@ -1,150 +1,73 @@
-//package io.github._0xorigin.queryfilterbuilder.operators;
-//
-//import io.github._0xorigin.queryfilterbuilder.base.wrapper.ErrorWrapper;
-//import jakarta.persistence.criteria.CriteriaBuilder;
-//import jakarta.persistence.criteria.Expression;
-//import jakarta.persistence.criteria.Path;
-//import jakarta.persistence.criteria.Predicate;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//
-//import java.util.Arrays;
-//import java.util.Collections;
-//import java.util.List;
-//
-//import static org.mockito.Mockito.*;
-//
-//@ExtendWith(MockitoExtension.class)
-//class IEndsWithTest {
-//
-//    @Mock
-//    private Path<?> path;
-//
-//    @Mock
-//    private Path<String> stringPath;
-//
-//    @Mock
-//    private CriteriaBuilder criteriaBuilder;
-//
-//    @Mock
-//    private ErrorWrapper errorWrapper;
-//
-//    @Mock
-//    private Predicate predicate;
-//
-//    @Mock
-//    private Expression<String> upperExpression;
-//
-//    private IEndsWith iEndsWithOperator;
-//
-//    @BeforeEach
-//    void setUp() {
-//        iEndsWithOperator = new IEndsWith();
-//    }
-//
-//    @Test
-//    void apply_WithValidSingleValue_ShouldCreateCaseInsensitiveLikePredicate() {
-//        // Arrange
-//        String testValue = "test";
-//        List<String> values = Collections.singletonList(testValue);
-//        when(path.as(String.class)).thenReturn(stringPath);
-//        when(criteriaBuilder.upper(stringPath)).thenReturn(upperExpression);
-//        when(criteriaBuilder.like(upperExpression, "%" + testValue.toUpperCase())).thenReturn(predicate);
-//
-//        // Act
-//        iEndsWithOperator.apply(path, criteriaBuilder, values, errorWrapper);
-//
-//        // Assert
-//        verify(path).as(String.class);
-//        verify(criteriaBuilder).upper(stringPath);
-//        verify(criteriaBuilder).like(upperExpression, "%" + testValue.toUpperCase());
-//    }
-//
-//    @Test
-//    void apply_WithEmptyList_ShouldReturnConjunction() {
-//        // Arrange
-//        List<?> emptyList = Collections.emptyList();
-//        when(criteriaBuilder.conjunction()).thenReturn(predicate);
-//
-//        // Act
-//        iEndsWithOperator.apply(path, criteriaBuilder, emptyList, errorWrapper);
-//
-//        // Assert
-//        verify(criteriaBuilder).conjunction();
-//        verify(path, never()).as(String.class);
-//        verify(criteriaBuilder, never()).upper(any());
-//    }
-//
-//    @Test
-//    void apply_WithNullValue_ShouldReturnConjunction() {
-//        // Arrange
-//        List<?> listWithNull = Collections.singletonList(null);
-//        when(criteriaBuilder.conjunction()).thenReturn(predicate);
-//
-//        // Act
-//        iEndsWithOperator.apply(path, criteriaBuilder, listWithNull, errorWrapper);
-//
-//        // Assert
-//        verify(criteriaBuilder).conjunction();
-//        verify(path, never()).as(String.class);
-//        verify(criteriaBuilder, never()).upper(any());
-//    }
-//
-//    @Test
-//    void apply_WithMultipleValues_ShouldUseFirstValue() {
-//        // Arrange
-//        String firstValue = "first";
-//        List<String> values = Arrays.asList(firstValue, "second", "third");
-//        when(path.as(String.class)).thenReturn(stringPath);
-//        when(criteriaBuilder.upper(stringPath)).thenReturn(upperExpression);
-//        when(criteriaBuilder.like(upperExpression, "%" + firstValue.toUpperCase())).thenReturn(predicate);
-//
-//        // Act
-//        iEndsWithOperator.apply(path, criteriaBuilder, values, errorWrapper);
-//
-//        // Assert
-//        verify(path).as(String.class);
-//        verify(criteriaBuilder).upper(stringPath);
-//        verify(criteriaBuilder).like(upperExpression, "%" + firstValue.toUpperCase());
-//    }
-//
-//    @Test
-//    void apply_WithMixedCaseValue_ShouldConvertToUpperCase() {
-//        // Arrange
-//        String testValue = "TeStVaLuE";
-//        List<String> values = Collections.singletonList(testValue);
-//        when(path.as(String.class)).thenReturn(stringPath);
-//        when(criteriaBuilder.upper(stringPath)).thenReturn(upperExpression);
-//        when(criteriaBuilder.like(upperExpression, "%" + testValue.toUpperCase())).thenReturn(predicate);
-//
-//        // Act
-//        iEndsWithOperator.apply(path, criteriaBuilder, values, errorWrapper);
-//
-//        // Assert
-//        verify(path).as(String.class);
-//        verify(criteriaBuilder).upper(stringPath);
-//        verify(criteriaBuilder).like(upperExpression, "%" + testValue.toUpperCase());
-//    }
-//
-//    @Test
-//    void apply_WithSpecialCharacters_ShouldHandleSpecialCharactersInUpperCase() {
-//        // Arrange
-//        String testValue = "test%_";
-//        List<String> values = Collections.singletonList(testValue);
-//        when(path.as(String.class)).thenReturn(stringPath);
-//        when(criteriaBuilder.upper(stringPath)).thenReturn(upperExpression);
-//        when(criteriaBuilder.like(upperExpression, "%" + testValue.toUpperCase())).thenReturn(predicate);
-//
-//        // Act
-//        iEndsWithOperator.apply(path, criteriaBuilder, values, errorWrapper);
-//
-//        // Assert
-//        verify(path).as(String.class);
-//        verify(criteriaBuilder).upper(stringPath);
-//        verify(criteriaBuilder).like(upperExpression, "%" + testValue.toUpperCase());
-//    }
-//
-//}
+package io.github._0xorigin.queryfilterbuilder.operators;
+
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.validation.BindingResult;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class IEndsWithTest {
+
+    @Mock
+    private CriteriaBuilder criteriaBuilder;
+
+    @Mock
+    private Predicate predicate;
+
+    @Mock
+    private FilterErrorWrapper filterErrorWrapper;
+
+    @Mock
+    private BindingResult bindingResult;
+
+    @Mock
+    private Expression<String> upperExpression;
+
+    @InjectMocks
+    private IEndsWith iendsWith;
+
+    @Test
+    void apply_validListWithSingleElement_returnsPredicate() {
+        List<String> values = List.of("test");
+        Expression<String> expression = mock(Expression.class);
+        when(expression.as(String.class)).thenReturn(expression);
+        when(criteriaBuilder.upper(expression)).thenReturn(upperExpression);
+        when(criteriaBuilder.like(upperExpression, "%TEST")).thenReturn(predicate);
+
+        Optional<Predicate> result = iendsWith.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+
+        assertThat(result).isPresent().contains(predicate);
+        verify(criteriaBuilder).upper(expression);
+        verify(criteriaBuilder).like(upperExpression, "%TEST");
+        verifyNoInteractions(bindingResult);
+    }
+
+    @Test
+    void apply_invalidList_returnsEmptyOptional() {
+        List<String> values = List.of();
+        Expression<String> expression = mock(Expression.class);
+
+        Optional<Predicate> result = iendsWith.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+
+        assertThat(result).isEmpty();
+        verifyNoInteractions(criteriaBuilder, bindingResult);
+    }
+
+    @Test
+    void getOperatorConstant_returnsIEndsWithOperator() {
+        assertThat(iendsWith.getOperatorConstant()).isEqualTo(Operator.IENDS_WITH);
+    }
+}

@@ -33,7 +33,7 @@ class FilterOperatorRegistryTest {
     private final FilterOperator equalsOperator = new Equals();
 
     @Autowired
-    private FilterOperatorRegistry registry;
+    private FilterOperatorRegistry realRegistry;
 
     @Test
     void givenNonEmptyInjectedList_whenConstructed_thenPopulatesMapCorrectly() {
@@ -117,7 +117,7 @@ class FilterOperatorRegistryTest {
     @Test
     void filterOperatorRegistry_autowired_shouldContainAllFilterOperators() {
         final var NUMBER_FILTER_OPERATORS = 18;
-        var filterOperators = registry.getOperators();
+        var filterOperators = realRegistry.getOperators();
         assertThat(filterOperators)
             .isNotNull()
             .hasSize(NUMBER_FILTER_OPERATORS);

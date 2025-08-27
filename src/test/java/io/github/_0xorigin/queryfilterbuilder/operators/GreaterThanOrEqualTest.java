@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class NotInTest {
+class GreaterThanOrEqualTest {
 
     @Mock
     private CriteriaBuilder criteriaBuilder;
@@ -33,24 +33,19 @@ class NotInTest {
     @Mock
     private BindingResult bindingResult;
 
-    @Mock
-    private Expression<Integer> expression;
-
     @InjectMocks
-    private NotIn notIn;
+    private GreaterThanOrEqual greaterThanOrEqual;
 
     @Test
-    void apply_validListWithElements_returnsPredicate() {
-        List<Integer> values = List.of(1, 2, 3);
-        Predicate inPredicate = mock(Predicate.class);
-        when(expression.in(values)).thenReturn(inPredicate);
-        when(criteriaBuilder.not(inPredicate)).thenReturn(predicate);
+    void apply_validListWithSingleElement_returnsPredicate() {
+        List<Integer> values = List.of(42);
+        Expression<Integer> expression = mock(Expression.class);
+        when(criteriaBuilder.greaterThanOrEqualTo(expression, values.get(0))).thenReturn(predicate);
 
-        Optional<Predicate> result = notIn.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+        Optional<Predicate> result = greaterThanOrEqual.apply(expression, criteriaBuilder, values, filterErrorWrapper);
 
         assertThat(result).isPresent().contains(predicate);
-        verify(expression).in(values);
-        verify(criteriaBuilder).not(inPredicate);
+        verify(criteriaBuilder).greaterThanOrEqualTo(expression, values.get(0));
         verifyNoInteractions(bindingResult);
     }
 
@@ -59,14 +54,14 @@ class NotInTest {
         List<String> values = List.of();
         Expression<String> expression = mock(Expression.class);
 
-        Optional<Predicate> result = notIn.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+        Optional<Predicate> result = greaterThanOrEqual.apply(expression, criteriaBuilder, values, filterErrorWrapper);
 
         assertThat(result).isEmpty();
         verifyNoInteractions(criteriaBuilder, bindingResult);
     }
 
     @Test
-    void getOperatorConstant_returnsNotInOperator() {
-        assertThat(notIn.getOperatorConstant()).isEqualTo(Operator.NOT_IN);
+    void getOperatorConstant_returnsGreaterThanOrEqualOperator() {
+        assertThat(greaterThanOrEqual.getOperatorConstant()).isEqualTo(Operator.GTE);
     }
 }
