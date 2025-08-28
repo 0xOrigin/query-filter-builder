@@ -5,21 +5,22 @@ import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BindingResult;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class LocalTimeFilterTest {
+class UuidFilterTest {
 
     @Mock
     private FilterErrorWrapper filterErrorWrapper;
@@ -31,11 +32,11 @@ class LocalTimeFilterTest {
     private FilterWrapper filterWrapper;
 
     @InjectMocks
-    private LocalTimeFilter localTimeFilter;
+    private UuidFilter uuidFilter;
 
     @Test
-    void getDataType_returnsLocalTimeClass() {
-        assertThat(localTimeFilter.getDataType()).isEqualTo(LocalTime.class);
+    void getDataType_returnsUuidClass() {
+        assertThat(uuidFilter.getDataType()).isEqualTo(UUID.class);
     }
 
     @Test
@@ -45,33 +46,35 @@ class LocalTimeFilterTest {
             Operator.IS_NULL, Operator.IS_NOT_NULL, Operator.IN, Operator.NOT_IN, Operator.BETWEEN, Operator.NOT_BETWEEN
         );
 
-        assertThat(localTimeFilter.getSupportedOperators()).containsExactlyInAnyOrderElementsOf(expectedOperators);
+        assertThat(uuidFilter.getSupportedOperators()).containsExactlyInAnyOrderElementsOf(expectedOperators);
     }
 
     @Test
-    void cast_validString_returnsLocalTime() {
-        String value = "15:30:00";
+    void cast_validString_returnsUuid() {
+        String value = "123e4567-e89b-12d3-a456-426614174000";
 
-        LocalTime result = localTimeFilter.cast(value);
+        UUID result = uuidFilter.cast(value);
 
-        assertThat(result).isEqualTo(LocalTime.parse("15:30:00"));
+        assertThat(result).isEqualTo(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "123e4567-12d3-a456-426614174000",
+        "invalid"
+    })
+    void cast_invalidString_throwsIllegalArgumentException(String value) {
+        assertThatThrownBy(() -> uuidFilter.cast(value))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void cast_invalidString_throwsDateTimeParseException() {
-        String value = "invalid";
+    void safeCast_validString_returnsUuid() {
+        String value = "123e4567-e89b-12d3-a456-426614174000";
 
-        assertThatThrownBy(() -> localTimeFilter.cast(value))
-            .isInstanceOf(DateTimeParseException.class);
-    }
+        UUID result = uuidFilter.safeCast(value, filterErrorWrapper);
 
-    @Test
-    void safeCast_validString_returnsLocalTime() {
-        String value = "15:30:00";
-
-        LocalTime result = localTimeFilter.safeCast(value, filterErrorWrapper);
-
-        assertThat(result).isEqualTo(LocalTime.parse("15:30:00"));
+        assertThat(result).isEqualTo(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
         verifyNoInteractions(bindingResult);
     }
 
@@ -83,7 +86,7 @@ class LocalTimeFilterTest {
         when(filterErrorWrapper.filterWrapper()).thenReturn(filterWrapper);
         when(filterWrapper.originalFieldName()).thenReturn("fieldName");
 
-        LocalTime result = localTimeFilter.safeCast(value, filterErrorWrapper);
+        UUID result = uuidFilter.safeCast(value, filterErrorWrapper);
 
         assertThat(result).isNull();
         verify(bindingResult).addError(any());

@@ -10,7 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BindingResult;
 
-import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Set;
 
@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class LocalTimeFilterTest {
+class OffsetDateTimeFilterTest {
 
     @Mock
     private FilterErrorWrapper filterErrorWrapper;
@@ -31,11 +31,11 @@ class LocalTimeFilterTest {
     private FilterWrapper filterWrapper;
 
     @InjectMocks
-    private LocalTimeFilter localTimeFilter;
+    private OffsetDateTimeFilter offsetDateTimeFilter;
 
     @Test
-    void getDataType_returnsLocalTimeClass() {
-        assertThat(localTimeFilter.getDataType()).isEqualTo(LocalTime.class);
+    void getDataType_returnsOffsetDateTimeClass() {
+        assertThat(offsetDateTimeFilter.getDataType()).isEqualTo(OffsetDateTime.class);
     }
 
     @Test
@@ -45,33 +45,41 @@ class LocalTimeFilterTest {
             Operator.IS_NULL, Operator.IS_NOT_NULL, Operator.IN, Operator.NOT_IN, Operator.BETWEEN, Operator.NOT_BETWEEN
         );
 
-        assertThat(localTimeFilter.getSupportedOperators()).containsExactlyInAnyOrderElementsOf(expectedOperators);
+        assertThat(offsetDateTimeFilter.getSupportedOperators()).containsExactlyInAnyOrderElementsOf(expectedOperators);
     }
 
     @Test
-    void cast_validString_returnsLocalTime() {
-        String value = "15:30:00";
+    void cast_validString_returnsOffsetDateTime() {
+        String value = "2025-08-27T15:30:00+02:00";
 
-        LocalTime result = localTimeFilter.cast(value);
+        OffsetDateTime result = offsetDateTimeFilter.cast(value);
 
-        assertThat(result).isEqualTo(LocalTime.parse("15:30:00"));
+        assertThat(result).isEqualTo(OffsetDateTime.parse("2025-08-27T15:30:00+02:00"));
     }
 
     @Test
     void cast_invalidString_throwsDateTimeParseException() {
         String value = "invalid";
 
-        assertThatThrownBy(() -> localTimeFilter.cast(value))
+        assertThatThrownBy(() -> offsetDateTimeFilter.cast(value))
             .isInstanceOf(DateTimeParseException.class);
     }
 
     @Test
-    void safeCast_validString_returnsLocalTime() {
-        String value = "15:30:00";
+    void cast_invalidDateTimeString_throwsDateTimeParseException() {
+        String value = "2025-08-27T15:30:00";
 
-        LocalTime result = localTimeFilter.safeCast(value, filterErrorWrapper);
+        assertThatThrownBy(() -> offsetDateTimeFilter.cast(value))
+            .isInstanceOf(DateTimeParseException.class);
+    }
 
-        assertThat(result).isEqualTo(LocalTime.parse("15:30:00"));
+    @Test
+    void safeCast_validString_returnsOffsetDateTime() {
+        String value = "2025-08-27T15:30:00+02:00";
+
+        OffsetDateTime result = offsetDateTimeFilter.safeCast(value, filterErrorWrapper);
+
+        assertThat(result).isEqualTo(OffsetDateTime.parse("2025-08-27T15:30:00+02:00"));
         verifyNoInteractions(bindingResult);
     }
 
@@ -83,7 +91,7 @@ class LocalTimeFilterTest {
         when(filterErrorWrapper.filterWrapper()).thenReturn(filterWrapper);
         when(filterWrapper.originalFieldName()).thenReturn("fieldName");
 
-        LocalTime result = localTimeFilter.safeCast(value, filterErrorWrapper);
+        OffsetDateTime result = offsetDateTimeFilter.safeCast(value, filterErrorWrapper);
 
         assertThat(result).isNull();
         verify(bindingResult).addError(any());

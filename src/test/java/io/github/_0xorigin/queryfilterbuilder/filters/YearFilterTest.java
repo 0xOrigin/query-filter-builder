@@ -10,7 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BindingResult;
 
-import java.time.LocalTime;
+import java.time.Year;
 import java.time.format.DateTimeParseException;
 import java.util.Set;
 
@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class LocalTimeFilterTest {
+class YearFilterTest {
 
     @Mock
     private FilterErrorWrapper filterErrorWrapper;
@@ -31,11 +31,11 @@ class LocalTimeFilterTest {
     private FilterWrapper filterWrapper;
 
     @InjectMocks
-    private LocalTimeFilter localTimeFilter;
+    private YearFilter yearFilter;
 
     @Test
-    void getDataType_returnsLocalTimeClass() {
-        assertThat(localTimeFilter.getDataType()).isEqualTo(LocalTime.class);
+    void getDataType_returnsYearClass() {
+        assertThat(yearFilter.getDataType()).isEqualTo(Year.class);
     }
 
     @Test
@@ -45,33 +45,41 @@ class LocalTimeFilterTest {
             Operator.IS_NULL, Operator.IS_NOT_NULL, Operator.IN, Operator.NOT_IN, Operator.BETWEEN, Operator.NOT_BETWEEN
         );
 
-        assertThat(localTimeFilter.getSupportedOperators()).containsExactlyInAnyOrderElementsOf(expectedOperators);
+        assertThat(yearFilter.getSupportedOperators()).containsExactlyInAnyOrderElementsOf(expectedOperators);
     }
 
     @Test
-    void cast_validString_returnsLocalTime() {
-        String value = "15:30:00";
+    void cast_validString_returnsYear() {
+        String value = "2025";
 
-        LocalTime result = localTimeFilter.cast(value);
+        Year result = yearFilter.cast(value);
 
-        assertThat(result).isEqualTo(LocalTime.parse("15:30:00"));
+        assertThat(result).isEqualTo(Year.parse("2025"));
     }
 
     @Test
     void cast_invalidString_throwsDateTimeParseException() {
         String value = "invalid";
 
-        assertThatThrownBy(() -> localTimeFilter.cast(value))
+        assertThatThrownBy(() -> yearFilter.cast(value))
             .isInstanceOf(DateTimeParseException.class);
     }
 
     @Test
-    void safeCast_validString_returnsLocalTime() {
-        String value = "15:30:00";
+    void cast_invalidYearString_throwsDateTimeParseException() {
+        String value = "y2025";
 
-        LocalTime result = localTimeFilter.safeCast(value, filterErrorWrapper);
+        assertThatThrownBy(() -> yearFilter.cast(value))
+            .isInstanceOf(DateTimeParseException.class);
+    }
 
-        assertThat(result).isEqualTo(LocalTime.parse("15:30:00"));
+    @Test
+    void safeCast_validString_returnsYear() {
+        String value = "2025";
+
+        Year result = yearFilter.safeCast(value, filterErrorWrapper);
+
+        assertThat(result).isEqualTo(Year.parse("2025"));
         verifyNoInteractions(bindingResult);
     }
 
@@ -83,7 +91,7 @@ class LocalTimeFilterTest {
         when(filterErrorWrapper.filterWrapper()).thenReturn(filterWrapper);
         when(filterWrapper.originalFieldName()).thenReturn("fieldName");
 
-        LocalTime result = localTimeFilter.safeCast(value, filterErrorWrapper);
+        Year result = yearFilter.safeCast(value, filterErrorWrapper);
 
         assertThat(result).isNull();
         verify(bindingResult).addError(any());

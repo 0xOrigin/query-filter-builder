@@ -10,8 +10,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BindingResult;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class LocalTimeFilterTest {
+class ShortFilterTest {
 
     @Mock
     private FilterErrorWrapper filterErrorWrapper;
@@ -31,11 +29,11 @@ class LocalTimeFilterTest {
     private FilterWrapper filterWrapper;
 
     @InjectMocks
-    private LocalTimeFilter localTimeFilter;
+    private ShortFilter shortFilter;
 
     @Test
-    void getDataType_returnsLocalTimeClass() {
-        assertThat(localTimeFilter.getDataType()).isEqualTo(LocalTime.class);
+    void getDataType_returnsShortClass() {
+        assertThat(shortFilter.getDataType()).isEqualTo(Short.class);
     }
 
     @Test
@@ -45,33 +43,41 @@ class LocalTimeFilterTest {
             Operator.IS_NULL, Operator.IS_NOT_NULL, Operator.IN, Operator.NOT_IN, Operator.BETWEEN, Operator.NOT_BETWEEN
         );
 
-        assertThat(localTimeFilter.getSupportedOperators()).containsExactlyInAnyOrderElementsOf(expectedOperators);
+        assertThat(shortFilter.getSupportedOperators()).containsExactlyInAnyOrderElementsOf(expectedOperators);
     }
 
     @Test
-    void cast_validString_returnsLocalTime() {
-        String value = "15:30:00";
+    void cast_validString_returnsShort() {
+        String value = "12345";
 
-        LocalTime result = localTimeFilter.cast(value);
+        Short result = shortFilter.cast(value);
 
-        assertThat(result).isEqualTo(LocalTime.parse("15:30:00"));
+        assertThat(result).isEqualTo((short) 12345);
     }
 
     @Test
-    void cast_invalidString_throwsDateTimeParseException() {
+    void cast_invalidString_throwsNumberFormatException() {
         String value = "invalid";
 
-        assertThatThrownBy(() -> localTimeFilter.cast(value))
-            .isInstanceOf(DateTimeParseException.class);
+        assertThatThrownBy(() -> shortFilter.cast(value))
+            .isInstanceOf(NumberFormatException.class);
     }
 
     @Test
-    void safeCast_validString_returnsLocalTime() {
-        String value = "15:30:00";
+    void cast_outOfRangeString_throwsNumberFormatException() {
+        String value = "32768";
 
-        LocalTime result = localTimeFilter.safeCast(value, filterErrorWrapper);
+        assertThatThrownBy(() -> shortFilter.cast(value))
+            .isInstanceOf(NumberFormatException.class);
+    }
 
-        assertThat(result).isEqualTo(LocalTime.parse("15:30:00"));
+    @Test
+    void safeCast_validString_returnsShort() {
+        String value = "12345";
+
+        Short result = shortFilter.safeCast(value, filterErrorWrapper);
+
+        assertThat(result).isEqualTo((short) 12345);
         verifyNoInteractions(bindingResult);
     }
 
@@ -83,7 +89,21 @@ class LocalTimeFilterTest {
         when(filterErrorWrapper.filterWrapper()).thenReturn(filterWrapper);
         when(filterWrapper.originalFieldName()).thenReturn("fieldName");
 
-        LocalTime result = localTimeFilter.safeCast(value, filterErrorWrapper);
+        Short result = shortFilter.safeCast(value, filterErrorWrapper);
+
+        assertThat(result).isNull();
+        verify(bindingResult).addError(any());
+    }
+
+    @Test
+    void safeCast_outOfRangeString_addsErrorAndReturnsNull() {
+        String value = "32768";
+        when(filterErrorWrapper.bindingResult()).thenReturn(bindingResult);
+        when(bindingResult.getObjectName()).thenReturn("objectName");
+        when(filterErrorWrapper.filterWrapper()).thenReturn(filterWrapper);
+        when(filterWrapper.originalFieldName()).thenReturn("fieldName");
+
+        Short result = shortFilter.safeCast(value, filterErrorWrapper);
 
         assertThat(result).isNull();
         verify(bindingResult).addError(any());
