@@ -23,6 +23,7 @@ public final class SortParserImp implements SortParser {
 
     @Override
     public List<SortWrapper> parse(@NonNull final HttpServletRequest request) {
+        Objects.requireNonNull(request, "request cannot be null");
         final String sort = getSortParamValue(request);
 
         return Arrays.stream(sort.split(","))
@@ -38,6 +39,7 @@ public final class SortParserImp implements SortParser {
 
     @Override
     public List<SortWrapper> parse(@NonNull final List<SortRequest> sortRequests) {
+        Objects.requireNonNull(sortRequests, "sortRequests cannot be null");
         return sortRequests
                 .stream()
                 .filter(sortRequest -> sortRequest.field() != null && !sortRequest.field().isBlank())

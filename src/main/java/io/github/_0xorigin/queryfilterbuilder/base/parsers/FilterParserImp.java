@@ -23,6 +23,7 @@ public final class FilterParserImp implements FilterParser {
 
     @Override
     public List<FilterWrapper> parse(@NonNull final HttpServletRequest httpServletRequest) {
+        Objects.requireNonNull(httpServletRequest, "httpServletRequest cannot be null");
         final String FIELD_DELIMITER = properties.defaults().fieldDelimiter();
         return getRequestQueryParams(httpServletRequest)
                 .entrySet()
@@ -61,6 +62,7 @@ public final class FilterParserImp implements FilterParser {
 
     @Override
     public List<FilterWrapper> parse(@NonNull final List<FilterRequest> filterRequests) {
+        Objects.requireNonNull(filterRequests, "filterRequests cannot be null");
         return filterRequests
                 .stream()
                 .filter(filterRequest -> filterRequest.field() != null && !filterRequest.field().isBlank())
