@@ -6,7 +6,8 @@ public enum MessageKey {
     OPERATOR_NOT_SUPPORTED("error.operator.not.supported"),
     VALUE_MUST_EXACTLY_TWO_ELEMENTS("error.operator.value.must.exactly.two"),
     INVALID_QUERY_PARAMETER_EXCEPTION_MESSAGE("error.invalid.query.parameter.exception.message"),
-    QUERY_BUILDER_CONFIGURATION_EXCEPTION_MESSAGE("error.query.builder.configuration.exception.message");
+    QUERY_BUILDER_CONFIGURATION_EXCEPTION_MESSAGE("error.query.builder.configuration.exception.message"),
+    NON_ASSOCIATION_IN_INTERMEDIATE_PATH("error.path.generator.non.association.in.intermediate.path");
 
     private final String code;
 

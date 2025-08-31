@@ -41,8 +41,8 @@ public class QueryFilterBuilderConfig {
     }
 
     @Bean
-    public <T> PathGenerator<T> pathGenerator(Metamodel metamodel, QueryFilterBuilderProperties properties) {
-        return new FieldPathGenerator<>(metamodel, properties);
+    public <T> PathGenerator<T> pathGenerator(Metamodel metamodel, QueryFilterBuilderProperties properties, LocalizationService localizationService) {
+        return new FieldPathGenerator<>(metamodel, properties, localizationService);
     }
 
     @Bean
