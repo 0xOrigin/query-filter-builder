@@ -156,6 +156,6 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
     ) {
         final var sortHolder = sortContext.getSorts().get(sortWrapper.field());
         final Optional<Expression<K>> providerFunction = sortHolder.getExpression(root, criteriaQuery, criteriaBuilder);
-        return providerFunction.orElse(fieldPathGenerator.generate(root, sortWrapper.field(), sortWrapper.originalFieldName(), errorHolder.bindingResult()));
+        return providerFunction.orElseGet(() -> fieldPathGenerator.generate(root, sortWrapper.field(), sortWrapper.originalFieldName(), errorHolder.bindingResult()));
     }
 }

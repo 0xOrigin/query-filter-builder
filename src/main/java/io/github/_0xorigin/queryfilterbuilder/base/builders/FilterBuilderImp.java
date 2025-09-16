@@ -154,7 +154,7 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
     ) {
         var filterHolder = filterContext.getFilters().get(filterWrapper.field());
         Optional<Expression<K>> providerFunction = filterHolder.getExpression(root, criteriaQuery, criteriaBuilder);
-        return providerFunction.orElse(fieldPathGenerator.generate(root, filterWrapper.field(), filterWrapper.originalFieldName(), errorHolder.bindingResult()));
+        return providerFunction.orElseGet(() -> fieldPathGenerator.generate(root, filterWrapper.field(), filterWrapper.originalFieldName(), errorHolder.bindingResult()));
     }
 
     private <K extends Comparable<? super K> & Serializable> Class<? extends K> getFieldDataType(final Expression<K> expression) {
