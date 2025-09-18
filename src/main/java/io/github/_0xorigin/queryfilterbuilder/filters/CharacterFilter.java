@@ -5,8 +5,14 @@ import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
 import java.util.Set;
 
+/**
+ * A filter implementation for handling {@link Character} fields.
+ */
 public final class CharacterFilter extends AbstractFilterField<Character> {
 
+    /**
+     * Constructs the filter and sets the supported operators for character types.
+     */
     public CharacterFilter() {
         setSupportedOperators(
             Set.of(
@@ -16,11 +22,20 @@ public final class CharacterFilter extends AbstractFilterField<Character> {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Casts the string to a character by taking the first character of the string.
+     * @throws IndexOutOfBoundsException if the input string is empty.
+     */
     @Override
     public Character cast(String value) {
         return value.charAt(0);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Class<Character> getDataType() {
         return Character.class;

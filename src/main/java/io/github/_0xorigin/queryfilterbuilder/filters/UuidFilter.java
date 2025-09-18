@@ -6,8 +6,14 @@ import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * A filter implementation for handling {@link UUID} fields.
+ */
 public final class UuidFilter extends AbstractFilterField<UUID> {
 
+    /**
+     * Constructs the filter and sets the supported operators for UUID types.
+     */
     public UuidFilter() {
         setSupportedOperators(
             Set.of(
@@ -17,11 +23,17 @@ public final class UuidFilter extends AbstractFilterField<UUID> {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UUID cast(String value) {
         return UUID.fromString(value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Class<UUID> getDataType() {
         return UUID.class;

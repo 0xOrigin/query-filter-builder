@@ -5,8 +5,15 @@ import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
 import java.util.Set;
 
+/**
+ * A filter implementation for handling {@link String} fields.
+ */
 public final class StringFilter extends AbstractFilterField<String> {
 
+    /**
+     * Constructs the filter and sets the supported operators for string types,
+     * including comparison, pattern matching, and null checks.
+     */
     public StringFilter() {
         setSupportedOperators(
             Set.of(
@@ -17,11 +24,19 @@ public final class StringFilter extends AbstractFilterField<String> {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The input string is returned as is.
+     */
     @Override
     public String cast(String value) {
         return value;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Class<String> getDataType() {
         return String.class;

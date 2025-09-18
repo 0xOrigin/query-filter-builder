@@ -6,8 +6,17 @@ import java.io.Serializable;
 import java.time.temporal.Temporal;
 import java.util.Set;
 
+/**
+ * An abstract base class for filter fields that handle temporal types (e.g., dates, times).
+ * It automatically configures a standard set of operators applicable to temporals (e.g., EQ, GT, BETWEEN).
+ *
+ * @param <T> The specific {@link Temporal} type (e.g., LocalDate, OffsetDateTime).
+ */
 public abstract class AbstractTemporalFilterField<T extends Temporal & Comparable<? super T> & Serializable> extends AbstractFilterField<T> {
 
+    /**
+     * Constructs the filter field and sets the default supported operators for temporal types.
+     */
     protected AbstractTemporalFilterField() {
         setSupportedOperators(
             Set.of(

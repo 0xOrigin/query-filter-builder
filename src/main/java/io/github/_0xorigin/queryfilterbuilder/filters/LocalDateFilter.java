@@ -4,13 +4,22 @@ import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractTemporalF
 
 import java.time.LocalDate;
 
+/**
+ * A filter implementation for handling {@link LocalDate} fields.
+ */
 public final class LocalDateFilter extends AbstractTemporalFilterField<LocalDate> {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public LocalDate cast(String value) {
         return LocalDate.parse(value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Class<LocalDate> getDataType() {
         return LocalDate.class;
