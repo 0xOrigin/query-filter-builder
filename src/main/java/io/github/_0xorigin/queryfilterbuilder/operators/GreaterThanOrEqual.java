@@ -12,8 +12,17 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A {@link FilterOperator} implementation that handles the 'greater than or equal to' operation.
+ */
 public final class GreaterThanOrEqual implements FilterOperator {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation requires the {@code values} list to contain at least one non-null element.
+     * It uses the first element in the list for the comparison.
+     */
     @Override
     public <T extends Comparable<? super T> & Serializable> Optional<Predicate> apply(Expression<T> expression, CriteriaBuilder cb, List<T> values, FilterErrorWrapper filterErrorWrapper) {
         if (FilterUtils.isNotValidList(values))
@@ -22,6 +31,9 @@ public final class GreaterThanOrEqual implements FilterOperator {
         return Optional.ofNullable(cb.greaterThanOrEqualTo(expression, values.get(0)));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Operator getOperatorConstant() {
         return Operator.GTE;

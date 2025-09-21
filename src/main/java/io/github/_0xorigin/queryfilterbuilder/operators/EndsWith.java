@@ -12,8 +12,18 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A {@link FilterOperator} implementation that handles the 'endsWith' operation (case-sensitive).
+ * This operator checks if a string expression ends with a specified substring.
+ */
 public final class EndsWith implements FilterOperator {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation requires the {@code values} list to contain at least one non-null element.
+     * It uses the first element in the list as the substring to search for.
+     */
     @Override
     public <T extends Comparable<? super T> & Serializable> Optional<Predicate> apply(Expression<T> expression, CriteriaBuilder cb, List<T> values, FilterErrorWrapper filterErrorWrapper) {
         if (FilterUtils.isNotValidList(values))
@@ -22,6 +32,9 @@ public final class EndsWith implements FilterOperator {
         return Optional.ofNullable(cb.like(expression.as(String.class), "%" + values.get(0)));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Operator getOperatorConstant() {
         return Operator.ENDS_WITH;
