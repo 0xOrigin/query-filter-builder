@@ -21,12 +21,23 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Implementation of the SortBuilder interface, responsible for constructing JPA Order objects from sort requests.
+ *
+ * @param <T> The type of the entity being sorted.
+ */
 public final class SortBuilderImp<T> implements SortBuilder<T> {
 
     private final PathGenerator<T> fieldPathGenerator;
     private final SortParser sortParser;
     private final Logger log = LoggerFactory.getLogger(SortBuilderImp.class);
 
+    /**
+     * Constructs a new SortBuilderImp with the necessary dependencies.
+     *
+     * @param fieldPathGenerator Generator for creating JPA Path expressions from field names.
+     * @param sortParser         Parser for extracting sort requests from the source.
+     */
     public SortBuilderImp(
         final PathGenerator<T> fieldPathGenerator,
         final SortParser sortParser
@@ -35,6 +46,17 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
         this.sortParser = sortParser;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation parses sort data from either an {@code HttpServletRequest} (query parameters) or a list of
+     * {@code SortRequest} objects (request body), as provided in the {@code sortContext}. It consolidates the sorts
+     * into a distinct collection, ensuring that each sort field is processed only once.
+     * <p>
+     * If a sort is specified in both the query parameters and the request body, the value from the request body
+     * will override the one from the query parameters. It also determines whether each sort is a normal or custom
+     * sort based on the context's configuration.
+     */
     @Override
     public Collection<SortWrapper> getDistinctSortWrappers(@NonNull final SortContext<T> sortContext) {
         final Map<String, SortWrapper> sortWrappers = new LinkedHashMap<>();
@@ -62,6 +84,14 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
         return currentValue;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation determines whether the sort is a standard field sort or a custom sort by checking
+     * the {@code sortType} of the {@code sortWrapper}. It then delegates to the appropriate private method
+     * ({@code buildSortOrder} or {@code buildCustomSortOrder}) to construct the final JPA {@link Order}.
+     * If the sort type is not set or not supported, it returns an empty optional.
+     */
     public Optional<Order> buildOrderForWrapper(
         final Root<T> root,
         final CriteriaQuery<?> criteriaQuery,

@@ -15,11 +15,23 @@ import org.springframework.validation.BindingResult;
 
 import java.util.*;
 
+/**
+ * Implementation of the QueryFilterBuilder interface, responsible for building JPA Specifications for filtering and sorting.
+ *
+ * @param <T> The type of the entity being filtered and sorted.
+ */
 public final class QueryFilterBuilderImp<T> implements QueryFilterBuilder<T> {
+
     private final FilterBuilder<T> filterBuilder;
     private final SortBuilder<T> sortBuilder;
     private final Logger log = LoggerFactory.getLogger(QueryFilterBuilderImp.class);
 
+    /**
+     * Constructs a new QueryFilterBuilderImp with the specified filter and sort builders.
+     *
+     * @param filterBuilder The builder responsible for creating filter predicates. Must not be null.
+     * @param sortBuilder The builder responsible for creating sort orders. Must not be null.
+     */
     public QueryFilterBuilderImp(
         final FilterBuilder<T> filterBuilder,
         final SortBuilder<T> sortBuilder
@@ -28,6 +40,15 @@ public final class QueryFilterBuilderImp<T> implements QueryFilterBuilder<T> {
         this.sortBuilder = sortBuilder;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation builds a specification that combines multiple filter criteria using an AND operator.
+     * It processes each filter defined in the {@link FilterContext}, generating a {@link Predicate} for each.
+     * If the provided context is null, it throws a {@link NullPointerException}.
+     * If any of the filter criteria are invalid, a client-side exception is thrown.
+     * If no predicates are generated, the specification will not filter any results.
+     */
     @Override
     public Specification<T> buildFilterSpecification(@NonNull final FilterContext<T> filterContext) {
         Objects.requireNonNull(filterContext, "FilterContext must not be null");
@@ -44,6 +65,15 @@ public final class QueryFilterBuilderImp<T> implements QueryFilterBuilder<T> {
         };
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation builds a specification that applies sorting to the query.
+     * It processes each sort criterion defined in the {@link SortContext}, generating an {@link Order} for each.
+     * If the provided context is null, it throws a {@link NullPointerException}.
+     * If any of the sort criteria are invalid, a client-side exception is thrown.
+     * The generated orders are applied to the query.
+     */
     @Override
     public Specification<T> buildSortSpecification(@NonNull final SortContext<T> sortContext) {
         Objects.requireNonNull(sortContext, "SortContext must not be null");

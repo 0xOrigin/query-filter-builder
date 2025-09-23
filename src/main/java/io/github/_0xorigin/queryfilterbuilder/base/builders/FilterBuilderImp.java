@@ -25,7 +25,13 @@ import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.util.*;
 
+/**
+ * Implementation of the FilterBuilder interface, responsible for constructing JPA Predicate objects from filter requests.
+ *
+ * @param <T> The type of the entity being filtered.
+ */
 public final class FilterBuilderImp<T> implements FilterBuilder<T> {
+
     private final PathGenerator<T> fieldPathGenerator;
     private final FilterParser filterParser;
     private final FilterFieldRegistry filterFieldRegistry;
@@ -33,6 +39,15 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
     private final LocalizationService localizationService;
     private final Logger log = LoggerFactory.getLogger(FilterBuilderImp.class);
 
+    /**
+     * Constructs a new FilterBuilderImp with the necessary dependencies.
+     *
+     * @param fieldPathGenerator      Generator for creating JPA Path expressions from field names.
+     * @param filterParser            Parser for extracting filter requests from the source.
+     * @param filterFieldRegistry     Registry for available filter field types (e.g., String, Integer).
+     * @param filterOperatorRegistry  Registry for available filter operators (e.g., EQ, GT).
+     * @param localizationService     Service for retrieving localized error messages.
+     */
     public FilterBuilderImp(
         final PathGenerator<T> fieldPathGenerator,
         final FilterParser filterParser,
@@ -47,6 +62,17 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         this.localizationService = localizationService;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation parses filter data from either an {@code HttpServletRequest} (query parameters) or a list of
+     * {@code FilterRequest} objects (request body), as provided in the {@code filterContext}. It consolidates the filters
+     * into a distinct collection, ensuring that each filter field is processed only once.
+     * <p>
+     * If a filter is specified in both the query parameters and the request body, the value from the request body
+     * will override the one from the query parameters. It also determines whether each filter is a normal or custom
+     * filter based on the context's configuration.
+     */
     @Override
     public Collection<FilterWrapper> getDistinctFilterWrappers(@NonNull final FilterContext<T> filterContext) {
         final Map<String, FilterWrapper> filterWrappers = new LinkedHashMap<>();
@@ -64,6 +90,14 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         return filterWrappers.values();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation determines whether the filter is a standard field filter or a custom filter by checking
+     * the {@code filterType} of the {@code filterWrapper}. It then delegates to the appropriate private method
+     * ({@code buildFilterPredicate} or {@code buildCustomFilterPredicate}) to construct the final JPA {@link Predicate}.
+     * If the filter type is not set or not supported, it returns an empty optional.
+     */
     @Override
     public Optional<Predicate> buildPredicateForWrapper(
         final Root<T> root,
