@@ -12,15 +12,30 @@ import org.springframework.lang.NonNull;
 
 import java.util.*;
 
+/**
+ * The default implementation of {@link SortParser}.
+ */
 public final class SortParserImp implements SortParser {
 
     private final QueryFilterBuilderProperties properties;
     private final Logger log = LoggerFactory.getLogger(SortParserImp.class);
 
+    /**
+     * Constructs a new SortParserImp.
+     *
+     * @param properties Configuration properties for the query builder, used to determine the sort parameter name.
+     */
     public SortParserImp(QueryFilterBuilderProperties properties) {
         this.properties = properties;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation parses a specific query parameter (defined in properties, e.g., "sort")
+     * from the {@link HttpServletRequest}. It expects a comma-separated list of fields.
+     * A field prefixed with a hyphen (e.g., "-name") is treated as a descending sort, otherwise it is ascending.
+     */
     @Override
     public List<SortWrapper> parse(@NonNull final HttpServletRequest request) {
         Objects.requireNonNull(request, "request cannot be null");
@@ -37,6 +52,13 @@ public final class SortParserImp implements SortParser {
                 .toList();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation iterates through the provided list of {@link SortRequest} objects.
+     * It creates a {@link SortWrapper} for each valid request, defaulting to ascending order if the
+     * provided direction is invalid.
+     */
     @Override
     public List<SortWrapper> parse(@NonNull final List<SortRequest> sortRequests) {
         Objects.requireNonNull(sortRequests, "sortRequests cannot be null");

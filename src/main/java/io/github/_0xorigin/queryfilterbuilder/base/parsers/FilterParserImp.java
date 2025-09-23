@@ -13,14 +13,32 @@ import org.springframework.lang.NonNull;
 
 import java.util.*;
 
+/**
+ * The default implementation of {@link FilterParser}.
+ */
 public final class FilterParserImp implements FilterParser {
+
     private final QueryFilterBuilderProperties properties;
     private final Logger log = LoggerFactory.getLogger(FilterParserImp.class);
 
+    /**
+     * Constructs a new FilterParserImp.
+     *
+     * @param properties Configuration properties for the query builder, used to determine delimiters and other parsing rules.
+     */
     public FilterParserImp(QueryFilterBuilderProperties properties) {
         this.properties = properties;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation parses the query string of the {@link HttpServletRequest}. It expects parameters
+     * where the name can be a combination of a field path and an operator (e.g., "user.name.icontains").
+     * If the last part of the parameter name is not a recognized operator, the entire name is treated as the field path
+     * and the operator defaults to {@link Operator#EQ}.
+     * Parameter values are split by commas to support multi-value operators like "in, between".
+     */
     @Override
     public List<FilterWrapper> parse(@NonNull final HttpServletRequest httpServletRequest) {
         Objects.requireNonNull(httpServletRequest, "httpServletRequest cannot be null");
@@ -33,7 +51,7 @@ public final class FilterParserImp implements FilterParser {
                     String paramValue = getParamValue(entry.getValue());
 
                     String[] parts = FilterUtils.splitWithEscapedDelimiter(paramName, FIELD_DELIMITER);
-                    String operatorPart = parts[parts.length - 1];
+                    String operatorPart = parts.length > 0 ? parts[parts.length - 1] : "";
 
                     Operator operator;
                     String fieldPath;
@@ -60,6 +78,13 @@ public final class FilterParserImp implements FilterParser {
                 .toList();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation iterates through the provided list of {@link FilterRequest} objects.
+     * For each request, it determines the operator, defaulting to {@link Operator#EQ} if the provided operator is invalid.
+     * It then creates a {@link FilterWrapper} for each valid request.
+     */
     @Override
     public List<FilterWrapper> parse(@NonNull final List<FilterRequest> filterRequests) {
         Objects.requireNonNull(filterRequests, "filterRequests cannot be null");

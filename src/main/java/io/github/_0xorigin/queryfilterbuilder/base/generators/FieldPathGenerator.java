@@ -11,12 +11,26 @@ import org.springframework.validation.BindingResult;
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+ * The default implementation of {@link PathGenerator}.
+ * It uses the JPA {@link Metamodel} to traverse delimited paths (e.g., "customer.address.city"),
+ * creating necessary joins and resolving the final expression.
+ *
+ * @param <T> The type of the root entity.
+ */
 public final class FieldPathGenerator<T> implements PathGenerator<T> {
 
     private final Metamodel metamodel;
     private final QueryFilterBuilderProperties properties;
     private final LocalizationService localizationService;
 
+    /**
+     * Constructs a new FieldPathGenerator.
+     *
+     * @param metamodel           The JPA metamodel, used for reflection on the entity structure.
+     * @param properties          Configuration properties for the query builder, such as the field delimiter.
+     * @param localizationService Service for retrieving localized error messages.
+     */
     public FieldPathGenerator(
         Metamodel metamodel,
         QueryFilterBuilderProperties properties,
@@ -27,6 +41,15 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
         this.localizationService = localizationService;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation parses the {@code field} string using the configured delimiter.
+     * It traverses the entity graph from the {@code root}, creating left joins for each association in the path.
+     * If an intermediate part of the path is not an association, or if the path is invalid, an error is added
+     * to the {@code bindingResult} and {@code null} is returned.
+     * If the final part of the path is an association, it automatically resolves to the ID of that association.
+     */
     @Override
     public <K extends Comparable<? super K> & Serializable> Expression<K> generate(Root<T> root, String field, String originalFieldName, BindingResult bindingResult) {
         final String FIELD_DELIMITER = properties.defaults().fieldDelimiter();
@@ -64,7 +87,7 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
             }
 
             // Get the final field for the condition (e.g., "name" in "user.manager.department.name")
-            String finalPart = parts[parts.length - 1];
+            String finalPart = parts.length > 0 ? parts[parts.length - 1] : "";
             ManagedType<?> finalModelType = metamodel.managedType(currentJavaType);
             Attribute<?, ?> finalAttribute = finalModelType.getAttribute(finalPart);
 
