@@ -13,14 +13,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * An abstract base class for handling exceptions thrown by the Query Filter Builder.
+ * To use this, create a concrete class that extends this class and annotate it with {@code @RestControllerAdvice}.
+ * It provides handlers for {@link InvalidQueryParameterException} and {@link QueryBuilderConfigurationException},
+ * creating a standardized {@link ApiErrorResponse}.
+ */
 public abstract class QueryFilterBuilderExceptionHandler {
 
     private final LocalizationService localizationService;
 
+    /**
+     * Constructs the exception handler with a localization service.
+     *
+     * @param localizationService The service for retrieving localized error messages.
+     */
     protected QueryFilterBuilderExceptionHandler(LocalizationService localizationService) {
         this.localizationService = localizationService;
     }
 
+    /**
+     * Handles {@link InvalidQueryParameterException}s, returning a 400 Bad Request response.
+     * The response body contains a structured error message with details of all validation failures.
+     *
+     * @param exception The exception that was thrown.
+     * @param request   The current web request.
+     * @return A {@link ResponseEntity} with a 400 status and an {@link ApiErrorResponse} body.
+     */
     @ExceptionHandler(InvalidQueryParameterException.class)
     protected ResponseEntity<?> handleException(InvalidQueryParameterException exception, WebRequest request) {
         Map<String, List<String>> groupedErrors = exception.getBindingResult()
@@ -39,6 +58,14 @@ public abstract class QueryFilterBuilderExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    /**
+     * Handles {@link QueryBuilderConfigurationException}s, returning a 500 Internal Server Error response.
+     * The response body contains a structured error message with details of all validation failures.
+     *
+     * @param exception The exception that was thrown.
+     * @param request   The current web request.
+     * @return A {@link ResponseEntity} with a 500 status and an {@link ApiErrorResponse} body.
+     */
     @ExceptionHandler(QueryBuilderConfigurationException.class)
     protected ResponseEntity<?> handleException(QueryBuilderConfigurationException exception, WebRequest request) {
         Map<String, List<String>> groupedErrors = exception.getBindingResult()
@@ -57,6 +84,12 @@ public abstract class QueryFilterBuilderExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
+    /**
+     * Extracts the request path from the given web request.
+     *
+     * @param request The current web request.
+     * @return The request path.
+     */
     private String getRequestPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
     }
