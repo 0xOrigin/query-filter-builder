@@ -334,6 +334,7 @@ public final class SortContext<T> {
          * @param fieldName The name of the field to sort by. Must not be null.
          * @return This configurer instance for chaining.
          * @throws NullPointerException if fieldName is null.
+         * @throws IllegalArgumentException if fieldName is blank.
          */
         public SortConfigurer<T> addAscSort(@NonNull final String fieldName) {
             return addSort(fieldName, Sort.Direction.ASC);
@@ -348,6 +349,7 @@ public final class SortContext<T> {
          * @param fieldName The name of the field to sort by. Must not be null.
          * @return This configurer instance for chaining.
          * @throws NullPointerException if fieldName is null.
+         * @throws IllegalArgumentException if fieldName is blank.
          */
         public SortConfigurer<T> addDescSort(@NonNull final String fieldName) {
             return addSort(fieldName, Sort.Direction.DESC);
@@ -362,6 +364,7 @@ public final class SortContext<T> {
          * @param fieldName The name of the field to sort by. Must not be null.
          * @return This configurer instance for chaining.
          * @throws NullPointerException if fieldName is null.
+         * @throws IllegalArgumentException if fieldName is blank.
          */
         public SortConfigurer<T> addSorts(@NonNull final String fieldName) {
             return addSort(fieldName, Sort.Direction.ASC, Sort.Direction.DESC);
@@ -379,6 +382,7 @@ public final class SortContext<T> {
          * @param <K>                      The type of the expression result.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if any of the arguments are null.
+         * @throws IllegalArgumentException if fieldName is blank.
          */
         public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addAscSort(
             @NonNull final String fieldName,
@@ -399,6 +403,7 @@ public final class SortContext<T> {
          * @param <K>                      The type of the expression result.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if any of the arguments are null.
+         * @throws IllegalArgumentException if fieldName is blank.
          */
         public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addDescSort(
             @NonNull final String fieldName,
@@ -419,6 +424,7 @@ public final class SortContext<T> {
          * @param <K>                      The type of the expression result.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if any of the arguments are null.
+         * @throws IllegalArgumentException if fieldName is blank.
          */
         public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSorts(
             @NonNull final String fieldName,
@@ -438,12 +444,16 @@ public final class SortContext<T> {
          * @param sortFunction The function that implements the custom sort logic. Must not be null.
          * @return This configurer instance for chaining.
          * @throws NullPointerException if any of the arguments are null.
+         * @throws IllegalArgumentException if sortName is blank.
          */
         public SortConfigurer<T> addCustomSort(
             @NonNull final String sortName,
             @NonNull final CustomSortFunction<T> sortFunction
         ) {
             Objects.requireNonNull(sortName, "Sort name must not be null");
+            if (sortName.isBlank())
+                throw new IllegalArgumentException("Sort name must not be blank");
+
             Objects.requireNonNull(sortFunction, "Sort function must not be null");
 
             var customSortHolder = templateBuilder.getCustomSorts()
@@ -466,12 +476,16 @@ public final class SortContext<T> {
          * @param directions The sort directions. Must not be null.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if fieldName or directions are null.
+         * @throws IllegalArgumentException if fieldName is blank.
          */
         private SortConfigurer<T> addSort(
             @NonNull final String fieldName,
             @NonNull Sort.Direction... directions
         ) {
             Objects.requireNonNull(fieldName, "Field name must not be null");
+            if (fieldName.isBlank())
+                throw new IllegalArgumentException("Field name must not be blank");
+
             Objects.requireNonNull(directions, "Directions must not be null");
 
             var sortHolder = templateBuilder.getSorts()
@@ -497,6 +511,7 @@ public final class SortContext<T> {
          * @param <K>                      The type of the expression result.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if any of the arguments are null.
+         * @throws IllegalArgumentException if fieldName is blank.
          */
         private <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSort(
             @NonNull final String fieldName,
@@ -504,6 +519,9 @@ public final class SortContext<T> {
             @NonNull Sort.Direction... directions
         ) {
             Objects.requireNonNull(fieldName, "Field name must not be null");
+            if (fieldName.isBlank())
+                throw new IllegalArgumentException("Field name must not be blank");
+
             Objects.requireNonNull(expressionProviderFunction, "Expression provider function must not be null");
             Objects.requireNonNull(directions, "Directions must not be null");
 

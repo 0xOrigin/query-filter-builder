@@ -332,17 +332,20 @@ public final class FilterContext<T> {
          * If a filter with the same {@code fieldName} already exists, the existing filter is used as-is
          * and the new operators are added to it. If no filter exists, a new one is created.
          *
-         * @param fieldName The name of the field to filter on.
-         * @param operators The allowed operators for this filter.
+         * @param fieldName The name of the field to filter on. Must not be null.
+         * @param operators The allowed operators for this filter. Must not be null.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if fieldName or operators are null.
-         * @throws IllegalArgumentException if no operators are provided.
+         * @throws IllegalArgumentException if fieldName is blank or if no operators are provided.
          */
         public FilterConfigurer<T> addFilter(
             @NonNull final String fieldName,
             @NonNull Operator... operators
         ) {
             Objects.requireNonNull(fieldName, "Field name must not be null");
+            if (fieldName.isBlank())
+                throw new IllegalArgumentException("Field name must not be blank");
+
             Objects.requireNonNull(operators, "Operators must not be null");
             EnumSet<Operator> operatorsSet = Arrays.stream(operators)
                     .filter(Objects::nonNull)
@@ -368,13 +371,13 @@ public final class FilterContext<T> {
          * If a filter with the same {@code fieldName} already exists, this new definition will overwrite the existing
          * expression provider. The operators and source types will be merged.
          *
-         * @param fieldName                The name of the filter.
-         * @param expressionProviderFunction A function that provides a custom JPA {@code Expression}.
-         * @param operators                The allowed operators for this filter.
+         * @param fieldName                The name of the filter. Must not be null.
+         * @param expressionProviderFunction A function that provides a custom JPA {@code Expression}. Must not be null.
+         * @param operators                The allowed operators for this filter. Must not be null.
          * @param <K>                      The type of the expression result.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if any of the arguments are null.
-         * @throws IllegalArgumentException if no operators are provided.
+         * @throws IllegalArgumentException if fieldName is blank or if no operators are provided.
          */
         public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
             @NonNull final String fieldName,
@@ -382,6 +385,9 @@ public final class FilterContext<T> {
             @NonNull Operator... operators
         ) {
             Objects.requireNonNull(fieldName, "Field name must not be null");
+            if (fieldName.isBlank())
+                throw new IllegalArgumentException("Field name must not be blank");
+
             Objects.requireNonNull(expressionProviderFunction, "Expression provider function must not be null");
             Objects.requireNonNull(operators, "Operators must not be null");
             EnumSet<Operator> operatorsSet = Arrays.stream(operators)
@@ -409,13 +415,13 @@ public final class FilterContext<T> {
          * data type or the filter function for an existing custom filter is not allowed and will result in an
          * {@link IllegalArgumentException}.
          *
-         * @param filterName     The name of the custom filter.
-         * @param dataTypeForInput The expected data type of the input value for this filter.
-         * @param filterFunction The function that implements the custom filter logic.
+         * @param filterName     The name of the custom filter. Must not be null.
+         * @param dataTypeForInput The expected data type of the input value for this filter. Must not be null.
+         * @param filterFunction The function that implements the custom filter logic. Must not be null.
          * @param <K>            The type of the input value.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if any of the arguments are null.
-         * @throws IllegalArgumentException if a custom filter with the same name but a different data type is already defined.
+         * @throws IllegalArgumentException if the filter name is blank or if a custom filter with the same name but a different data type is already defined.
          */
         public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addCustomFilter(
             @NonNull final String filterName,
@@ -423,6 +429,9 @@ public final class FilterContext<T> {
             @NonNull final CustomFilterFunction<T> filterFunction
         ) {
             Objects.requireNonNull(filterName, "Filter name must not be null");
+            if (filterName.isBlank())
+                throw new IllegalArgumentException("Filter name must not be blank");
+
             Objects.requireNonNull(dataTypeForInput, "Data type for input must not be null");
             Objects.requireNonNull(filterFunction, "Filter function must not be null");
 

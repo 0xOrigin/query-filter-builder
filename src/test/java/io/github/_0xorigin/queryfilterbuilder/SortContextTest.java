@@ -406,4 +406,133 @@ class SortContextTest {
         assertThatThrownBy(() -> customSorts.put("new", null))
             .isInstanceOf(UnsupportedOperationException.class);
     }
+
+    @Test
+    void sortConfigurer_maximumDirectionsPerField_success() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addSorts("field"));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        var holder = context.getSorts().get("field");
+
+        assertThat(holder.directions()).hasSize(2);
+    }
+
+    @Test
+    void sortConfigurer_addAscSort_blankFieldName_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort("   ")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addAscSort_emptyFieldName_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort("")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addDescSort_blankFieldName_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addDescSort("   ")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addDescSort_emptyFieldName_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addDescSort("")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addSorts_blankFieldName_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addSorts("   ")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addSorts_emptyFieldName_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addSorts("")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addAscSortWithExpression_blankFieldName_throwsIllegalArgumentException() {
+        ExpressionProviderFunction<User, String> expressionProvider = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort("   ", expressionProvider)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addAscSortWithExpression_emptyFieldName_throwsIllegalArgumentException() {
+        ExpressionProviderFunction<User, String> expressionProvider = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort("", expressionProvider)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addDescSortWithExpression_blankFieldName_throwsIllegalArgumentException() {
+        ExpressionProviderFunction<User, String> expressionProvider = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addDescSort("   ", expressionProvider)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addDescSortWithExpression_emptyFieldName_throwsIllegalArgumentException() {
+        ExpressionProviderFunction<User, String> expressionProvider = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addDescSort("", expressionProvider)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addSortsWithExpression_blankFieldName_throwsIllegalArgumentException() {
+        ExpressionProviderFunction<User, String> expressionProvider = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addSorts("   ", expressionProvider)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addSortsWithExpression_emptyFieldName_throwsIllegalArgumentException() {
+        ExpressionProviderFunction<User, String> expressionProvider = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addSorts("", expressionProvider)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addCustomSort_blankSortName_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addCustomSort("   ", (root, cq, cb, errorWrapper) -> Optional.ofNullable(cb.asc(root.get("firstName"))))))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Sort name must not be blank");
+    }
+
+    @Test
+    void sortConfigurer_addCustomSort_emptySortName_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addCustomSort("", (root, cq, cb, errorWrapper) -> Optional.ofNullable(cb.asc(root.get("firstName"))))))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Sort name must not be blank");
+    }
 }

@@ -365,4 +365,58 @@ class FilterContextTest {
         assertThatThrownBy(() -> customFilters.put("new", null))
             .isInstanceOf(UnsupportedOperationException.class);
     }
+
+    @Test
+    void filterConfigurer_maximumOperatorsPerField_success() {
+        Operator[] allOperators = Operator.values();
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addFilter("field", allOperators));
+
+        FilterContext<User> context = builder.buildTemplate().newSourceBuilder().buildFilterContext();
+        var holder = context.getFilters().get("field");
+
+        assertThat(holder.operators()).hasSize(allOperators.length);
+    }
+
+    @Test
+    void filterConfigurer_addFilter_blankFieldName_throwsIllegalArgumentException() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addFilter("   ", Operator.EQ)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void filterConfigurer_addFilter_emptyFieldName_throwsIllegalArgumentException() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addFilter("", Operator.EQ)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void filterConfigurer_addFilterWithExpression_blankFieldName_throwsIllegalArgumentException() {
+        ExpressionProviderFunction<User, String> expressionProvider = (root, cq, cb) -> root.get("firstName");
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addFilter("   ", expressionProvider, Operator.EQ)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void filterConfigurer_addFilterWithExpression_emptyFieldName_throwsIllegalArgumentException() {
+        ExpressionProviderFunction<User, String> expressionProvider = (root, cq, cb) -> root.get("firstName");
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addFilter("", expressionProvider, Operator.EQ)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Field name must not be blank");
+    }
+
+    @Test
+    void filterConfigurer_addCustomFilter_blankFilterName_throwsIllegalArgumentException() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addCustomFilter("   ", String.class, (root, cq, cb, values, errorWrapper) -> Optional.ofNullable(cb.equal(root.get("firstName"), values.get(0))))))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Filter name must not be blank");
+    }
 }
