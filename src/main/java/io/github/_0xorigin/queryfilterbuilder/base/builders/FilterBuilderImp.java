@@ -163,8 +163,14 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         if (!isValidCustomFilter(filterContext, filterWrapper))
             return Optional.empty();
 
-        final CustomFilterHolder<T, ?> customFilter = filterContext.getCustomFilters().get(filterWrapper.originalFieldName());
+        @SuppressWarnings("unchecked")
+        final CustomFilterHolder<T, K> customFilter = (CustomFilterHolder<T, K>)(filterContext.getCustomFilters().get(filterWrapper.originalFieldName()));
         final FilterOperator filterOperator = filterOperatorRegistry.getOperator(Operator.EQ);
+        if (customFilter.dataType().isEnum()) {
+            List<K> enumValues = validateAndGetCastedEnumValues(customFilter.dataType(), filterOperator, filterWrapper, errorHolder, filterErrorWrapper);
+            return customFilter.customFilterFunction().apply(root, criteriaQuery, cb, enumValues, filterErrorWrapper);
+        }
+
         final AbstractFilterField<? extends Comparable<?>> filterField = getFilterField(customFilter.dataType());
         final List<K> values = validateAndGetCastedValues(filterField, filterOperator, filterWrapper, errorHolder, filterErrorWrapper);
         return customFilter.customFilterFunction().apply(root, criteriaQuery, cb, values, filterErrorWrapper);
