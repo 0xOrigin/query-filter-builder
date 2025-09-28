@@ -6,6 +6,8 @@ import io.github._0xorigin.queryfilterbuilder.base.builders.FilterBuilder;
 import io.github._0xorigin.queryfilterbuilder.base.builders.FilterBuilderImp;
 import io.github._0xorigin.queryfilterbuilder.base.builders.SortBuilder;
 import io.github._0xorigin.queryfilterbuilder.base.builders.SortBuilderImp;
+import io.github._0xorigin.queryfilterbuilder.base.enumfield.AbstractEnumFilterField;
+import io.github._0xorigin.queryfilterbuilder.base.enumfield.EnumFilterFieldImp;
 import io.github._0xorigin.queryfilterbuilder.base.generators.FieldPathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.generators.PathGenerator;
 import io.github._0xorigin.queryfilterbuilder.base.parsers.FilterParser;
@@ -74,11 +76,22 @@ public class QueryFilterBuilderConfig {
     }
 
     /**
+     * Creates the {@link AbstractEnumFilterField} bean
+     *
+     * @return A {@link EnumFilterFieldImp} instance.
+     */
+    @Bean
+    public AbstractEnumFilterField abstractEnumFilterField() {
+        return new EnumFilterFieldImp();
+    }
+
+    /**
      * Creates the {@link FilterBuilder} bean.
      * @param fieldPathGenerator The path generator service.
      * @param filterParser The filter parser service.
      * @param filterFieldRegistry The registry of filterable fields.
      * @param filterOperatorRegistry The registry of filter operators.
+     * @param enumFilterField The enum filter field service.
      * @param localizationService The service for localized messages.
      * @param <T> The generic type of the entity.
      * @return A {@link FilterBuilderImp} instance.
@@ -89,9 +102,10 @@ public class QueryFilterBuilderConfig {
         FilterParser filterParser,
         FilterFieldRegistry filterFieldRegistry,
         FilterOperatorRegistry filterOperatorRegistry,
+        AbstractEnumFilterField enumFilterField,
         LocalizationService localizationService
     ) {
-        return new FilterBuilderImp<>(fieldPathGenerator, filterParser, filterFieldRegistry, filterOperatorRegistry, localizationService);
+        return new FilterBuilderImp<>(fieldPathGenerator, filterParser, filterFieldRegistry, filterOperatorRegistry, enumFilterField, localizationService);
     }
 
     /**

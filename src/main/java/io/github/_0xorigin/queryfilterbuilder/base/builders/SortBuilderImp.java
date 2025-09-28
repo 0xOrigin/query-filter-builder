@@ -139,7 +139,8 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
             return Optional.empty();
 
         final CustomSortHolder<T> customSortHolder = sortContext.getCustomSorts().get(sortWrapper.originalFieldName());
-        return customSortHolder.customSortFunction().apply(root, criteriaQuery, criteriaBuilder, new SortErrorWrapper(errorHolder.bindingResult(), sortWrapper));
+        final SortErrorWrapper sortErrorWrapper = new SortErrorWrapper(errorHolder.bindingResult(), sortWrapper);
+        return customSortHolder.customSortFunction().apply(root, criteriaQuery, criteriaBuilder, sortErrorWrapper);
     }
 
     private <K extends Comparable<? super K> & Serializable> Optional<Order> getOrder(

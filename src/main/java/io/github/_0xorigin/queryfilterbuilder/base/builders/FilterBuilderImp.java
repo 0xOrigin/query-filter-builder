@@ -1,6 +1,7 @@
 package io.github._0xorigin.queryfilterbuilder.base.builders;
 
 import io.github._0xorigin.queryfilterbuilder.FilterContext;
+import io.github._0xorigin.queryfilterbuilder.base.enumfield.AbstractEnumFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.enums.FilterType;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.FieldCaster;
@@ -36,6 +37,7 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
     private final FilterParser filterParser;
     private final FilterFieldRegistry filterFieldRegistry;
     private final FilterOperatorRegistry filterOperatorRegistry;
+    private final AbstractEnumFilterField enumFilterField;
     private final LocalizationService localizationService;
     private final Logger log = LoggerFactory.getLogger(FilterBuilderImp.class);
 
@@ -46,6 +48,7 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
      * @param filterParser            Parser for extracting filter requests from the source.
      * @param filterFieldRegistry     Registry for available filter field types (e.g., String, Integer).
      * @param filterOperatorRegistry  Registry for available filter operators (e.g., EQ, GT).
+     * @param enumFilterField         Enum filter field provider.
      * @param localizationService     Service for retrieving localized error messages.
      */
     public FilterBuilderImp(
@@ -53,12 +56,14 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         final FilterParser filterParser,
         final FilterFieldRegistry filterFieldRegistry,
         final FilterOperatorRegistry filterOperatorRegistry,
+        final AbstractEnumFilterField enumFilterField,
         final LocalizationService localizationService
     ) {
         this.fieldPathGenerator = fieldPathGenerator;
         this.filterParser = filterParser;
         this.filterFieldRegistry = filterFieldRegistry;
         this.filterOperatorRegistry = filterOperatorRegistry;
+        this.enumFilterField = enumFilterField;
         this.localizationService = localizationService;
     }
 
@@ -111,9 +116,10 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         if (filterType.isEmpty())
             return Optional.empty();
 
+        final FilterErrorWrapper filterErrorWrapper = new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper);
         return switch (filterType.get()) {
-            case NORMAL -> buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, errorHolder);
-            case CUSTOM -> buildCustomFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, errorHolder);
+            case NORMAL -> buildFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, errorHolder, filterErrorWrapper);
+            case CUSTOM -> buildCustomFilterPredicate(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, errorHolder, filterErrorWrapper);
             default -> Optional.empty();
         };
     }
@@ -124,7 +130,8 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         final CriteriaBuilder criteriaBuilder,
         final FilterContext<T> filterContext,
         final FilterWrapper filterWrapper,
-        final ErrorHolder errorHolder
+        final ErrorHolder errorHolder,
+        final FilterErrorWrapper filterErrorWrapper
     ) {
         if (!isValidFilter(filterContext, filterWrapper))
             return Optional.empty();
@@ -133,21 +140,15 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         FilterUtils.throwServerSideExceptionIfInvalid(errorHolder);
 
         final Class<? extends K> dataType = getFieldDataType(expression);
-        final AbstractFilterField<? extends Comparable<?>> filterField = getFilterField(dataType);
         final FilterOperator filterOperator = filterOperatorRegistry.getOperator(filterWrapper.operator());
+        if (dataType.isEnum()) {
+            List<K> enumValues = validateAndGetCastedEnumValues(dataType, filterOperator, filterWrapper, errorHolder, filterErrorWrapper);
+            return filterOperator.apply(expression, criteriaBuilder, enumValues, filterErrorWrapper);
+        }
 
-        FilterValidator.validateFilterFieldAndOperator(
-            filterField,
-            filterOperator,
-            filterWrapper,
-            new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper),
-            localizationService
-        );
-        FilterUtils.throwServerSideExceptionIfInvalid(errorHolder);
-
-        final FieldCaster<K> fieldCaster = getFieldCaster(filterField);
-        final List<K> values = getCastedValues(filterWrapper, fieldCaster, errorHolder);
-        return filterOperator.apply(expression, criteriaBuilder, values, new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper));
+        final AbstractFilterField<? extends Comparable<?>> filterField = getFilterField(dataType);
+        final List<K> values = validateAndGetCastedValues(filterField, filterOperator, filterWrapper, errorHolder, filterErrorWrapper);
+        return filterOperator.apply(expression, criteriaBuilder, values, filterErrorWrapper);
     }
 
     private <K extends Comparable<? super K> & Serializable> Optional<Predicate> buildCustomFilterPredicate(
@@ -156,26 +157,17 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         final CriteriaBuilder cb,
         final FilterContext<T> filterContext,
         final FilterWrapper filterWrapper,
-        final ErrorHolder errorHolder
+        final ErrorHolder errorHolder,
+        final FilterErrorWrapper filterErrorWrapper
     ) {
         if (!isValidCustomFilter(filterContext, filterWrapper))
             return Optional.empty();
 
         final CustomFilterHolder<T, ?> customFilter = filterContext.getCustomFilters().get(filterWrapper.originalFieldName());
-        final AbstractFilterField<? extends Comparable<?>> filterField = getFilterField(customFilter.dataType());
         final FilterOperator filterOperator = filterOperatorRegistry.getOperator(Operator.EQ);
-        FilterValidator.validateFilterFieldAndOperator(
-            filterField,
-            filterOperator,
-            filterWrapper,
-            new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper),
-            localizationService
-        );
-        FilterUtils.throwServerSideExceptionIfInvalid(errorHolder);
-
-        final FieldCaster<K> fieldCaster = getFieldCaster(filterField);
-        final List<K> values = getCastedValues(filterWrapper, fieldCaster, errorHolder);
-        return customFilter.customFilterFunction().apply(root, criteriaQuery, cb, values, new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper));
+        final AbstractFilterField<? extends Comparable<?>> filterField = getFilterField(customFilter.dataType());
+        final List<K> values = validateAndGetCastedValues(filterField, filterOperator, filterWrapper, errorHolder, filterErrorWrapper);
+        return customFilter.customFilterFunction().apply(root, criteriaQuery, cb, values, filterErrorWrapper);
     }
 
     private <K extends Comparable<? super K> & Serializable> Expression<K> getExpression(
@@ -199,6 +191,44 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         return filterFieldRegistry.getFilterField(dataType);
     }
 
+    private <K extends Comparable<? super K> & Serializable> List<K> validateAndGetCastedValues(
+        final AbstractFilterField<? extends Comparable<?>> filterField,
+        final FilterOperator filterOperator,
+        final FilterWrapper filterWrapper,
+        final ErrorHolder errorHolder,
+        final FilterErrorWrapper filterErrorWrapper
+    ) {
+        FilterValidator.validateFilterFieldAndOperator(
+            filterField,
+            filterOperator,
+            filterWrapper,
+            filterErrorWrapper,
+            localizationService
+        );
+        FilterUtils.throwServerSideExceptionIfInvalid(errorHolder);
+
+        final FieldCaster<K> fieldCaster = getFieldCaster(filterField);
+        return getCastedValues(filterWrapper, fieldCaster, filterErrorWrapper);
+    }
+
+    private <K extends Comparable<? super K> & Serializable> List<K> validateAndGetCastedEnumValues(
+        final Class<? extends K> dataType,
+        final FilterOperator filterOperator,
+        final FilterWrapper filterWrapper,
+        final ErrorHolder errorHolder,
+        final FilterErrorWrapper filterErrorWrapper
+    ) {
+        FilterValidator.validateEnumFilterOperator(
+            enumFilterField,
+            filterOperator,
+            filterWrapper,
+            filterErrorWrapper,
+            localizationService
+        );
+        FilterUtils.throwServerSideExceptionIfInvalid(errorHolder);
+        return getCastedEnumValues(filterWrapper, dataType, filterErrorWrapper);
+    }
+
     @SuppressWarnings("unchecked")
     private <K extends Comparable<? super K> & Serializable> FieldCaster<K> getFieldCaster(final AbstractFilterField<? extends Comparable<?>> filterField) {
         return (FieldCaster<K>) filterField;
@@ -207,11 +237,23 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
     private <K extends Comparable<? super K> & Serializable> List<K> getCastedValues(
         final FilterWrapper filterWrapper,
         final FieldCaster<K> filterCaster,
-        final ErrorHolder errorHolder
+        final FilterErrorWrapper filterErrorWrapper
     ) {
         return filterWrapper.values()
             .stream()
-            .map(value -> filterCaster.safeCast(value, new FilterErrorWrapper(errorHolder.bindingResult(), filterWrapper)))
+            .map(value -> filterCaster.safeCast(value, filterErrorWrapper))
+            .toList();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private <K extends Comparable<? super K> & Serializable> List<K> getCastedEnumValues(
+        final FilterWrapper filterWrapper,
+        final Class<? extends K> enumClass,
+        final FilterErrorWrapper filterErrorWrapper
+    ) {
+        return filterWrapper.values()
+            .stream()
+            .map(value ->  (K)(enumFilterField.safeCast((Class<? extends Enum>) enumClass, value, filterErrorWrapper)))
             .toList();
     }
 

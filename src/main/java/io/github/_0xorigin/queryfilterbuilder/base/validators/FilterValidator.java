@@ -1,12 +1,13 @@
 package io.github._0xorigin.queryfilterbuilder.base.validators;
 
+import io.github._0xorigin.queryfilterbuilder.base.enumfield.AbstractEnumFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.enums.MessageKey;
 import io.github._0xorigin.queryfilterbuilder.base.filterfield.AbstractFilterField;
 import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
+import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
 import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
-import io.github._0xorigin.queryfilterbuilder.base.services.LocalizationService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +61,56 @@ public final class FilterValidator {
             );
 
         if (filterField != null && !filterField.getSupportedOperators().contains(filterWrapper.operator()))
+            errorMessages.add(
+                localizationService.getMessage(
+                    MessageKey.OPERATOR_NOT_SUPPORTED.getCode(),
+                    localizationService.getMessage(filterWrapper.operator().getValue())
+                )
+            );
+
+        for (String errorMessage : errorMessages) {
+            FilterUtils.addFieldError(
+                filterErrorWrapper.bindingResult(),
+                filterWrapper.originalFieldName(),
+                filterWrapper.values().toString(),
+                errorMessage
+            );
+        }
+    }
+
+    /**
+     * Validates the compatibility between an enum filter field and a filter operator.
+     * It checks for two conditions:
+     * <ol>
+     *     <li>Whether the filter operator is valid (i.e., not null).</li>
+     *     <li>Whether the operator is supported by the given enum filter field.</li>
+     * </ol>
+     * If any validation fails, a corresponding {@link org.springframework.validation.FieldError} is added to the {@link org.springframework.validation.BindingResult}.
+     *
+     * @param enumFilterField     The filter field implementation for the target enum type.
+     * @param filterOperator      The filter operator implementation.
+     * @param filterWrapper       The wrapper containing the raw filter request data.
+     * @param filterErrorWrapper  The wrapper for collecting validation errors.
+     * @param localizationService The service for retrieving localized error messages.
+     */
+    public static void validateEnumFilterOperator(
+        final AbstractEnumFilterField enumFilterField,
+        final FilterOperator filterOperator,
+        final FilterWrapper filterWrapper,
+        final FilterErrorWrapper filterErrorWrapper,
+        final LocalizationService localizationService
+    ) {
+        List<String> errorMessages = new ArrayList<>();
+
+        if (filterOperator == null)
+            errorMessages.add(
+                localizationService.getMessage(
+                    MessageKey.OPERATOR_NOT_VALID.getCode(),
+                    localizationService.getMessage(filterWrapper.operator().getValue())
+                )
+            );
+
+        if (!enumFilterField.getSupportedOperators().contains(filterWrapper.operator()))
             errorMessages.add(
                 localizationService.getMessage(
                     MessageKey.OPERATOR_NOT_SUPPORTED.getCode(),
