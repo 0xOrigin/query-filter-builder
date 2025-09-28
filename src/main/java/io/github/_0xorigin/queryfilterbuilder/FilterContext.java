@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
  * @param <T> The type of the entity to which the filter will be applied.
  */
 public final class FilterContext<T> {
-    private final Map<String, FilterHolder<T, ?>> filters;
-    private final Map<String, CustomFilterHolder<T, ?>> customFilters;
+    private final Map<String, FilterHolder<T, ? extends Comparable<?>>> filters;
+    private final Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> customFilters;
     private final HttpServletRequest request;
     private final List<FilterRequest> filterRequests;
 
@@ -73,7 +73,7 @@ public final class FilterContext<T> {
      *
      * @return An unmodifiable map of filter holders, keyed by field name.
      */
-    public Map<String, FilterHolder<T, ?>> getFilters() {
+    public Map<String, FilterHolder<T, ? extends Comparable<?>>> getFilters() {
         return filters;
     }
 
@@ -82,7 +82,7 @@ public final class FilterContext<T> {
      *
      * @return An unmodifiable map of custom filter holders, keyed by filter name.
      */
-    public Map<String, CustomFilterHolder<T, ?>> getCustomFilters() {
+    public Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> getCustomFilters() {
         return customFilters;
     }
 
@@ -192,8 +192,8 @@ public final class FilterContext<T> {
      * @param <T> The type of the entity.
      */
     public static final class Template<T> {
-        private final Map<String, FilterHolder<T, ?>> filters;
-        private final Map<String, CustomFilterHolder<T, ?>> customFilters;
+        private final Map<String, FilterHolder<T, ? extends Comparable<?>>> filters;
+        private final Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> customFilters;
 
         /**
          * Creates a new {@link Template} instance.
@@ -210,7 +210,7 @@ public final class FilterContext<T> {
          *
          * @return An unmodifiable map of filter holders, keyed by field name.
          */
-        private Map<String, FilterHolder<T, ?>> getFilters() {
+        private Map<String, FilterHolder<T, ? extends Comparable<?>>> getFilters() {
             return filters;
         }
 
@@ -219,7 +219,7 @@ public final class FilterContext<T> {
          *
          * @return An unmodifiable map of custom filter holders, keyed by filter name.
          */
-        private Map<String, CustomFilterHolder<T, ?>> getCustomFilters() {
+        private Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> getCustomFilters() {
             return customFilters;
         }
 
@@ -239,8 +239,8 @@ public final class FilterContext<T> {
      * @param <T> The type of the entity.
      */
     public static final class TemplateBuilder<T> {
-        private final Map<String, FilterHolder<T, ?>> filters = new HashMap<>();
-        private final Map<String, CustomFilterHolder<T, ?>> customFilters = new HashMap<>();
+        private final Map<String, FilterHolder<T, ? extends Comparable<?>>> filters = new HashMap<>();
+        private final Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> customFilters = new HashMap<>();
 
         /**
          * Creates a new {@link TemplateBuilder} instance.
@@ -280,7 +280,7 @@ public final class FilterContext<T> {
          *
          * @return A map of filter holders, keyed by field name.
          */
-        private Map<String, FilterHolder<T, ?>> getFilters() {
+        private Map<String, FilterHolder<T, ? extends Comparable<?>>> getFilters() {
             return filters;
         }
 
@@ -289,7 +289,7 @@ public final class FilterContext<T> {
          *
          * @return A map of custom filter holders, keyed by filter name.
          */
-        private Map<String, CustomFilterHolder<T, ?>> getCustomFilters() {
+        private Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> getCustomFilters() {
             return customFilters;
         }
 
@@ -338,7 +338,7 @@ public final class FilterContext<T> {
          * @throws NullPointerException     if fieldName or operators are null.
          * @throws IllegalArgumentException if fieldName is blank or if no operators are provided.
          */
-        public FilterConfigurer<T> addFilter(
+        public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
             @NonNull final String fieldName,
             @NonNull Operator... operators
         ) {
@@ -357,7 +357,7 @@ public final class FilterContext<T> {
                 .compute(fieldName, (key, existingHolder) -> (
                     existingHolder != null ?
                         existingHolder :
-                        new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.empty())
+                        new FilterHolder<T, K>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.empty())
                 ));
             filterHolder.operators().addAll(operatorsSet);
             filterHolder.sourceTypes().add(sourceType);

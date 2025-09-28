@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  * @param <T> The type of the entity to which the sort will be applied.
  */
 public final class SortContext<T> {
-    private final Map<String, SortHolder<T, ?>> sorts;
+    private final Map<String, SortHolder<T, ? extends Comparable<?>>> sorts;
     private final Map<String, CustomSortHolder<T>> customSorts;
     private final HttpServletRequest request;
     private final List<SortRequest> sortRequests;
@@ -72,7 +72,7 @@ public final class SortContext<T> {
      *
      * @return An unmodifiable map of sort holders, keyed by field name.
      */
-    public Map<String, SortHolder<T, ?>> getSorts() {
+    public Map<String, SortHolder<T, ? extends Comparable<?>>> getSorts() {
         return sorts;
     }
 
@@ -191,7 +191,7 @@ public final class SortContext<T> {
      * @param <T> The type of the entity.
      */
     public static final class Template<T> {
-        private final Map<String, SortHolder<T, ?>> sorts;
+        private final Map<String, SortHolder<T, ? extends Comparable<?>>> sorts;
         private final Map<String, CustomSortHolder<T>> customSorts;
 
         /**
@@ -209,7 +209,7 @@ public final class SortContext<T> {
          *
          * @return An unmodifiable map of sort holders, keyed by field name.
          */
-        private Map<String, SortHolder<T, ?>> getSorts() {
+        private Map<String, SortHolder<T, ? extends Comparable<?>>> getSorts() {
             return sorts;
         }
 
@@ -238,7 +238,7 @@ public final class SortContext<T> {
      * @param <T> The type of the entity.
      */
     public static final class TemplateBuilder<T> {
-        private final Map<String, SortHolder<T, ?>> sorts = new HashMap<>();
+        private final Map<String, SortHolder<T, ? extends Comparable<?>>> sorts = new HashMap<>();
         private final Map<String, CustomSortHolder<T>> customSorts = new HashMap<>();
 
         /**
@@ -279,7 +279,7 @@ public final class SortContext<T> {
          *
          * @return A map of sort holders, keyed by field name.
          */
-        private Map<String, SortHolder<T, ?>> getSorts() {
+        private Map<String, SortHolder<T, ? extends Comparable<?>>> getSorts() {
             return sorts;
         }
 
@@ -478,7 +478,7 @@ public final class SortContext<T> {
          * @throws NullPointerException     if fieldName or directions are null.
          * @throws IllegalArgumentException if fieldName is blank.
          */
-        private SortConfigurer<T> addSort(
+        private <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSort(
             @NonNull final String fieldName,
             @NonNull Sort.Direction... directions
         ) {
@@ -492,7 +492,7 @@ public final class SortContext<T> {
                 .compute(fieldName, (key, existingHolder) -> (
                     existingHolder != null ?
                         existingHolder :
-                        new SortHolder<>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.empty())
+                        new SortHolder<T, K>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.empty())
                 ));
             sortHolder.directions().addAll(Arrays.stream(directions).toList());
             sortHolder.sourceTypes().add(sourceType);

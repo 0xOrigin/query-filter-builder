@@ -100,7 +100,7 @@ public final class FilterValidator {
         final FilterErrorWrapper filterErrorWrapper,
         final LocalizationService localizationService
     ) {
-        List<String> errorMessages = new ArrayList<>();
+        final List<String> errorMessages = new ArrayList<>();
 
         if (filterOperator == null)
             errorMessages.add(
