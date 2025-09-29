@@ -33,8 +33,12 @@ public class User {
 
     @CreatedBy
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false, updatable = false)
+    @JoinColumn(name = "created_by", nullable = true, updatable = false)
     private User createdBy;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     public UUID getId() {
         return id;
@@ -64,6 +68,14 @@ public class User {
         return createdBy;
     }
 
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
     public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
@@ -90,5 +102,11 @@ public class User {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public enum Role {
+        ADMIN,
+        USER,
+        GUEST
     }
 }
