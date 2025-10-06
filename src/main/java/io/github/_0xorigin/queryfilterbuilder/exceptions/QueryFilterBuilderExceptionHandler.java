@@ -90,7 +90,16 @@ public abstract class QueryFilterBuilderExceptionHandler {
      * @param request The current web request.
      * @return The request path.
      */
-    private String getRequestPath(WebRequest request) {
+    protected String getRequestPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
+    }
+
+    /**
+     * Returns the localization service.
+     *
+     * @return The localization service.
+     */
+    protected LocalizationService getLocalizationService() {
+        return localizationService;
     }
 }
