@@ -15,7 +15,7 @@ Thank you for considering contributing to Query Filter Builder! We welcome contr
 
 ## Reporting Issues
 
-If you encounter any issues, please report them in the [GitHub Issues](https://github.com/your-repo/issues) section.
+If you encounter any issues, please report them in the [GitHub Issues](https://github.com/0xOrigin/query-filter-builder/issues) section.
 
 ## Questions
 
