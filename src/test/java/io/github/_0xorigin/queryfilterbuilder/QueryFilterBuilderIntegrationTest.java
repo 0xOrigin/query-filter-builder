@@ -73,6 +73,7 @@ class QueryFilterBuilderIntegrationTest {
                 .addFilter("isActive", Operator.EQ)
                 .addFilter("lastLogin", Operator.GT, Operator.LT, Operator.GTE, Operator.LTE, Operator.BETWEEN)
                 .addFilter("createdAt", Operator.GT, Operator.LT, Operator.GTE, Operator.LTE, Operator.BETWEEN)
+                .addFilter("createdBy.firstName", Operator.EQ)
                 .addCustomFilter("customRoleFilter", User.Role.class,
                     (root, criteriaQuery, cb, values, filterErrorWrapper) ->
                         Optional.of(cb.equal(root.get("role"), values.get(0))))
@@ -85,7 +86,10 @@ class QueryFilterBuilderIntegrationTest {
                 .addSorts("firstName")
                 .addSorts("lastName")
                 .addSorts("createdAt")
-                .addSorts("role"))
+                .addSorts("role")
+                .addDescSort("createdBy.firstName")
+                .addAscSort("createdBy.lastName")
+            )
             .requestBody(configurer -> configurer
                 .addSorts("firstName")
                 .addSorts("lastName")
@@ -107,7 +111,7 @@ class QueryFilterBuilderIntegrationTest {
 
         User adminUser = new User();
         adminUser.setFirstName("Admin");
-        adminUser.setLastName("User");
+        adminUser.setLastName(null);
         adminUser.setRole(User.Role.ADMIN);
         adminUser.setIsActive(true);
         adminUser.setCreatedAt(now.minus(3, ChronoUnit.HOURS));
@@ -116,20 +120,22 @@ class QueryFilterBuilderIntegrationTest {
 
         User regularUser = new User();
         regularUser.setFirstName("Regular");
-        regularUser.setLastName("User");
+        regularUser.setLastName("User1");
         regularUser.setRole(User.Role.USER);
         regularUser.setIsActive(true);
         regularUser.setCreatedAt(now.minus(1, ChronoUnit.HOURS));
         regularUser.setLastLogin(OffsetDateTime.now().minusDays(1));
+        regularUser.setCreatedBy(adminUser);
         userRepository.save(regularUser);
 
         User inactiveUser = new User();
         inactiveUser.setFirstName("Inactive");
-        inactiveUser.setLastName("User");
+        inactiveUser.setLastName("User1");
         inactiveUser.setRole(User.Role.USER);
         inactiveUser.setIsActive(false);
         inactiveUser.setCreatedAt(now);
         inactiveUser.setLastLogin(OffsetDateTime.now().minusDays(30));
+        inactiveUser.setCreatedBy(regularUser);
         userRepository.save(inactiveUser);
     }
 
@@ -416,11 +422,11 @@ class QueryFilterBuilderIntegrationTest {
         Instant now = Instant.now();
         return Stream.of(
             Arguments.of("firstName", Operator.EQ, "Admin", 1, SourceType.QUERY_PARAM),
-            Arguments.of("lastName", Operator.CONTAINS, "ser", 3, SourceType.QUERY_PARAM),
+            Arguments.of("lastName", Operator.CONTAINS, "User", 2, SourceType.QUERY_PARAM),
             Arguments.of("role", Operator.IN, "ADMIN,USER", 3, SourceType.QUERY_PARAM),
             Arguments.of("isActive", Operator.EQ, "true", 2, SourceType.QUERY_PARAM),
             Arguments.of("createdAt", Operator.GT, now.minus(2, ChronoUnit.HOURS).toString(), 2, SourceType.QUERY_PARAM),
-            Arguments.of("lastName", Operator.ICONTAINS, "ser", 3, SourceType.REQUEST_BODY),
+            Arguments.of("lastName", Operator.ICONTAINS, "ser", 2, SourceType.REQUEST_BODY),
             Arguments.of("role", Operator.NEQ, "ADMIN", 2, SourceType.REQUEST_BODY),
             Arguments.of("lastLogin", Operator.BETWEEN, String.format("%s,%s", OffsetDateTime.now().minusDays(2), OffsetDateTime.now().plusDays(1)), 2, SourceType.REQUEST_BODY)
         );
@@ -571,5 +577,44 @@ class QueryFilterBuilderIntegrationTest {
         assertThatThrownBy(() -> userRepository.findAll(specification))
             .isInstanceOf(InvalidQueryParameterException.class)
             .hasMessageContaining("No enum constant");
+    }
+
+    @Test
+    @DisplayName("Handles nested field lookup")
+    void testFilter_NestedFieldLookup() {
+        List<FilterRequest> filterRequests = List.of(
+            new FilterRequest("createdBy.firstName", Operator.EQ.getValue(), "Admin")
+        );
+        FilterContext<User> filterContext = userFilterTemplate
+            .newSourceBuilder()
+            .withBodySource(filterRequests)
+            .buildFilterContext();
+
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results).hasSize(1).allMatch(user -> user.getCreatedBy().getFirstName().equals("Admin"));
+    }
+
+    @Test
+    @DisplayName("Handles multiple/nested field sorting")
+    void testSort_MultipleFields_NestedField() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addParameter("sort", "lastName,-createdBy.firstName");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        SortContext<User> sortContext = userSortTemplate
+            .newSourceBuilder()
+            .withQuerySource(request)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        var users = assertThat(results).hasSize(3);
+
+        users.extracting(User::getLastName)
+            .containsSequence("User1", "User1", null);
+        users.extracting(User::getFirstName)
+            .containsSequence("Inactive", "Regular", "Admin");
     }
 }
