@@ -347,7 +347,6 @@ This ensures that the sorting process is predictable and respects the client's s
 - If the context or required arguments are null, a `NullPointerException` is thrown.
 - If no valid filters or sorts are found, the resulting specification will not filter or sort any results.
 - Unsupported types will throw an error at template build time.
-- 
 - In all other error scenarios, an exception is thrown to ensure predictable behavior and easier debugging. This includes:
     - Invalid value for a field (e.g., "abc" for a number).
     - Invalid operator for a field.
@@ -365,11 +364,11 @@ Query Filter Builder provides robust exception handling to ensure predictable er
 
 #### Exceptions Thrown
 
-##### InvalidQueryParameterException
+##### - InvalidQueryParameterException
 - **Description:** Thrown when a query parameter or request body contains invalid, unrecognized, or unconvertible values (e.g., invalid value).
 - **Handling:** The exception handler will return a clear error message indicating which parameter or value was invalid, helping clients correct their requests.
 
-##### QueryBuilderConfigurationException
+##### - QueryBuilderConfigurationException
 - **Description:** Thrown for internal errors within the filter builder, such as misconfiguration, template errors, or unexpected failures during query construction.
 - **Handling:** The exception handler will return a clear error message indicating which parameter or value was invalid, helping developers correct their templates.
 
