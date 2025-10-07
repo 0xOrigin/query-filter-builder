@@ -19,6 +19,7 @@
     - [Building Contexts from Requests](#building-contexts-from-requests)
     - [Applying Specifications to Repository](#applying-specifications-to-repository)
     - [Nested Field Filtering and Sorting](#nested-field-filtering-and-sorting)
+    - [Using ListAPIRequest in Controller and Service](#using-listapirequest-in-controller-and-service)
 - [Supported Operators](#supported-operators)
 - [Supported Types](#supported-types)
 - [Advanced Features](#advanced-features)
@@ -225,6 +226,66 @@ SortContext<User> sortContext = userSortTemplate.newSourceBuilder()
 
 ```
 
+### Using ListAPIRequest in Controller and Service
+
+You can use the provided `ListAPIRequest` DTO to accept filtering and sorting criteria in a structured way, making your API endpoints consistent and predictable. Below is a complete example of a controller and service using `ListAPIRequest`:
+
+#### Controller Example
+
+```java
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/users")
+public class UserController {
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @PostMapping("/list")
+    public ResponseEntity<List<User>> listUsers(@Valid @RequestBody ListAPIRequest request) {
+        List<User> users = userService.listUsers(request);
+        return ResponseEntity.ok(users);
+    }
+}
+```
+
+#### Service Example
+```java
+@Service
+public class UserService {
+    private final QueryFilterBuilder<User> queryFilterBuilder;
+    private final UserRepository userRepository;
+    private final FilterContext.Template<User> userFilterTemplate;
+    private final SortContext.Template<User> userSortTemplate;
+
+    public UserService(QueryFilterBuilder<User> queryFilterBuilder,
+                      UserRepository userRepository) {
+        this.queryFilterBuilder = queryFilterBuilder;
+        this.userRepository = userRepository;
+        // Assume templates are initialized elsewhere and injected or built here
+        this.userFilterTemplate = ...;
+        this.userSortTemplate = ...;
+    }
+
+    public List<User> listUsers(ListAPIRequest request) {
+        FilterContext<User> filterContext = userFilterTemplate.newSourceBuilder()
+            .withBodySource(request.filters())
+            .buildFilterContext();
+        SortContext<User> sortContext = userSortTemplate.newSourceBuilder()
+            .withBodySource(request.sorts())
+            .buildSortContext();
+        Specification<User> filterSpecification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        Specification<User> sortSpecification = queryFilterBuilder.buildSortSpecification(sortContext);
+        return userRepository.findAll(Specification.where(filterSpecification).and(sortSpecification));
+    }
+}
+```
+
+This approach ensures maintainable, consistent, and predictable results for your API endpoints.
+
 ## Supported Operators
 
 Operator literals are case-insensitive: whether sent in query parameters or request body, any case (e.g., `EQ`, `eq`, `Eq`, `eQ`) will be accepted and correctly interpreted.
@@ -412,6 +473,24 @@ SortContext<User> sortContext = userSortTemplate.newSourceBuilder()
     .buildSortContext();
 // Query param: ?sort=-createdBy.lastName
 ```
+
+## DTOs for Consistent API Design
+
+### ListAPIRequest
+
+The package provides a convenient `ListAPIRequest` DTO, which encapsulates lists of `FilterRequest` and `SortRequest` objects. This DTO is ready to use in any controller method, allowing you to accept filtering and sorting criteria in a structured and predictable way:
+
+```java
+@PostMapping("/users/list")
+public ResponseEntity<List<User>> listUsers(@RequestBody ListAPIRequest request) {
+    Specification<User> spec = filterContext.newSourceBuilder().fromFilterRequests(request.filters()).build();
+    Sort sort = sortContext.newSourceBuilder().fromSortRequests(request.sorts()).build();
+    List<User> users = userRepository.findAll(spec, sort);
+    return ResponseEntity.ok(users);
+}
+```
+
+Using `ListAPIRequest` helps standardize your API endpoints, making development more consistent and results more predictable. It also improves maintainability by providing a single DTO for both filtering and sorting operations.
 
 ## Public API Reference
 
