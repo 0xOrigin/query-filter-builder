@@ -396,7 +396,9 @@ sort=-firstName,lastName,createdAt
 
 ### Sorting via Request Body
 
-The order of fields in the request body determines the sorting precedence.
+- The order of fields in the request body determines the sorting precedence.
+- Sorting direction literals are case-insensitive. Any case (e.g., ASC, asc, aSc, DESC, desc, dEsC) will be accepted and correctly interpreted.
+- Defaults to ASC if no direction is specified or if the direction is invalid string.
 
 This ensures that the sorting process is predictable and respects the client's specified order, whether provided in query parameters or the request body.
 

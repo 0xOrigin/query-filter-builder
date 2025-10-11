@@ -1,11 +1,15 @@
 package io.github._0xorigin.queryfilterbuilder.base.dtos;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.data.domain.Sort;
 
 import java.util.Set;
@@ -127,5 +131,53 @@ class SortRequestTest {
 
         // Assert
         assertThat(sortRequest.direction()).isEqualTo(Sort.Direction.ASC);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"asc", "ASC"})
+    void testSortRequestJsonCreator(String direction) {
+        // Arrange
+        SortRequest sortRequest = SortRequest.fromJson("firstName", direction);
+
+        // Act
+        Set<ConstraintViolation<SortRequest>> violations = validator.validate(sortRequest);
+
+        // Assert
+        assertThat(violations).isEmpty();
+        assertThat(sortRequest.field()).isEqualTo("firstName");
+        assertThat(sortRequest.direction()).isEqualTo(Sort.Direction.ASC);
+    }
+
+    @Test
+    void testSortRequestJsonCreatorWithInvalidDirection() {
+        // Arrange
+        SortRequest sortRequest = SortRequest.fromJson("firstName", "INVALID");
+
+        // Act
+        Set<ConstraintViolation<SortRequest>> violations = validator.validate(sortRequest);
+
+        // Assert
+        assertThat(violations).isEmpty();
+        assertThat(sortRequest.field()).isEqualTo("firstName");
+        assertThat(sortRequest.direction()).isEqualTo(Sort.Direction.ASC);
+    }
+
+    @Test
+    void testSortRequestObjectMapper() {
+        // Arrange
+        ObjectMapper mapper = new ObjectMapper();
+        String json = "{\"field\":\"name\",\"direction\":\"aSc\"}";
+        SortRequest req = null;
+
+        // Act
+        try {
+            req = mapper.readValue(json, SortRequest.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Assert
+        assertThat(req.field()).isEqualTo("name");
+        assertThat(req.direction()).isEqualTo(Sort.Direction.ASC);
     }
 }
