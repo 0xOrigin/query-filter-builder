@@ -497,6 +497,12 @@ Using `ListAPIRequest` helps standardize your API endpoints, making development 
 
 ### FilterContext
 - `buildTemplateForType(Class<T> type)`: Start building a filter template for an entity.
+- `TemplateBuilder<T>.queryParam(Consumer<FilterConfigurer<T>>)`: Configure the filter template for query parameters.
+- `TemplateBuilder<T>.requestBody(Consumer<FilterConfigurer<T>>)`: Configure the filter template for request body.
+- `FilterConfigurer<T>.addFilter(String, Operator...)`: Add a filter with specified operators array to the template.
+- `FilterConfigurer<T>.addFilter(String, ExpressionProviderFunction, Operator...)`: Add a filter with expression provider function and specified operators array to the template.
+- `FilterConfigurer<T>.addCustomFilter(String, Class, CustomFilterFunction)`: Add a custom filter with specified datatype for input and custom filter function to the template.
+- `TemplateBuilder<T>.buildTemplate()`: Build the filter template.
 - `Template<T>.newSourceBuilder()`: Create a new SourceBuilder for the template.
 - `SourceBuilder<T>.withQuerySource(HttpServletRequest)`: Use query parameters as source.
 - `SourceBuilder<T>.withBodySource(List<FilterRequest>)`: Use request body as source.
@@ -504,6 +510,16 @@ Using `ListAPIRequest` helps standardize your API endpoints, making development 
 
 ### SortContext
 - `buildTemplateForType(Class<T> type)`: Start building a sort template for an entity.
+- `TemplateBuilder<T>.queryParam(Consumer<SortConfigurer<T>>)`: Configure the sort template for query parameters.
+- `TemplateBuilder<T>.requestBody(Consumer<SortConfigurer<T>>)`: Configure the sort template for request body.
+- `SortConfigurer<T>.addAscSort(String)`: Add an ascending sort for the specified field to the template.
+- `SortConfigurer<T>.addAscSort(String, ExpressionProviderFunction)`: Add an ascending sort with expression provider function for the specified field to the template.
+- `SortConfigurer<T>.addDescSort(String)`: Add a descending sort for the specified field to the template.
+- `SortConfigurer<T>.addDescSort(String, ExpressionProviderFunction)`: Add a descending sort with expression provider function for the specified field to the template.
+- `SortConfigurer<T>.addSorts(String)`: Add both ascending and descending sorts for the specified field to the template.
+- `SortConfigurer<T>.addSorts(String, ExpressionProviderFunction)`: Add both ascending and descending sorts with expression provider function for the specified field to the template.
+- `SortConfigurer<T>.addCustomSort(String, CustomSortFunction)`: Add a custom sort for the specified field to the template.
+- `TemplateBuilder<T>.buildTemplate()`: Build the sort template.
 - `Template<T>.newSourceBuilder()`: Create a new SourceBuilder for the template.
 - `SourceBuilder<T>.withQuerySource(HttpServletRequest)`: Use query parameters as source.
 - `SourceBuilder<T>.withBodySource(List<SortRequest>)`: Use request body as source.
