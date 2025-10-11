@@ -482,11 +482,17 @@ SortContext<User> sortContext = userSortTemplate.newSourceBuilder()
 The package provides a convenient `ListAPIRequest` DTO, which encapsulates lists of `FilterRequest` and `SortRequest` objects. This DTO is ready to use in any controller method, allowing you to accept filtering and sorting criteria in a structured and predictable way:
 
 ```java
+import jakarta.validation.Valid;
+
 @PostMapping("/users/list")
-public ResponseEntity<List<User>> listUsers(@RequestBody ListAPIRequest request) {
-    Specification<User> spec = filterContext.newSourceBuilder().fromFilterRequests(request.filters()).build();
-    Sort sort = sortContext.newSourceBuilder().fromSortRequests(request.sorts()).build();
-    List<User> users = userRepository.findAll(spec, sort);
+public ResponseEntity<List<User>> listUsers(@Valid @RequestBody ListAPIRequest request) {
+    Specification<User> filterSpecs = queryFilterBuilder.buildFilterSpecification(
+        userFilterTemplate.newSourceBuilder().withBodySource(request.filters()).buildFilterContext()
+    );
+    Specification<User> sortSpecs = queryFilterBuilder.buildSortSpecification(
+        userSortTemplate.newSourceBuilder().withBodySource(request.sorts()).buildSortContext()
+    );
+    List<User> users = userRepository.findAll(Specification.where(filterSpecs).and(sortSpecs));
     return ResponseEntity.ok(users);
 }
 ```
