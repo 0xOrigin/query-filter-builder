@@ -40,21 +40,20 @@
 
 ## Features
 
-- 🚀 **Automatic Conversion**: Effortlessly transform query parameters **and request bodies** into JPA predicates.
-- 🎯 **Comprehensive Operators**: Supports 18+ filtering operators including comparison, collection, string matching, null checks, and range operators.
-- 🔒 **Type-Safe Validation**: Ensures data integrity with robust parameter validation and type conversion.
-- 🎨 **Clean API Design**: Provides an intuitive and developer-friendly API with fluent interfaces.
-- 🔌 **Spring Data Integration**: Seamlessly works with Spring Data JPA and Hibernate.
-- 📦 **Nested Property Filtering**: Enables filtering across related entities with customizable field delimiters.
-- 🛠️ **Extensibility**: Highly customizable with custom filter functions, custom sort functions, and expression providers.
-- ⚙️ **Flexible Configuration**: Configurable field delimiters, sort parameters, and localization support.
-- 🔄 **Custom Filters & Sorting**: Support for complex, custom filtering and sorting logic beyond standard operators.
-- 🏗️ **Registry-Based Architecture**: Extensible operator and field registries for maximum flexibility.
-- 🌐 **Internationalization**: Built-in support for localized error messages and validation.
-- 🧪 **Comprehensive Testing**: Extensive unit test coverage for all operators, data types, and edge cases.
-- 🛡️ **Security-First Design**: Input validation, SQL injection prevention, and secure type conversion.
-- 📈 **Performance Optimized**: Efficient query building with minimal overhead and smart predicate generation.
-- 📥 **Request Body Support**: Full support for JSON request body filtering and sorting alongside query parameters.
+- **Automatic Conversion**: Effortlessly transform query parameters **and request bodies** into JPA predicates.
+- **Comprehensive Operators**: Supports 18+ filtering operators including comparison, collection, string matching, null checks, and range operators.
+- **Type-Safe Validation**: Ensures data integrity with robust parameter validation and type conversion.
+- **Clean API Design**: Provides an intuitive and developer-friendly API with fluent interfaces.
+- **Spring Data Integration**: Seamlessly works with Spring Data JPA and Hibernate.
+- **Nested Property Filtering**: Enables filtering across related entities with customizable field delimiters.
+- **Extensibility**: Highly customizable with custom filter functions, custom sort functions, and expression providers.
+- **Flexible Configuration**: Configurable field delimiters, sort parameters, and localization support.
+- **Custom Filters & Sorting**: Support for complex, custom filtering and sorting logic beyond standard operators.
+- **Registry-Based Architecture**: Extensible operator and field registries for maximum flexibility.
+- **Comprehensive Testing**: Extensive unit test coverage for all operators, data types, and edge cases.
+- **Security-First Design**: Input validation, SQL injection prevention, and secure type conversion.
+- **Performance Optimized**: Efficient query building with minimal overhead and smart predicate generation.
+- **Request Body Support**: Full support for JSON request body filtering and sorting alongside query parameters.
 
 ## Requirements
 
