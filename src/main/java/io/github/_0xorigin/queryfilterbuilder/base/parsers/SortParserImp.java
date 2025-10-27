@@ -61,7 +61,8 @@ public final class SortParserImp implements SortParser {
      */
     @Override
     public List<SortWrapper> parse(@NonNull final List<SortRequest> sortRequests) {
-        Objects.requireNonNull(sortRequests, "sortRequests cannot be null");
+        if (sortRequests == null)
+            return List.of();
         return sortRequests
                 .stream()
                 .filter(sortRequest -> sortRequest.field() != null && !sortRequest.field().isBlank())

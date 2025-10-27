@@ -87,7 +87,8 @@ public final class FilterParserImp implements FilterParser {
      */
     @Override
     public List<FilterWrapper> parse(@NonNull final List<FilterRequest> filterRequests) {
-        Objects.requireNonNull(filterRequests, "filterRequests cannot be null");
+        if (filterRequests == null)
+            return List.of();
         return filterRequests
                 .stream()
                 .filter(filterRequest -> filterRequest.field() != null && !filterRequest.field().isBlank())

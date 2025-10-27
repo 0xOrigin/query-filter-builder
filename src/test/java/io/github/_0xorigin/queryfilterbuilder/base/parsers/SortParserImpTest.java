@@ -257,8 +257,7 @@ class SortParserImpTest {
 
     @Test
     void testParseSortRequestsWithNullList() {
-        assertThatThrownBy(() -> sortParser.parse((List<SortRequest>) null))
-            .isInstanceOf(NullPointerException.class)
-            .hasMessage("sortRequests cannot be null");
+        assertThat(sortParser.parse((List<SortRequest>) null))
+            .isEmpty();
     }
 }
