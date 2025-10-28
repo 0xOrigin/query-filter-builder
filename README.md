@@ -205,7 +205,7 @@ Specification<User> filterSpec = queryFilterBuilder.buildFilterSpecification(fil
 Specification<User> sortSpec = queryFilterBuilder.buildSortSpecification(sortContext);
 
 // Combine and use with Spring Data JPA
-List<User> users = userRepository.findAll(Specification.where(filterSpec).and(sortSpec));
+List<User> users = userRepository.findAll(Specification.allOf(filterSpec, sortSpec));
 ```
 
 ### Nested Field Filtering and Sorting
@@ -283,7 +283,7 @@ public class UserService {
             .buildSortContext();
         Specification<User> filterSpecification = queryFilterBuilder.buildFilterSpecification(filterContext);
         Specification<User> sortSpecification = queryFilterBuilder.buildSortSpecification(sortContext);
-        return userRepository.findAll(Specification.where(filterSpecification).and(sortSpecification));
+        return userRepository.findAll(Specification.allOf(filterSpecification, sortSpecification));
     }
 }
 ```
@@ -457,7 +457,7 @@ SortContext<User> sortContext = userSortTemplate.newSourceBuilder()
 Specification<User> filterSpec = queryFilterBuilder.buildFilterSpecification(filterContext);
 Specification<User> sortSpec = queryFilterBuilder.buildSortSpecification(sortContext);
 
-List<User> users = userRepository.findAll(Specification.where(filterSpec).and(sortSpec));
+List<User> users = userRepository.findAll(filterSpec.and(sortSpec));
 ```
 
 ### Filtering on Nested Fields
@@ -497,7 +497,7 @@ public ResponseEntity<List<User>> listUsers(@Valid @RequestBody ListAPIRequest r
     Specification<User> sortSpecs = queryFilterBuilder.buildSortSpecification(
         userSortTemplate.newSourceBuilder().withBodySource(request.sorts()).buildSortContext()
     );
-    List<User> users = userRepository.findAll(Specification.where(filterSpecs).and(sortSpecs));
+    List<User> users = userRepository.findAll(Specification.allOf(filterSpecs, sortSpecs));
     return ResponseEntity.ok(users);
 }
 ```
