@@ -10,6 +10,7 @@ import org.springframework.validation.BindingResult;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * The default implementation of {@link PathGenerator}.
@@ -51,6 +52,7 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
      * If the final part of the path is an association, it automatically resolves to the ID of that association.
      */
     @Override
+    @SuppressWarnings("unchecked")
     public <K extends Comparable<? super K> & Serializable> Expression<K> generate(Root<T> root, String field, String originalFieldName, BindingResult bindingResult) {
         final String FIELD_DELIMITER = properties.defaults().fieldDelimiter();
 
@@ -80,9 +82,12 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
                     return null;
                 }
 
-                path = (path instanceof Root<?>)
-                        ? ((Root<?>) path).join(part, JoinType.LEFT)
-                        : ((From<?, ?>) path).join(part, JoinType.LEFT);
+                From<?, ?> from = (path instanceof Root<?>) ? (Root<?>) path : (From<?, ?>) path;
+
+                // Try to reuse an existing join for this attribute on the current path (root or from)
+                Join<?, ?> existingJoin = findExistingJoin(from, part);
+                path = existingJoin != null ? (Path<T>) existingJoin : from.join(part, JoinType.LEFT);
+
                 currentJavaType = attribute.getJavaType();
             }
 
@@ -107,5 +112,29 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
             );
             return null;
         }
+    }
+
+    // Helper to find an existing join on a From by attribute name to avoid duplicate joins
+    private Join<?, ?> findExistingJoin(From<?, ?> from, String attributeName) {
+        if (from == null || attributeName == null)
+            return null;
+
+        Set<? extends Join<?, ?>> joins = from.getJoins();
+        if (joins == null || joins.isEmpty())
+            return null;
+
+        for (Join<?, ?> join : joins) {
+            // Some JPA implementations return null for getAttribute in certain contexts; guard against NullPointerException
+            Attribute<?, ?> attr = null;
+            try {
+                attr = join.getAttribute();
+            } catch (Exception ignored) {
+                // ignored because some JPA implementations throw when calling getAttribute(); it's safe to skip these joins
+            }
+            if (attr != null && attributeName.equals(attr.getName())) {
+                return join;
+            }
+        }
+        return null;
     }
 }

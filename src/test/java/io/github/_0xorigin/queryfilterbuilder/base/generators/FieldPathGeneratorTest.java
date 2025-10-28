@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BindingResult;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -243,6 +244,51 @@ class FieldPathGeneratorTest {
         // Assert
         assertThatThrownBy(() -> fieldPathGenerator.generate(root, field, originalFieldName, bindingResult))
             .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void testGenerate_ReusesExistingJoin() {
+        // Arrange
+        String field = "manager.department.name";
+        String originalFieldName = "manager.department.name";
+
+        // Mock root to manager attribute
+        when(root.getJavaType()).thenAnswer(invocation -> TestEntity.class);
+        when(metamodel.managedType(TestEntity.class)).thenReturn(rootManagedType);
+        when(rootManagedType.getAttribute("manager")).thenAnswer(invocation -> managerAttribute);
+        when(managerAttribute.isAssociation()).thenReturn(true);
+        when(managerAttribute.getJavaType()).thenReturn(Manager.class);
+
+        // Simulate an existing join on root for 'manager'
+        when(root.getJoins()).thenReturn(Set.of(managerJoin));
+        when(managerJoin.getAttribute()).thenReturn((Attribute) managerAttribute);
+        // Ensure attribute name matches so the join is recognized as the existing join
+        when(managerAttribute.getName()).thenReturn("manager");
+
+        // Manager to department
+        when(metamodel.managedType(Manager.class)).thenReturn(managerManagedType);
+        when(managerManagedType.getAttribute("department")).thenAnswer(invocation -> departmentAttribute);
+        when(departmentAttribute.isAssociation()).thenReturn(true);
+        when(departmentAttribute.getJavaType()).thenReturn(Department.class);
+        when(managerJoin.join("department", JoinType.LEFT)).thenAnswer(invocation -> departmentJoin);
+
+        // Final field
+        when(metamodel.managedType(Department.class)).thenReturn(departmentManagedType);
+        when(departmentManagedType.getAttribute("name")).thenAnswer(invocation -> nameAttribute);
+        when(nameAttribute.isAssociation()).thenReturn(false);
+        when(departmentJoin.get("name")).thenAnswer(invocation -> namePath);
+
+        // Act
+        Expression<?> result = fieldPathGenerator.generate(root, field, originalFieldName, bindingResult);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(namePath).isEqualTo(result);
+        // Ensure root.join was never called because we reused the existing join
+        verify(root, never()).join("manager", JoinType.LEFT);
+        // Ensure we did call join on the existing manager join for department
+        verify(managerJoin).join("department", JoinType.LEFT);
+        verify(bindingResult, never()).addError(any());
     }
 
     // Mock entity classes for testing
