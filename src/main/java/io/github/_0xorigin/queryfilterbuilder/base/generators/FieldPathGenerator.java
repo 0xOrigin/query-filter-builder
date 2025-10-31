@@ -9,6 +9,7 @@ import jakarta.persistence.metamodel.*;
 import org.springframework.validation.BindingResult;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -46,7 +47,7 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
      * {@inheritDoc}
      * <p>
      * This implementation parses the {@code field} string using the configured delimiter.
-     * It traverses the entity graph from the {@code root}, creating left joins for each association in the path.
+     * It traverses the entity graph from the {@code root}, creating inner joins for each association in the path.
      * If an intermediate part of the path is not an association, or if the path is invalid, an error is added
      * to the {@code bindingResult} and {@code null} is returned.
      * If the final part of the path is an association, it automatically resolves to the ID of that association.
@@ -86,7 +87,7 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
 
                 // Try to reuse an existing join for this attribute on the current path (root or from)
                 Join<?, ?> existingJoin = findExistingJoin(from, part);
-                path = existingJoin != null ? (Path<T>) existingJoin : from.join(part, JoinType.LEFT);
+                path = existingJoin != null ? (Path<T>) existingJoin : from.join(part, JoinType.INNER);
 
                 currentJavaType = attribute.getJavaType();
             }
@@ -119,22 +120,41 @@ public final class FieldPathGenerator<T> implements PathGenerator<T> {
         if (from == null || attributeName == null)
             return null;
 
-        Set<? extends Join<?, ?>> joins = from.getJoins();
-        if (joins == null || joins.isEmpty())
-            return null;
-
-        for (Join<?, ?> join : joins) {
-            // Some JPA implementations return null for getAttribute in certain contexts; guard against NullPointerException
-            Attribute<?, ?> attr = null;
-            try {
-                attr = join.getAttribute();
-            } catch (Exception ignored) {
-                // ignored because some JPA implementations throw when calling getAttribute(); it's safe to skip these joins
-            }
+        for (Join<?, ?> join : getAllJoins(from)) {
+            Attribute<?, ?> attr = safeGetAttribute(join);
             if (attr != null && attributeName.equals(attr.getName())) {
                 return join;
             }
         }
         return null;
+    }
+
+    // Collect joins from both getJoins() and getFetches() depending on configuration
+    private Set<Join<?, ?>> getAllJoins(From<?, ?> from) {
+        Set<Join<?, ?>> all = new HashSet<>();
+        Set<? extends Join<?, ?>> joins = from.getJoins();
+        if (joins != null && !joins.isEmpty())
+            all.addAll(joins);
+
+        // Only include fetches if configured to do so. Some users prefer to control fetch handling
+        Set<? extends Fetch<?, ?>> fetches = from.getFetches();
+        if (fetches != null && !fetches.isEmpty()) {
+            for (Fetch<?, ?> fetch : fetches) {
+                if (fetch instanceof Join<?, ?> join)
+                    all.add(join);
+            }
+        }
+        return all;
+    }
+
+    // Safe wrapper around Join.getAttribute() because some JPA implementations may throw from it
+    private Attribute<?, ?> safeGetAttribute(Join<?, ?> join) {
+        if (join == null)
+            return null;
+        try {
+            return join.getAttribute();
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 }

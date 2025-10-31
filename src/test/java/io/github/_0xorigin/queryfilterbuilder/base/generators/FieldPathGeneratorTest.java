@@ -115,14 +115,14 @@ class FieldPathGeneratorTest {
         when(rootManagedType.getAttribute("manager")).thenAnswer(invocation -> managerAttribute);
         when(managerAttribute.isAssociation()).thenReturn(true);
         when(managerAttribute.getJavaType()).thenReturn(Manager.class);
-        when(root.join("manager", JoinType.LEFT)).thenAnswer(invocation -> managerJoin);
+        when(root.join("manager", JoinType.INNER)).thenAnswer(invocation -> managerJoin);
 
         // Mock manager to department
         when(metamodel.managedType(Manager.class)).thenReturn(managerManagedType);
         when(managerManagedType.getAttribute("department")).thenAnswer(invocation -> departmentAttribute);
         when(departmentAttribute.isAssociation()).thenReturn(true);
         when(departmentAttribute.getJavaType()).thenReturn(Department.class);
-        when(managerJoin.join("department", JoinType.LEFT)).thenAnswer(invocation -> departmentJoin);
+        when(managerJoin.join("department", JoinType.INNER)).thenAnswer(invocation -> departmentJoin);
 
         // Mock final field (name)
         when(metamodel.managedType(Department.class)).thenReturn(departmentManagedType);
@@ -151,7 +151,7 @@ class FieldPathGeneratorTest {
         when(rootManagedType.getAttribute("manager")).thenAnswer(invocation -> managerAttribute);
         when(managerAttribute.isAssociation()).thenReturn(true);
         when(managerAttribute.getJavaType()).thenReturn(Manager.class);
-        when(root.join("manager", JoinType.LEFT)).thenAnswer(invocation -> managerJoin);
+        when(root.join("manager", JoinType.INNER)).thenAnswer(invocation -> managerJoin);
 
         // Mock final field (id)
         when(metamodel.managedType(Manager.class)).thenReturn(managerManagedType);
@@ -199,7 +199,7 @@ class FieldPathGeneratorTest {
         when(rootManagedType.getAttribute("manager")).thenAnswer(invocation -> managerAttribute);
         when(managerAttribute.isAssociation()).thenReturn(true);
         when(managerAttribute.getJavaType()).thenReturn(Manager.class);
-        when(root.join("manager", JoinType.LEFT)).thenAnswer(invocation -> managerJoin);
+        when(root.join("manager", JoinType.INNER)).thenAnswer(invocation -> managerJoin);
 
         // Mock manager to name (non-association)
         when(metamodel.managedType(Manager.class)).thenReturn(managerManagedType);
@@ -224,7 +224,8 @@ class FieldPathGeneratorTest {
 
         when(root.getJavaType()).thenAnswer(invocation -> TestEntity.class);
         when(metamodel.managedType(TestEntity.class)).thenReturn(rootManagedType);
-        when(rootManagedType.getAttribute("")).thenThrow(new IllegalArgumentException("Empty field"));
+        when(rootManagedType.getAttribute(""))
+            .thenThrow(new IllegalArgumentException("Empty field"));
         when(bindingResult.getObjectName()).thenReturn("testEntity");
 
         // Act
@@ -270,7 +271,7 @@ class FieldPathGeneratorTest {
         when(managerManagedType.getAttribute("department")).thenAnswer(invocation -> departmentAttribute);
         when(departmentAttribute.isAssociation()).thenReturn(true);
         when(departmentAttribute.getJavaType()).thenReturn(Department.class);
-        when(managerJoin.join("department", JoinType.LEFT)).thenAnswer(invocation -> departmentJoin);
+        when(managerJoin.join("department", JoinType.INNER)).thenAnswer(invocation -> departmentJoin);
 
         // Final field
         when(metamodel.managedType(Department.class)).thenReturn(departmentManagedType);
@@ -285,9 +286,58 @@ class FieldPathGeneratorTest {
         assertThat(result).isNotNull();
         assertThat(namePath).isEqualTo(result);
         // Ensure root.join was never called because we reused the existing join
-        verify(root, never()).join("manager", JoinType.LEFT);
+        verify(root, never()).join("manager", JoinType.INNER);
         // Ensure we did call join on the existing manager join for department
-        verify(managerJoin).join("department", JoinType.LEFT);
+        verify(managerJoin).join("department", JoinType.INNER);
+        verify(bindingResult, never()).addError(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testGenerate_ReusesExistingFetch() {
+        // Arrange
+        String field = "manager.department.name";
+        String originalFieldName = "manager.department.name";
+
+        // Mock root to manager attribute
+        when(root.getJavaType()).thenAnswer(invocation -> TestEntity.class);
+        when(metamodel.managedType(TestEntity.class)).thenReturn(rootManagedType);
+        when(rootManagedType.getAttribute("manager")).thenAnswer(invocation -> managerAttribute);
+        when(managerAttribute.isAssociation()).thenReturn(true);
+        when(managerAttribute.getJavaType()).thenReturn(Manager.class);
+
+        // Simulate no regular joins but an existing fetch (which is also a Join) on root for 'manager'
+        when(root.getJoins()).thenReturn(Set.of());
+        // create a mock that implements both Join and Fetch so it can be returned from getFetches and used as a join
+        @SuppressWarnings("unchecked")
+        Join<TestEntity, Manager> managerJoinAndFetch = mock(Join.class, withSettings().extraInterfaces(Fetch.class));
+        when(root.getFetches()).thenReturn(Set.of((Fetch) managerJoinAndFetch));
+        when(managerJoinAndFetch.getAttribute()).thenReturn((Attribute) managerAttribute);
+        when(managerAttribute.getName()).thenReturn("manager");
+
+        // Manager to department
+        when(metamodel.managedType(Manager.class)).thenReturn(managerManagedType);
+        when(managerManagedType.getAttribute("department")).thenAnswer(invocation -> departmentAttribute);
+        when(departmentAttribute.isAssociation()).thenReturn(true);
+        when(departmentAttribute.getJavaType()).thenReturn(Department.class);
+        when(managerJoinAndFetch.join("department", JoinType.INNER)).thenAnswer(invocation -> departmentJoin);
+
+        // Final field
+        when(metamodel.managedType(Department.class)).thenReturn(departmentManagedType);
+        when(departmentManagedType.getAttribute("name")).thenAnswer(invocation -> nameAttribute);
+        when(nameAttribute.isAssociation()).thenReturn(false);
+        when(departmentJoin.get("name")).thenAnswer(invocation -> namePath);
+
+        // Act
+        Expression<?> result = fieldPathGenerator.generate(root, field, originalFieldName, bindingResult);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(namePath).isEqualTo(result);
+        // Ensure root.join was never called because we reused the existing fetch join
+        verify(root, never()).join("manager", JoinType.INNER);
+        // Ensure we did call join on the existing manager fetch (join) for department
+        verify(managerJoinAndFetch).join("department", JoinType.INNER);
         verify(bindingResult, never()).addError(any());
     }
 

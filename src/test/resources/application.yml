@@ -10,6 +10,3 @@ spring:
       ddl-auto: create-drop
     properties:
       format_sql: true
-      hibernate:
-        order_by:
-          default_null_ordering: last

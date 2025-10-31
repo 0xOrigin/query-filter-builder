@@ -610,11 +610,11 @@ class QueryFilterBuilderIntegrationTest {
         Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
         List<User> results = userRepository.findAll(specification);
 
-        var users = assertThat(results).hasSize(3);
+        var users = assertThat(results).hasSize(2);
 
         users.extracting(User::getLastName)
-            .containsSequence("User1", "User1", null);
+            .containsSequence("User1", "User1");
         users.extracting(User::getFirstName)
-            .containsSequence("Inactive", "Regular", "Admin");
+            .containsSequence("Inactive", "Regular");
     }
 }
