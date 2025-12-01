@@ -1,47 +1,56 @@
 package io.github._0xorigin.queryfilterbuilder.registries;
 
-import io.github._0xorigin.queryfilterbuilder.base.Operator;
-import io.github._0xorigin.queryfilterbuilder.operators.*;
-import io.github._0xorigin.queryfilterbuilder.base.FilterOperator;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
-public class FilterOperatorRegistry {
+/**
+ * A registry for all available {@link FilterOperator} implementations.
+ * This class holds a map of {@link Operator} constants to their corresponding handlers, allowing for easy lookup.
+ */
+public final class FilterOperatorRegistry {
 
-    private static final Map<Operator, FilterOperator> operatorMap = new HashMap<>();
+    private final Map<Operator, FilterOperator> operatorMap = new EnumMap<>(Operator.class);
 
-    static {
-        addOperator(Operator.EQ, new Equal());
-        addOperator(Operator.NEQ, new NotEqual());
-        addOperator(Operator.IS_NULL, new IsNull());
-        addOperator(Operator.IS_NOT_NULL, new IsNotNull());
-        addOperator(Operator.GT, new GreaterThan());
-        addOperator(Operator.LT, new LessThan());
-        addOperator(Operator.GTE, new GreaterThanEqual());
-        addOperator(Operator.LTE, new LessThanEqual());
-        addOperator(Operator.CONTAINS, new Contains());
-        addOperator(Operator.ICONTAINS, new IContains());
-        addOperator(Operator.STARTS_WITH, new StartsWith());
-        addOperator(Operator.ISTARTS_WITH, new IStartsWith());
-        addOperator(Operator.ENDS_WITH, new EndsWith());
-        addOperator(Operator.IENDS_WITH, new IEndsWith());
-        addOperator(Operator.IN, new In());
-        addOperator(Operator.NOT_IN, new NotIn());
-        addOperator(Operator.BETWEEN, new Between());
-        addOperator(Operator.NOT_BETWEEN, new NotBetween());
+    /**
+     * Constructs a new registry and populates it with the provided list of filter operators.
+     *
+     * @param operators A list of {@code FilterOperator} beans, typically injected by Spring.
+     */
+    public FilterOperatorRegistry(List<FilterOperator> operators) {
+        operators.forEach(operator -> addOperator(operator.getOperatorConstant(), operator));
     }
 
-    private static void addOperator(Operator operator, FilterOperator filterOperator) {
+    /**
+     * Adds a filter operator to the registry.
+     *
+     * @param operator        The operator constant.
+     * @param filterOperator The filter operator implementation.
+     */
+    private void addOperator(Operator operator, FilterOperator filterOperator) {
         operatorMap.put(operator, filterOperator);
     }
 
-    public static FilterOperator getOperator(Operator operator) {
+    /**
+     * Retrieves the {@link FilterOperator} implementation for a given {@link Operator} constant.
+     *
+     * @param operator The {@code Operator} constant.
+     * @return The corresponding {@code FilterOperator}, or {@code null} if no handler is registered for the operator.
+     */
+    public FilterOperator getOperator(Operator operator) {
         return operatorMap.get(operator);
     }
 
-    public static Map<Operator, FilterOperator> getAllOperators() {
-        return operatorMap;
+    /**
+     * Gets a view of the registered filter operators.
+     *
+     * @return An unmodifiable map of operator constants to filter operator handlers.
+     */
+    public Map<Operator, FilterOperator> getOperators() {
+        return Collections.unmodifiableMap(operatorMap);
     }
-
 }

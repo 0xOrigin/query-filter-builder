@@ -1,127 +1,72 @@
 package io.github._0xorigin.queryfilterbuilder.operators;
 
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class NotInTest {
 
     @Mock
-    private Path<?> path;
-
-    @Mock
-    private CriteriaBuilder cb;
+    private CriteriaBuilder criteriaBuilder;
 
     @Mock
     private Predicate predicate;
 
-    private NotIn notIn;
+    @Mock
+    private FilterErrorWrapper filterErrorWrapper;
+
+    @Mock
     private BindingResult bindingResult;
-    private ErrorWrapper errorWrapper;
 
-    @BeforeEach
-    void setUp() {
-        notIn = new NotIn();
-        bindingResult = new BeanPropertyBindingResult(path, "path");
-        errorWrapper = new ErrorWrapper(bindingResult, null);
+    @Mock
+    private Expression<Integer> expression;
+
+    @InjectMocks
+    private NotIn notIn;
+
+    @Test
+    void apply_validListWithElements_returnsPredicate() {
+        List<Integer> values = List.of(1, 2, 3);
+        Predicate inPredicate = mock(Predicate.class);
+        when(expression.in(values)).thenReturn(inPredicate);
+        when(criteriaBuilder.not(inPredicate)).thenReturn(predicate);
+
+        Optional<Predicate> result = notIn.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+
+        assertThat(result).isPresent().contains(predicate);
+        verify(expression).in(values);
+        verify(criteriaBuilder).not(inPredicate);
+        verifyNoInteractions(bindingResult);
     }
 
     @Test
-    void apply_WithNullValues_ReturnsPredicate() {
-        List<Object> values = Collections.singletonList(null);
-        when(cb.conjunction()).thenReturn(predicate);
+    void apply_invalidList_returnsEmptyOptional() {
+        List<String> values = List.of();
+        Expression<String> expression = mock(Expression.class);
 
-        Predicate result = notIn.apply(path, cb, values, errorWrapper);
+        Optional<Predicate> result = notIn.apply(expression, criteriaBuilder, values, filterErrorWrapper);
 
-        assertNotNull(result);
-        verify(cb).conjunction();
-        assertFalse(errorWrapper.getBindingResult().hasErrors());
+        assertThat(result).isEmpty();
+        verifyNoInteractions(criteriaBuilder, bindingResult);
     }
 
     @Test
-    void apply_WithEmptyList_ReturnsPredicate() {
-        List<Object> values = Collections.emptyList();
-        when(cb.conjunction()).thenReturn(predicate);
-
-        Predicate result = notIn.apply(path, cb, values, errorWrapper);
-
-        assertNotNull(result);
-        verify(cb).conjunction();
-        assertFalse(errorWrapper.getBindingResult().hasErrors());
+    void getOperatorConstant_returnsNotInOperator() {
+        assertThat(notIn.getOperatorConstant()).isEqualTo(Operator.NOT_IN);
     }
-
-    @Test
-    void apply_WithNumericValues_ReturnsPredicate() {
-        List<Integer> values = Arrays.asList(1, 2, 3);
-        when(path.in(values)).thenReturn(predicate);
-        when(cb.not(predicate)).thenReturn(predicate);
-
-        Predicate result = notIn.apply(path, cb, values, errorWrapper);
-
-        assertNotNull(result);
-        verify(path).in(values);
-        verify(cb).not(predicate);
-        assertFalse(errorWrapper.getBindingResult().hasErrors());
-    }
-
-    @Test
-    void apply_WithStringValues_ReturnsPredicate() {
-        List<String> values = Arrays.asList("A", "B", "C");
-        when(path.in(values)).thenReturn(predicate);
-        when(cb.not(predicate)).thenReturn(predicate);
-
-        Predicate result = notIn.apply(path, cb, values, errorWrapper);
-
-        assertNotNull(result);
-        verify(path).in(values);
-        verify(cb).not(predicate);
-        assertFalse(errorWrapper.getBindingResult().hasErrors());
-    }
-
-    @Test
-    void apply_WithSingleValue_ReturnsPredicate() {
-        List<String> values = Collections.singletonList("test");
-        when(path.in(values)).thenReturn(predicate);
-        when(cb.not(predicate)).thenReturn(predicate);
-
-        Predicate result = notIn.apply(path, cb, values, errorWrapper);
-
-        assertNotNull(result);
-        verify(path).in(values);
-        verify(cb).not(predicate);
-        assertFalse(errorWrapper.getBindingResult().hasErrors());
-    }
-
-    @Test
-    void apply_WithMixedTypes_ReturnsPredicate() {
-        List<Object> values = Arrays.asList("A", 1, true, Instant.now());
-        when(path.in(values)).thenReturn(predicate);
-        when(cb.not(predicate)).thenReturn(predicate);
-
-        Predicate result = notIn.apply(path, cb, values, errorWrapper);
-
-        assertNotNull(result);
-        verify(path).in(values);
-        verify(cb).not(predicate);
-        assertFalse(errorWrapper.getBindingResult().hasErrors());
-    }
-
 }

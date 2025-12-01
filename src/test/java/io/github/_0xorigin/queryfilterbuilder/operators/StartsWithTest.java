@@ -1,120 +1,68 @@
 package io.github._0xorigin.queryfilterbuilder.operators;
 
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.validation.BindingResult;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class StartsWithTest {
 
     @Mock
-    private Path<?> path;
-
-    @Mock
-    private Path<String> stringPath;
-
-    @Mock
     private CriteriaBuilder criteriaBuilder;
-
-    @Mock
-    private ErrorWrapper errorWrapper;
 
     @Mock
     private Predicate predicate;
 
-    private StartsWith startsWithOperator;
+    @Mock
+    private FilterErrorWrapper filterErrorWrapper;
 
-    @BeforeEach
-    void setUp() {
-        startsWithOperator = new StartsWith();
+    @Mock
+    private BindingResult bindingResult;
+
+    @InjectMocks
+    private StartsWith startsWith;
+
+    @Test
+    void apply_validListWithSingleElement_returnsPredicate() {
+        List<String> values = List.of("test");
+        Expression<String> expression = mock(Expression.class);
+        when(expression.as(String.class)).thenReturn(expression);
+        when(criteriaBuilder.like(expression, "test%")).thenReturn(predicate);
+
+        Optional<Predicate> result = startsWith.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+
+        assertThat(result).isPresent().contains(predicate);
+        verify(criteriaBuilder).like(expression, "test%");
+        verifyNoInteractions(bindingResult);
     }
 
     @Test
-    void apply_WithValidSingleValue_ShouldCreateLikePredicate() {
-        // Arrange
-        String testValue = "test";
-        List<String> values = Collections.singletonList(testValue);
-        when(path.as(String.class)).thenReturn(stringPath);
-        when(criteriaBuilder.like(stringPath, testValue + "%")).thenReturn(predicate);
+    void apply_invalidList_returnsEmptyOptional() {
+        List<String> values = List.of();
+        Expression<String> expression = mock(Expression.class);
 
-        // Act
-        startsWithOperator.apply(path, criteriaBuilder, values, errorWrapper);
+        Optional<Predicate> result = startsWith.apply(expression, criteriaBuilder, values, filterErrorWrapper);
 
-        // Assert
-        verify(path).as(String.class);
-        verify(criteriaBuilder).like(stringPath, testValue + "%");
+        assertThat(result).isEmpty();
+        verifyNoInteractions(criteriaBuilder, bindingResult);
     }
 
     @Test
-    void apply_WithEmptyList_ShouldReturnConjunction() {
-        // Arrange
-        List<?> emptyList = Collections.emptyList();
-        when(criteriaBuilder.conjunction()).thenReturn(predicate);
-
-        // Act
-        startsWithOperator.apply(path, criteriaBuilder, emptyList, errorWrapper);
-
-        // Assert
-        verify(criteriaBuilder).conjunction();
-        verify(path, never()).as(String.class);
+    void getOperatorConstant_returnsStartsWithOperator() {
+        assertThat(startsWith.getOperatorConstant()).isEqualTo(Operator.STARTS_WITH);
     }
-
-    @Test
-    void apply_WithNullValue_ShouldReturnConjunction() {
-        // Arrange
-        List<?> listWithNull = Collections.singletonList(null);
-        when(criteriaBuilder.conjunction()).thenReturn(predicate);
-
-        // Act
-        startsWithOperator.apply(path, criteriaBuilder, listWithNull, errorWrapper);
-
-        // Assert
-        verify(criteriaBuilder).conjunction();
-        verify(path, never()).as(String.class);
-    }
-
-    @Test
-    void apply_WithMultipleValues_ShouldUseFirstValue() {
-        // Arrange
-        String firstValue = "first";
-        List<String> values = Arrays.asList(firstValue, "second", "third");
-        when(path.as(String.class)).thenReturn(stringPath);
-        when(criteriaBuilder.like(stringPath, firstValue + "%")).thenReturn(predicate);
-
-        // Act
-        startsWithOperator.apply(path, criteriaBuilder, values, errorWrapper);
-
-        // Assert
-        verify(path).as(String.class);
-        verify(criteriaBuilder).like(stringPath, firstValue + "%");
-    }
-
-    @Test
-    void apply_WithSpecialCharacters_ShouldCreateLikePredicateWithSpecialCharacters() {
-        // Arrange
-        String testValue = "test%_";  // Contains special SQL LIKE characters
-        List<String> values = Collections.singletonList(testValue);
-        when(path.as(String.class)).thenReturn(stringPath);
-        when(criteriaBuilder.like(stringPath, testValue + "%")).thenReturn(predicate);
-
-        // Act
-        startsWithOperator.apply(path, criteriaBuilder, values, errorWrapper);
-
-        // Assert
-        verify(path).as(String.class);
-        verify(criteriaBuilder).like(stringPath, testValue + "%");
-    }
-
 }

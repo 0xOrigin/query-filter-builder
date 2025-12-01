@@ -1,21 +1,43 @@
 package io.github._0xorigin.queryfilterbuilder.operators;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractFilterOperator;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
+import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 
-public class IStartsWith extends AbstractFilterOperator {
+/**
+ * A {@link FilterOperator} implementation that handles the 'istartsWith' operation (case-insensitive starts with).
+ * This operator checks if a string expression starts with a specified substring, ignoring case.
+ */
+public final class IStartsWith implements FilterOperator {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation requires the {@code values} list to contain at least one non-null element.
+     * It uses the first element in the list as the substring to search for.
+     * Both the expression and the value are converted to uppercase for the comparison.
+     */
     @Override
-    public Predicate apply(Path<?> path, CriteriaBuilder cb, List<?> values, ErrorWrapper errorWrapper) {
-        if (isContainNulls(values) || isEmpty(values))
-            return cb.conjunction();
+    public <T extends Comparable<? super T> & Serializable> Optional<Predicate> apply(Expression<T> expression, CriteriaBuilder cb, List<T> values, FilterErrorWrapper filterErrorWrapper) {
+        if (FilterUtils.isNotValidList(values))
+            return Optional.empty();
 
-        return cb.like(cb.upper(path.as(String.class)), ((String) values.get(0)).toUpperCase() + "%");
+        return Optional.ofNullable(cb.like(cb.upper(expression.as(String.class)), values.get(0).toString().toUpperCase() + "%"));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Operator getOperatorConstant() {
+        return Operator.ISTARTS_WITH;
+    }
 }

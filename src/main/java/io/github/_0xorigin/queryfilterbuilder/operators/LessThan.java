@@ -1,36 +1,41 @@
 package io.github._0xorigin.queryfilterbuilder.operators;
 
-import io.github._0xorigin.queryfilterbuilder.base.AbstractFilterOperator;
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.FilterOperator;
+import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 
-import java.time.format.DateTimeParseException;
+import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 
-public class LessThan extends AbstractFilterOperator {
+/**
+ * A {@link FilterOperator} implementation that handles the 'less than' operation.
+ */
+public final class LessThan implements FilterOperator {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation requires the {@code values} list to contain at least one non-null element.
+     * It uses the first element in the list for the comparison.
+     */
     @Override
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public Predicate apply(Path<?> path, CriteriaBuilder cb, List<?> values, ErrorWrapper errorWrapper) {
-        if (isContainNulls(values) || isEmpty(values))
-            return cb.conjunction();
+    public <T extends Comparable<? super T> & Serializable> Optional<Predicate> apply(Expression<T> expression, CriteriaBuilder cb, List<T> values, FilterErrorWrapper filterErrorWrapper) {
+        if (FilterUtils.isNotValidList(values))
+            return Optional.empty();
 
-        try {
-            if (isTemporalFilter(path)) {
-                TemporalGroup group = getTemporalGroup(path);
-                List<? extends Comparable> jdbcTypes = getJdbcTypes(path, group, List.of(values.get(0)));
-                Expression expression = getTemporalPath(group).apply(path);
-                return cb.lessThan(expression, jdbcTypes.get(0));
-            }
-        } catch (IllegalArgumentException | DateTimeParseException | ClassCastException e) {
-            addError(errorWrapper, generateFieldError(errorWrapper, values.toString(), e.getMessage()));
-            return null;
-        }
-
-        return cb.lessThan(path.as(Comparable.class), (Comparable) values.get(0));
+        return Optional.ofNullable(cb.lessThan(expression, values.get(0)));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Operator getOperatorConstant() {
+        return Operator.LT;
+    }
 }

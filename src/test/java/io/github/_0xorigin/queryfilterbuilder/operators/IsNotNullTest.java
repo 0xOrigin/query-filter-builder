@@ -1,27 +1,25 @@
 package io.github._0xorigin.queryfilterbuilder.operators;
 
-import io.github._0xorigin.queryfilterbuilder.base.ErrorWrapper;
+import io.github._0xorigin.queryfilterbuilder.base.filteroperator.Operator;
+import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterErrorWrapper;
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.validation.BindingResult;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class IsNotNullTest {
-
-    @Mock
-    private Path<?> path;
 
     @Mock
     private CriteriaBuilder criteriaBuilder;
@@ -30,71 +28,55 @@ class IsNotNullTest {
     private Predicate predicate;
 
     @Mock
-    private ErrorWrapper errorWrapper;
+    private FilterErrorWrapper filterErrorWrapper;
 
+    @Mock
+    private BindingResult bindingResult;
+
+    @InjectMocks
     private IsNotNull isNotNull;
 
-    @BeforeEach
-    void setUp() {
-        isNotNull = new IsNotNull();
+    @Test
+    void apply_validListWithTrueValue_returnsIsNotNullPredicate() {
+        List<String> values = List.of("true");
+        Expression<String> expression = mock(Expression.class);
+        when(criteriaBuilder.isNotNull(expression)).thenReturn(predicate);
+
+        Optional<Predicate> result = isNotNull.apply(expression, criteriaBuilder, values, filterErrorWrapper);
+
+        assertThat(result).isPresent().contains(predicate);
+        verify(criteriaBuilder).isNotNull(expression);
+        verifyNoMoreInteractions(criteriaBuilder);
+        verifyNoInteractions(bindingResult);
     }
 
     @Test
-    void whenValuesContainNull_shouldReturnConjunction() {
-        // Arrange
-        List<Object> values = Arrays.asList(null, true);
-        when(criteriaBuilder.conjunction()).thenReturn(predicate);
+    void apply_validListWithFalseValue_returnsIsNullPredicate() {
+        List<String> values = List.of("false");
+        Expression<String> expression = mock(Expression.class);
+        when(criteriaBuilder.isNull(expression)).thenReturn(predicate);
 
-        // Act
-        Predicate result = isNotNull.apply(path, criteriaBuilder, values, errorWrapper);
+        Optional<Predicate> result = isNotNull.apply(expression, criteriaBuilder, values, filterErrorWrapper);
 
-        // Assert
-        assertEquals(predicate, result);
-        verify(criteriaBuilder).conjunction();
-        verifyNoMoreInteractions(path);
+        assertThat(result).isPresent().contains(predicate);
+        verify(criteriaBuilder).isNull(expression);
+        verifyNoMoreInteractions(criteriaBuilder);
+        verifyNoInteractions(bindingResult);
     }
 
     @Test
-    void whenValuesIsEmpty_shouldReturnConjunction() {
-        // Arrange
-        List<Object> values = Collections.emptyList();
-        when(criteriaBuilder.conjunction()).thenReturn(predicate);
+    void apply_invalidList_returnsEmptyOptional() {
+        List<String> values = List.of();
+        Expression<String> expression = mock(Expression.class);
 
-        // Act
-        Predicate result = isNotNull.apply(path, criteriaBuilder, values, errorWrapper);
+        Optional<Predicate> result = isNotNull.apply(expression, criteriaBuilder, values, filterErrorWrapper);
 
-        // Assert
-        assertEquals(predicate, result);
-        verify(criteriaBuilder).conjunction();
-        verifyNoMoreInteractions(path);
+        assertThat(result).isEmpty();
+        verifyNoInteractions(criteriaBuilder, bindingResult);
     }
 
     @Test
-    void whenValueIsFalse_shouldReturnIsNull() {
-        // Arrange
-        List<Object> values = Collections.singletonList(false);
-        when(criteriaBuilder.isNull(path)).thenReturn(predicate);
-
-        // Act
-        Predicate result = isNotNull.apply(path, criteriaBuilder, values, errorWrapper);
-
-        // Assert
-        assertEquals(predicate, result);
-        verify(criteriaBuilder).isNull(path);
+    void getOperatorConstant_returnsIsNotNullOperator() {
+        assertThat(isNotNull.getOperatorConstant()).isEqualTo(Operator.IS_NOT_NULL);
     }
-
-    @Test
-    void whenValueIsTrue_shouldReturnIsNotNull() {
-        // Arrange
-        List<Object> values = Collections.singletonList(true);
-        when(criteriaBuilder.isNotNull(path)).thenReturn(predicate);
-
-        // Act
-        Predicate result = isNotNull.apply(path, criteriaBuilder, values, errorWrapper);
-
-        // Assert
-        assertEquals(predicate, result);
-        verify(criteriaBuilder).isNotNull(path);
-    }
-
 }
