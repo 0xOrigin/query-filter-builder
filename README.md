@@ -47,7 +47,7 @@
 ## Features
 
 - **Automatic Conversion**: Effortlessly transform query parameters **and request bodies** into JPA predicates.
-- **Comprehensive Operators**: Supports 18+ filtering operators including comparison, collection, string matching, null checks, and range operators.
+- **Comprehensive Operators**: Supports +18 filtering operators including comparison, collection, string matching, null checks, and range operators.
 - **Type-Safe Validation**: Ensures data integrity with robust parameter validation and type conversion.
 - **Clean API Design**: Provides an intuitive and developer-friendly API with fluent interfaces.
 - **Spring Data Integration**: Seamlessly works with Spring Data JPA and Hibernate.

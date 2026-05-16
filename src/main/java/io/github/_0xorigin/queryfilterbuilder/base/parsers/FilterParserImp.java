@@ -7,8 +7,6 @@ import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 
 import java.util.*;
@@ -19,7 +17,6 @@ import java.util.*;
 public final class FilterParserImp implements FilterParser {
 
     private final QueryFilterBuilderProperties properties;
-    private final Logger log = LoggerFactory.getLogger(FilterParserImp.class);
 
     /**
      * Constructs a new FilterParserImp.
@@ -87,8 +84,7 @@ public final class FilterParserImp implements FilterParser {
      */
     @Override
     public List<FilterWrapper> parse(@NonNull final List<FilterRequest> filterRequests) {
-        if (filterRequests == null)
-            return List.of();
+        Objects.requireNonNull(filterRequests, "filterRequests cannot be null");
         return filterRequests
                 .stream()
                 .filter(filterRequest -> filterRequest.field() != null && !filterRequest.field().isBlank())

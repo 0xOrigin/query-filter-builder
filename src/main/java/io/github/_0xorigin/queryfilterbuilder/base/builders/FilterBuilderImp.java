@@ -19,8 +19,6 @@ import io.github._0xorigin.queryfilterbuilder.base.wrappers.FilterWrapper;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterFieldRegistry;
 import io.github._0xorigin.queryfilterbuilder.registries.FilterOperatorRegistry;
 import jakarta.persistence.criteria.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 
 import java.io.Serializable;
@@ -39,7 +37,6 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
     private final FilterOperatorRegistry filterOperatorRegistry;
     private final AbstractEnumFilterField enumFilterField;
     private final LocalizationService localizationService;
-    private final Logger log = LoggerFactory.getLogger(FilterBuilderImp.class);
 
     /**
      * Constructs a new FilterBuilderImp with the necessary dependencies.
@@ -82,16 +79,17 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
     public Collection<FilterWrapper> getDistinctFilterWrappers(@NonNull final FilterContext<T> filterContext) {
         final Map<String, FilterWrapper> filterWrappers = new LinkedHashMap<>();
         filterContext.getRequest().ifPresent(request ->
-            filterParser.parse(request).forEach(filterWrapper ->
-                filterWrappers.compute(filterWrapper.field(), (k, currentValue) -> setFilterType(filterContext, filterWrapper, currentValue))
-            )
+            filterParser.parse(request).forEach(filterWrapper -> {
+                final FilterWrapper resolved = resolveAlias(filterContext, filterWrapper);
+                filterWrappers.compute(resolved.field(), (k, currentValue) -> setFilterType(filterContext, resolved, currentValue));
+            })
         );
         filterContext.getFilterRequests().ifPresent(filterRequests ->
-            filterParser.parse(filterRequests).forEach(filterWrapper ->
-                filterWrappers.compute(filterWrapper.originalFieldName(), (k, currentValue) -> setFilterType(filterContext, filterWrapper, currentValue))
-            )
+            filterParser.parse(filterRequests).forEach(filterWrapper -> {
+                final FilterWrapper resolved = resolveAlias(filterContext, filterWrapper);
+                filterWrappers.compute(resolved.field(), (k, currentValue) -> setFilterType(filterContext, resolved, currentValue));
+            })
         );
-//        log.debug("FilterWrappers: {}", filterWrappers);
         return filterWrappers.values();
     }
 
@@ -292,5 +290,34 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
             isFilterExists
                 && customFilterHolder.sourceTypes().contains(filterWrapper.sourceType())
         );
+    }
+
+    /**
+     * Resolve a parsed FilterWrapper's field to the configured entity field name if an alias was registered.
+     * This will return a new FilterWrapper with the resolved entity field in the 'field' position while keeping
+     * originalFieldName unchanged (for error reporting and custom-filter lookup).
+     */
+    private FilterWrapper resolveAlias(final FilterContext<T> filterContext, final FilterWrapper wrapper) {
+        final Map<String, String> map = filterContext.getAliasToFieldMap();
+        if (map.isEmpty())
+            return wrapper;
+
+        // try using the parsed field (query param case) first, then originalFieldName (body case)
+        String candidate = wrapper.field();
+        String mapped = map.get(candidate);
+        if (mapped == null)
+            mapped = map.get(wrapper.originalFieldName());
+
+        if (mapped != null && !mapped.equals(wrapper.field())) {
+            return new FilterWrapper(
+                mapped,
+                wrapper.originalFieldName(),
+                wrapper.operator(),
+                wrapper.values(),
+                wrapper.sourceType(),
+                wrapper.filterType()
+            );
+        }
+        return wrapper;
     }
 }

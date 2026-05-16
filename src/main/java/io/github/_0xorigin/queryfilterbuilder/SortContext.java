@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 public final class SortContext<T> {
     private final Map<String, SortHolder<T, ? extends Comparable<?>>> sorts;
     private final Map<String, CustomSortHolder<T>> customSorts;
+    private final Map<String, String> aliasToFieldMap;
     private final HttpServletRequest request;
     private final List<SortRequest> sortRequests;
 
@@ -35,6 +36,7 @@ public final class SortContext<T> {
     private SortContext(@NonNull final SourceBuilder<T> sourceBuilder) {
         this.sorts = Map.copyOf(sourceBuilder.getTemplate().getSorts());
         this.customSorts = Map.copyOf(sourceBuilder.getTemplate().getCustomSorts());
+        this.aliasToFieldMap = Map.copyOf(sourceBuilder.getTemplate().getAliasToFieldMap());
         this.request = sourceBuilder.getRequest().orElse(null);
         this.sortRequests = sourceBuilder.getSortRequests().orElse(null);
     }
@@ -83,6 +85,13 @@ public final class SortContext<T> {
      */
     public Map<String, CustomSortHolder<T>> getCustomSorts() {
         return customSorts;
+    }
+
+    /**
+     * Returns the alias-to-entity field mapping for sorts. Keys are alias (client-facing) field names and values are entity field names.
+     */
+    public Map<String, String> getAliasToFieldMap() {
+        return aliasToFieldMap;
     }
 
     /**
@@ -193,6 +202,7 @@ public final class SortContext<T> {
     public static final class Template<T> {
         private final Map<String, SortHolder<T, ? extends Comparable<?>>> sorts;
         private final Map<String, CustomSortHolder<T>> customSorts;
+        private final Map<String, String> aliasToFieldMap;
 
         /**
          * Creates a new {@link Template} instance.
@@ -201,6 +211,7 @@ public final class SortContext<T> {
          */
         private Template(TemplateBuilder<T> templateBuilder) {
             this.sorts = Map.copyOf(templateBuilder.getSorts());
+            this.aliasToFieldMap = Map.copyOf(templateBuilder.getAliasToField());
             this.customSorts = Map.copyOf(templateBuilder.getCustomSorts());
         }
 
@@ -222,6 +233,10 @@ public final class SortContext<T> {
             return customSorts;
         }
 
+        private Map<String, String> getAliasToFieldMap() {
+            return aliasToFieldMap;
+        }
+
         /**
          * Creates a new {@link SourceBuilder} from this template, which can then be used to specify the source of the sort data.
          *
@@ -240,6 +255,7 @@ public final class SortContext<T> {
     public static final class TemplateBuilder<T> {
         private final Map<String, SortHolder<T, ? extends Comparable<?>>> sorts = new HashMap<>();
         private final Map<String, CustomSortHolder<T>> customSorts = new HashMap<>();
+        private final Map<String, String> aliasToField = new HashMap<>();
 
         /**
          * Creates a new {@link TemplateBuilder} instance.
@@ -281,6 +297,10 @@ public final class SortContext<T> {
          */
         private Map<String, SortHolder<T, ? extends Comparable<?>>> getSorts() {
             return sorts;
+        }
+
+        private Map<String, String> getAliasToField() {
+            return aliasToField;
         }
 
         /**
@@ -478,7 +498,7 @@ public final class SortContext<T> {
          * @throws NullPointerException     if fieldName or directions are null.
          * @throws IllegalArgumentException if fieldName is blank.
          */
-        private <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSort(
+        private SortConfigurer<T> addSort(
             @NonNull final String fieldName,
             @NonNull Sort.Direction... directions
         ) {
@@ -488,14 +508,8 @@ public final class SortContext<T> {
 
             Objects.requireNonNull(directions, "Directions must not be null");
 
-            var sortHolder = templateBuilder.getSorts()
-                .compute(fieldName, (key, existingHolder) -> (
-                    existingHolder != null ?
-                        existingHolder :
-                        new SortHolder<T, K>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.empty())
-                ));
-            sortHolder.directions().addAll(Arrays.stream(directions).toList());
-            sortHolder.sourceTypes().add(sourceType);
+            addSortHolderWithoutAlias(fieldName, directions);
+            registerDefaultAliasIfNeeded(fieldName);
             return this;
         }
 
@@ -525,6 +539,30 @@ public final class SortContext<T> {
             Objects.requireNonNull(expressionProviderFunction, "Expression provider function must not be null");
             Objects.requireNonNull(directions, "Directions must not be null");
 
+            addSortHolderWithExprWithoutAlias(fieldName, expressionProviderFunction, directions);
+            registerDefaultAliasIfNeeded(fieldName);
+            return this;
+        }
+
+        private <K extends Comparable<? super K> & Serializable> void addSortHolderWithoutAlias(
+            @NonNull final String fieldName,
+            @NonNull final Sort.Direction... directions
+        ) {
+            var sortHolder = templateBuilder.getSorts()
+                .compute(fieldName, (key, existingHolder) -> (
+                    existingHolder != null ?
+                        existingHolder :
+                        new SortHolder<T, K>(EnumSet.noneOf(Sort.Direction.class), EnumSet.noneOf(SourceType.class), Optional.empty())
+                ));
+            sortHolder.directions().addAll(Arrays.stream(directions).toList());
+            sortHolder.sourceTypes().add(sourceType);
+        }
+
+        private <K extends Comparable<? super K> & Serializable> void addSortHolderWithExprWithoutAlias(
+            @NonNull final String fieldName,
+            @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+            @NonNull final Sort.Direction... directions
+        ) {
             var sortHolder = templateBuilder.getSorts()
                 .compute(fieldName, (key, existingHolder) -> (
                     existingHolder != null ?
@@ -533,6 +571,102 @@ public final class SortContext<T> {
                 ));
             sortHolder.directions().addAll(Arrays.stream(directions).toList());
             sortHolder.sourceTypes().add(sourceType);
+        }
+
+        private void registerDefaultAliasIfNeeded(@NonNull final String fieldName) {
+            templateBuilder.getAliasToField().putIfAbsent(fieldName, fieldName);
+        }
+
+        /**
+         * Adds a sort for an entity field and registers a different alias (client-facing name).
+         */
+        public SortConfigurer<T> addSortWithAlias(
+            @NonNull final String fieldName,
+            @NonNull final String alias,
+            @NonNull Sort.Direction... directions
+        ) {
+            Objects.requireNonNull(alias, "Alias must not be null");
+            if (alias.isBlank())
+                throw new IllegalArgumentException("Alias must not be blank");
+
+            String existing = templateBuilder.getAliasToField().get(alias);
+            if (existing != null && !existing.equals(fieldName))
+                throw new IllegalArgumentException("Alias '" + alias + "' is already mapped to a different field: " + existing);
+
+            // configure the actual sort without registering default alias
+            addSortHolderWithoutAlias(fieldName, directions);
+            templateBuilder.getAliasToField().put(alias, fieldName);
+            return this;
+        }
+
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSortWithAlias(
+            @NonNull final String fieldName,
+            @NonNull final String alias,
+            @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+            @NonNull Sort.Direction... directions
+        ) {
+            Objects.requireNonNull(alias, "Alias must not be null");
+            if (alias.isBlank())
+                throw new IllegalArgumentException("Alias must not be blank");
+
+            String existing = templateBuilder.getAliasToField().get(alias);
+            if (existing != null && !existing.equals(fieldName))
+                throw new IllegalArgumentException("Alias '" + alias + "' is already mapped to a different field: " + existing);
+
+            addSortHolderWithExprWithoutAlias(fieldName, expressionProviderFunction, directions);
+            templateBuilder.getAliasToField().put(alias, fieldName);
+            return this;
+        }
+
+        /**
+         * Adds a sort for an entity field and registers a set of aliases (client-facing names).
+         */
+        public SortConfigurer<T> addSortWithAliases(
+            @NonNull final String fieldName,
+            @NonNull final Set<String> aliases,
+            @NonNull Sort.Direction... directions
+        ) {
+            Objects.requireNonNull(aliases, "Aliases must not be null");
+            if (aliases.isEmpty())
+                throw new IllegalArgumentException("Aliases must not be empty");
+
+            for (String alias : aliases) {
+                Objects.requireNonNull(alias, "Alias in set must not be null");
+                if (alias.isBlank())
+                    throw new IllegalArgumentException("Alias in set must not be blank");
+                String existing = templateBuilder.getAliasToField().get(alias);
+                if (existing != null && !existing.equals(fieldName))
+                    throw new IllegalArgumentException("Alias '" + alias + "' is already mapped to a different field: " + existing);
+            }
+
+            addSortHolderWithoutAlias(fieldName, directions);
+            for (String alias : aliases)
+                templateBuilder.getAliasToField().put(alias, fieldName);
+            return this;
+        }
+
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSortWithAliases(
+            @NonNull final String fieldName,
+            @NonNull final Set<String> aliases,
+            @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+            @NonNull Sort.Direction... directions
+        ) {
+            Objects.requireNonNull(aliases, "Aliases must not be null");
+            if (aliases.isEmpty())
+                throw new IllegalArgumentException("Aliases must not be empty");
+
+            for (String alias : aliases) {
+                Objects.requireNonNull(alias, "Alias in set must not be null");
+                if (alias.isBlank())
+                    throw new IllegalArgumentException("Alias in set must not be blank");
+                String existing = templateBuilder.getAliasToField().get(alias);
+                if (existing != null && !existing.equals(fieldName))
+                    throw new IllegalArgumentException("Alias '" + alias + "' is already mapped to a different field: " + existing);
+            }
+
+            addSortHolderWithExprWithoutAlias(fieldName, expressionProviderFunction, directions);
+            for (String alias : aliases)
+                templateBuilder.getAliasToField().put(alias, fieldName);
             return this;
         }
     }

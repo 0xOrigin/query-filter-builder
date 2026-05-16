@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 public final class FilterContext<T> {
     private final Map<String, FilterHolder<T, ? extends Comparable<?>>> filters;
     private final Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> customFilters;
+    private final Map<String, String> aliasToFieldMap;
     private final HttpServletRequest request;
     private final List<FilterRequest> filterRequests;
 
@@ -36,6 +37,7 @@ public final class FilterContext<T> {
     private FilterContext(@NonNull final SourceBuilder<T> sourceBuilder) {
         this.filters = Map.copyOf(sourceBuilder.getTemplate().getFilters());
         this.customFilters = Map.copyOf(sourceBuilder.getTemplate().getCustomFilters());
+        this.aliasToFieldMap = Map.copyOf(sourceBuilder.getTemplate().getAliasToFieldMap());
         this.request = sourceBuilder.getRequest().orElse(null);
         this.filterRequests = sourceBuilder.getFilterRequests().orElse(null);
     }
@@ -84,6 +86,14 @@ public final class FilterContext<T> {
      */
     public Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> getCustomFilters() {
         return customFilters;
+    }
+
+    /**
+     * Returns the alias-to-entity field mapping.
+     * Keys are alias (client-facing) field names and values are the actual entity field names.
+     */
+    public Map<String, String> getAliasToFieldMap() {
+        return aliasToFieldMap;
     }
 
     /**
@@ -194,6 +204,7 @@ public final class FilterContext<T> {
     public static final class Template<T> {
         private final Map<String, FilterHolder<T, ? extends Comparable<?>>> filters;
         private final Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> customFilters;
+        private final Map<String, String> aliasToFieldMap;
 
         /**
          * Creates a new {@link Template} instance.
@@ -203,6 +214,7 @@ public final class FilterContext<T> {
         private Template(TemplateBuilder<T> templateBuilder) {
             this.filters = Map.copyOf(templateBuilder.getFilters());
             this.customFilters = Map.copyOf(templateBuilder.getCustomFilters());
+            this.aliasToFieldMap = Map.copyOf(templateBuilder.getAliasToField());
         }
 
         /**
@@ -224,6 +236,15 @@ public final class FilterContext<T> {
         }
 
         /**
+         * Returns the map of aliases to fields.
+         *
+         * @return An unmodifiable map of aliases to fields, keyed by alias.
+         */
+        private Map<String, String> getAliasToFieldMap() {
+            return aliasToFieldMap;
+        }
+
+        /**
          * Creates a new {@link SourceBuilder} from this template, which can then be used to specify the source of the filter data.
          *
          * @return A new {@link SourceBuilder}.
@@ -241,11 +262,13 @@ public final class FilterContext<T> {
     public static final class TemplateBuilder<T> {
         private final Map<String, FilterHolder<T, ? extends Comparable<?>>> filters = new HashMap<>();
         private final Map<String, CustomFilterHolder<T, ? extends Comparable<?>>> customFilters = new HashMap<>();
+        private final Map<String, String> aliasToField = new HashMap<>();
 
         /**
          * Creates a new {@link TemplateBuilder} instance.
          */
-        private TemplateBuilder() {}
+        private TemplateBuilder() {
+        }
 
         /**
          * Configures filters that are sourced from query parameters.
@@ -282,6 +305,15 @@ public final class FilterContext<T> {
          */
         private Map<String, FilterHolder<T, ? extends Comparable<?>>> getFilters() {
             return filters;
+        }
+
+        /**
+         * Returns the map of aliases to fields.
+         *
+         * @return A map of aliases to fields.
+         */
+        private Map<String, String> getAliasToField() {
+            return aliasToField;
         }
 
         /**
@@ -326,6 +358,45 @@ public final class FilterContext<T> {
             this.sourceType = sourceType;
         }
 
+        private static EnumSet<Operator> getOperatorsSet(@NonNull Operator[] operators) {
+            return Arrays.stream(operators)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
+        }
+
+        private static void validateFieldName(String fieldName) {
+            Objects.requireNonNull(fieldName, "Field name must not be null");
+            if (fieldName.isBlank())
+                throw new IllegalArgumentException("Field name must not be blank");
+        }
+
+        private static void validateOperatorsArray(Operator[] operators) {
+            Objects.requireNonNull(operators, "Operators must not be null");
+        }
+
+        private static void validateOperatorsSet(EnumSet<Operator> operatorsSet) {
+            if (operatorsSet.isEmpty())
+                throw new IllegalArgumentException("Operators must not be empty");
+        }
+
+        private static <T, K extends Comparable<? super K> & Serializable> void validateExpressionProviderFunction(ExpressionProviderFunction<T, K> expressionProviderFunction) {
+            Objects.requireNonNull(expressionProviderFunction, "Expression provider function must not be null");
+        }
+
+        private static <T> void validateCustomFilterFunction(CustomFilterFunction<T> filterFunction) {
+            Objects.requireNonNull(filterFunction, "Filter function must not be null");
+        }
+
+        private static <K extends Comparable<? super K> & Serializable> void validateDataTypeForInput(Class<K> dataTypeForInput) {
+            Objects.requireNonNull(dataTypeForInput, "Data type for input must not be null");
+        }
+
+        private static void validateFilterName(String filterName) {
+            Objects.requireNonNull(filterName, "Filter name must not be null");
+            if (filterName.isBlank())
+                throw new IllegalArgumentException("Filter name must not be blank");
+        }
+
         /**
          * Adds a filter for a specific field with the given operators.
          * <p>
@@ -338,29 +409,12 @@ public final class FilterContext<T> {
          * @throws NullPointerException     if fieldName or operators are null.
          * @throws IllegalArgumentException if fieldName is blank or if no operators are provided.
          */
-        public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
-            @NonNull final String fieldName,
-            @NonNull Operator... operators
+        public FilterConfigurer<T> addFilter(
+                @NonNull final String fieldName,
+                @NonNull Operator... operators
         ) {
-            Objects.requireNonNull(fieldName, "Field name must not be null");
-            if (fieldName.isBlank())
-                throw new IllegalArgumentException("Field name must not be blank");
-
-            Objects.requireNonNull(operators, "Operators must not be null");
-            EnumSet<Operator> operatorsSet = Arrays.stream(operators)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
-            if (operatorsSet.isEmpty())
-                throw new IllegalArgumentException("Operators must not be empty");
-
-            var filterHolder = templateBuilder.getFilters()
-                .compute(fieldName, (key, existingHolder) -> (
-                    existingHolder != null ?
-                        existingHolder :
-                        new FilterHolder<T, K>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.empty())
-                ));
-            filterHolder.operators().addAll(operatorsSet);
-            filterHolder.sourceTypes().add(sourceType);
+            addBaseFilter(fieldName, operators);
+            registerDefaultAlias(fieldName);
             return this;
         }
 
@@ -371,39 +425,76 @@ public final class FilterContext<T> {
          * If a filter with the same {@code fieldName} already exists, this new definition will overwrite the existing
          * expression provider. The operators and source types will be merged.
          *
-         * @param fieldName                The name of the filter. Must not be null.
+         * @param fieldName                  The name of the filter. Must not be null.
          * @param expressionProviderFunction A function that provides a custom JPA {@code Expression}. Must not be null.
-         * @param operators                The allowed operators for this filter. Must not be null.
-         * @param <K>                      The type of the expression result.
+         * @param operators                  The allowed operators for this filter. Must not be null.
+         * @param <K>                        The type of the expression result.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if any of the arguments are null.
          * @throws IllegalArgumentException if fieldName is blank or if no operators are provided.
          */
         public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
-            @NonNull final String fieldName,
-            @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
-            @NonNull Operator... operators
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+                @NonNull Operator... operators
         ) {
-            Objects.requireNonNull(fieldName, "Field name must not be null");
-            if (fieldName.isBlank())
-                throw new IllegalArgumentException("Field name must not be blank");
+            addBaseFilter(fieldName, expressionProviderFunction, operators);
+            registerDefaultAlias(fieldName);
+            return this;
+        }
 
-            Objects.requireNonNull(expressionProviderFunction, "Expression provider function must not be null");
-            Objects.requireNonNull(operators, "Operators must not be null");
-            EnumSet<Operator> operatorsSet = Arrays.stream(operators)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
-            if (operatorsSet.isEmpty())
-                throw new IllegalArgumentException("Operators must not be empty");
+        /**
+         * Adds a filter for a specific entity field but accepts a different alias.
+         * The alias is what the client will use in query params or request body; it will be mapped to the
+         * given entity fieldName internally.
+         */
+        public FilterConfigurer<T> addFilter(
+                @NonNull final String alias,
+                @NonNull final String fieldName,
+                @NonNull Operator... operators
+        ) {
+            validateAlias(alias, fieldName);
+            addBaseFilter(fieldName, operators);
+            addAliasToField(alias, fieldName);
+            return this;
+        }
 
-            var filterHolder = templateBuilder.getFilters()
-                .compute(fieldName, (key, existingHolder) -> (
-                    existingHolder != null ?
-                        new FilterHolder<>(EnumSet.copyOf(existingHolder.operators()), EnumSet.copyOf(existingHolder.sourceTypes()), Optional.of(expressionProviderFunction)) :
-                        new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.of(expressionProviderFunction))
-                ));
-            filterHolder.operators().addAll(operatorsSet);
-            filterHolder.sourceTypes().add(sourceType);
+        public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
+                @NonNull final String alias,
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+                @NonNull Operator... operators
+        ) {
+            validateAlias(alias, fieldName);
+            addBaseFilter(fieldName, expressionProviderFunction, operators);
+            addAliasToField(alias, fieldName);
+            return this;
+        }
+
+        /**
+         * Adds a filter for a specific entity field but accepts a set of aliases.
+         * All aliases will map to the same entity field internally. No alias may already be mapped to a different field.
+         */
+        public FilterConfigurer<T> addFilter(
+                @NonNull final Set<String> aliases,
+                @NonNull final String fieldName,
+                @NonNull Operator... operators
+        ) {
+            validateAliasesSet(aliases, fieldName);
+            addBaseFilter(fieldName, operators);
+            aliases.forEach(alias -> addAliasToField(alias, fieldName));
+            return this;
+        }
+
+        public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
+                @NonNull final String fieldName,
+                @NonNull final Set<String> aliases,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+                @NonNull Operator... operators
+        ) {
+            validateAliasesSet(aliases, fieldName);
+            addBaseFilter(fieldName, expressionProviderFunction, operators);
+            aliases.forEach(alias -> addAliasToField(alias, fieldName));
             return this;
         }
 
@@ -415,38 +506,116 @@ public final class FilterContext<T> {
          * data type or the filter function for an existing custom filter is not allowed and will result in an
          * {@link IllegalArgumentException}.
          *
-         * @param filterName     The name of the custom filter. Must not be null.
+         * @param filterName       The name of the custom filter. Must not be null.
          * @param dataTypeForInput The expected data type of the input value for this filter. Must not be null.
-         * @param filterFunction The function that implements the custom filter logic. Must not be null.
-         * @param <K>            The type of the input value.
+         * @param filterFunction   The function that implements the custom filter logic. Must not be null.
+         * @param <K>              The type of the input value.
          * @return This configurer instance for chaining.
          * @throws NullPointerException     if any of the arguments are null.
          * @throws IllegalArgumentException if the filter name is blank or if a custom filter with the same name but a different data type is already defined.
          */
         public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addCustomFilter(
-            @NonNull final String filterName,
-            @NonNull final Class<K> dataTypeForInput,
-            @NonNull final CustomFilterFunction<T> filterFunction
+                @NonNull final String filterName,
+                @NonNull final Class<K> dataTypeForInput,
+                @NonNull final CustomFilterFunction<T> filterFunction
         ) {
-            Objects.requireNonNull(filterName, "Filter name must not be null");
-            if (filterName.isBlank())
-                throw new IllegalArgumentException("Filter name must not be blank");
-
-            Objects.requireNonNull(dataTypeForInput, "Data type for input must not be null");
-            Objects.requireNonNull(filterFunction, "Filter function must not be null");
-
-            var customFilterHolder = templateBuilder.getCustomFilters()
-                .compute(filterName, (key, existingHolder) -> {
-                    if (existingHolder == null)
-                        return new CustomFilterHolder<>(dataTypeForInput, filterFunction, EnumSet.noneOf(SourceType.class));
-
-                    if (!existingHolder.dataType().equals(dataTypeForInput))
-                        throw new IllegalArgumentException("Changing data type or filter function for existing custom filter is not allowed: " + filterName);
-
-                    return existingHolder;
-                });
-            customFilterHolder.sourceTypes().add(sourceType);
+            validateFilterName(filterName);
+            validateDataTypeForInput(dataTypeForInput);
+            validateCustomFilterFunction(filterFunction);
+            addCustomFilterHolder(filterName, dataTypeForInput, filterFunction);
             return this;
+        }
+
+        private void addBaseFilter(
+                @NonNull final String fieldName,
+                @NonNull final Operator... operators
+        ) {
+            validateFieldName(fieldName);
+            validateOperatorsArray(operators);
+            EnumSet<Operator> operatorsSet = getOperatorsSet(operators);
+            validateOperatorsSet(operatorsSet);
+            addFilterHolder(fieldName, operatorsSet);
+        }
+
+        private <K extends Comparable<? super K> & Serializable> void addBaseFilter(
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+                @NonNull final Operator... operators
+        ) {
+            validateFieldName(fieldName);
+            validateExpressionProviderFunction(expressionProviderFunction);
+            validateOperatorsArray(operators);
+            EnumSet<Operator> operatorsSet = getOperatorsSet(operators);
+            validateOperatorsSet(operatorsSet);
+            addFilterHolder(fieldName, expressionProviderFunction, operatorsSet);
+        }
+
+        private <K extends Comparable<? super K> & Serializable> void addFilterHolder(
+                @NonNull final String fieldName,
+                final EnumSet<Operator> operatorsSet
+        ) {
+            var filterHolder = templateBuilder.getFilters()
+                    .compute(fieldName, (key, existingHolder) -> (
+                            existingHolder != null ?
+                                    existingHolder :
+                                    new FilterHolder<T, K>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.empty())
+                    ));
+            filterHolder.operators().addAll(operatorsSet);
+            filterHolder.sourceTypes().add(sourceType);
+        }
+
+        private <K extends Comparable<? super K> & Serializable> void addFilterHolder(
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+                final EnumSet<Operator> operatorsSet
+        ) {
+            var filterHolder = templateBuilder.getFilters()
+                    .compute(fieldName, (key, existingHolder) -> (
+                            existingHolder != null ?
+                                    new FilterHolder<>(EnumSet.copyOf(existingHolder.operators()), EnumSet.copyOf(existingHolder.sourceTypes()), Optional.of(expressionProviderFunction)) :
+                                    new FilterHolder<>(EnumSet.noneOf(Operator.class), EnumSet.noneOf(SourceType.class), Optional.of(expressionProviderFunction))
+                    ));
+            filterHolder.operators().addAll(operatorsSet);
+            filterHolder.sourceTypes().add(sourceType);
+        }
+
+        private <K extends Comparable<? super K> & Serializable> void addCustomFilterHolder(String filterName, Class<K> dataTypeForInput, CustomFilterFunction<T> filterFunction) {
+            var customFilterHolder = templateBuilder.getCustomFilters()
+                    .compute(filterName, (key, existingHolder) -> {
+                        if (existingHolder == null)
+                            return new CustomFilterHolder<>(dataTypeForInput, filterFunction, EnumSet.noneOf(SourceType.class));
+
+                        if (!existingHolder.dataType().equals(dataTypeForInput))
+                            throw new IllegalArgumentException("Changing data type or filter function for existing custom filter is not allowed: " + filterName);
+
+                        return existingHolder;
+                    });
+            customFilterHolder.sourceTypes().add(sourceType);
+        }
+
+        private void registerDefaultAlias(@NonNull final String fieldName) {
+            templateBuilder.getAliasToField().putIfAbsent(fieldName, fieldName);
+        }
+
+        private void addAliasToField(String alias, String fieldName) {
+            templateBuilder.getAliasToField().put(alias, fieldName);
+        }
+
+        private void validateAliasesSet(Set<String> aliases, String fieldName) {
+            Objects.requireNonNull(aliases, "Aliases must not be null");
+            if (aliases.isEmpty())
+                throw new IllegalArgumentException("Aliases must not be empty");
+            aliases.forEach(alias -> validateAlias(alias, fieldName));
+        }
+
+        private void validateAlias(String alias, String fieldName) {
+            Objects.requireNonNull(alias, "Alias must not be null");
+            if (alias.isBlank())
+                throw new IllegalArgumentException("Alias must not be blank");
+
+            String existing = templateBuilder.getAliasToField().get(alias);
+            if (existing != null && !existing.equals(fieldName))
+                throw new IllegalArgumentException("Alias '" + alias + "' is already mapped to a different field: " + existing);
         }
     }
 }
