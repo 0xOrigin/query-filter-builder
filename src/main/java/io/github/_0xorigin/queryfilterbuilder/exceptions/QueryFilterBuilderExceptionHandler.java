@@ -41,7 +41,7 @@ public abstract class QueryFilterBuilderExceptionHandler {
      * @return A {@link ResponseEntity} with a 400 status and an {@link ApiErrorResponse} body.
      */
     @ExceptionHandler(InvalidQueryParameterException.class)
-    protected ResponseEntity<?> handleException(InvalidQueryParameterException exception, WebRequest request) {
+    protected ResponseEntity<ApiErrorResponse> handleException(InvalidQueryParameterException exception, WebRequest request) {
         Map<String, List<String>> groupedErrors = exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -67,7 +67,7 @@ public abstract class QueryFilterBuilderExceptionHandler {
      * @return A {@link ResponseEntity} with a 500 status and an {@link ApiErrorResponse} body.
      */
     @ExceptionHandler(QueryBuilderConfigurationException.class)
-    protected ResponseEntity<?> handleException(QueryBuilderConfigurationException exception, WebRequest request) {
+    protected ResponseEntity<ApiErrorResponse> handleException(QueryBuilderConfigurationException exception, WebRequest request) {
         Map<String, List<String>> groupedErrors = exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
