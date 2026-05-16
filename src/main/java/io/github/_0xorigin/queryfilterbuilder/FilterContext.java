@@ -90,7 +90,7 @@ public final class FilterContext<T> {
 
     /**
      * Returns the alias-to-entity field mapping.
-     * Keys are alias (client-facing) field names and values are the actual entity field names.
+     * Keys are aliases (client-facing) and values are the actual entity field names.
      */
     public Map<String, String> getAliasToFieldMap() {
         return aliasToFieldMap;
@@ -358,39 +358,95 @@ public final class FilterContext<T> {
             this.sourceType = sourceType;
         }
 
+        /**
+         * Convert the provided operators array into an {@link EnumSet} while filtering out null entries.
+         * This helper normalizes the operator input and returns an empty {@code EnumSet} if no valid
+         * operators are present.
+         *
+         * @param operators the operators array passed by the caller; must not be null
+         * @return an {@link EnumSet} containing the non-null operators
+         */
         private static EnumSet<Operator> getOperatorsSet(@NonNull Operator[] operators) {
             return Arrays.stream(operators)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(() -> EnumSet.noneOf(Operator.class)));
         }
 
+        /**
+         * Validate that a field name is neither {@code null} nor blank.
+         *
+         * @param fieldName the field name to validate
+         * @throws NullPointerException     if {@code fieldName} is null
+         * @throws IllegalArgumentException if {@code fieldName} is blank
+         */
         private static void validateFieldName(String fieldName) {
             Objects.requireNonNull(fieldName, "Field name must not be null");
             if (fieldName.isBlank())
                 throw new IllegalArgumentException("Field name must not be blank");
         }
 
+        /**
+         * Validate that the operators array is not {@code null}.
+         *
+         * @param operators the operators array to validate
+         * @throws NullPointerException if {@code operators} is null
+         */
         private static void validateOperatorsArray(Operator[] operators) {
             Objects.requireNonNull(operators, "Operators must not be null");
         }
 
+        /**
+         * Validate that the operators set is not empty.
+         *
+         * @param operatorsSet the set of operators to validate
+         * @throws IllegalArgumentException if {@code operatorsSet} is empty
+         */
         private static void validateOperatorsSet(EnumSet<Operator> operatorsSet) {
             if (operatorsSet.isEmpty())
                 throw new IllegalArgumentException("Operators must not be empty");
         }
 
+        /**
+         * Validate that the provided expression provider function is not {@code null}.
+         *
+         * @param expressionProviderFunction the function to validate
+         * @param <T> entity type parameter used by the function
+         * @param <K> expression result type used by the function
+         * @throws NullPointerException if {@code expressionProviderFunction} is null
+         */
         private static <T, K extends Comparable<? super K> & Serializable> void validateExpressionProviderFunction(ExpressionProviderFunction<T, K> expressionProviderFunction) {
             Objects.requireNonNull(expressionProviderFunction, "Expression provider function must not be null");
         }
 
+        /**
+         * Validate that the provided custom filter function is not {@code null}.
+         *
+         * @param filterFunction the custom filter function to validate
+         * @param <T> the entity type parameter for the filter
+         * @throws NullPointerException if {@code filterFunction} is null
+         */
         private static <T> void validateCustomFilterFunction(CustomFilterFunction<T> filterFunction) {
             Objects.requireNonNull(filterFunction, "Filter function must not be null");
         }
 
+        /**
+         * Validate that the data type for input is not {@code null}.
+         *
+         * @param dataTypeForInput the expected input data type class
+         * @param <K> the input data type
+         * @throws NullPointerException if {@code dataTypeForInput} is null
+         */
         private static <K extends Comparable<? super K> & Serializable> void validateDataTypeForInput(Class<K> dataTypeForInput) {
             Objects.requireNonNull(dataTypeForInput, "Data type for input must not be null");
         }
 
+        /**
+         * Validate that a custom filter name is neither {@code null} nor blank.
+         *
+         * @param filterName the custom filter name to validate
+         * @throws NullPointerException     if {@code filterName} is null
+         * @throws IllegalArgumentException if {@code filterName} is blank
+         */
         private static void validateFilterName(String filterName) {
             Objects.requireNonNull(filterName, "Filter name must not be null");
             if (filterName.isBlank())
@@ -444,9 +500,16 @@ public final class FilterContext<T> {
         }
 
         /**
-         * Adds a filter for a specific entity field but accepts a different alias.
-         * The alias is what the client will use in query params or request body; it will be mapped to the
-         * given entity fieldName internally.
+         * Adds a filter for the given entity field and registers a single client-facing alias for it.
+         * The alias is what clients will use when submitting filter parameters; it will be mapped to the
+         * provided {@code fieldName} internally.
+         *
+         * @param alias     the client-facing alias to register for this field. Must not be null or blank.
+         * @param fieldName the entity field name the alias maps to. Must not be null or blank.
+         * @param operators allowed operators for this filter. Must not be null.
+         * @return this configurer for chaining
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if alias is blank or already mapped to a different field, or if fieldName is blank
          */
         public FilterConfigurer<T> addFilter(
                 @NonNull final String alias,
@@ -459,6 +522,19 @@ public final class FilterContext<T> {
             return this;
         }
 
+        /**
+         * Adds a filter backed by a custom expression provider and registers a single client-facing alias for it.
+         * The alias will be mapped to {@code fieldName} when parsing client requests.
+         *
+         * @param alias                     the client-facing alias to register. Must not be null or blank.
+         * @param fieldName                 the entity field name the alias maps to. Must not be null or blank.
+         * @param expressionProviderFunction custom expression provider; must not be null
+         * @param operators                 allowed operators for this filter; must not be null
+         * @param <K>                       expression result type
+         * @return this configurer for chaining
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if alias is blank or already mapped to a different field, or if fieldName is blank
+         */
         public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
                 @NonNull final String alias,
                 @NonNull final String fieldName,
@@ -472,8 +548,16 @@ public final class FilterContext<T> {
         }
 
         /**
-         * Adds a filter for a specific entity field but accepts a set of aliases.
-         * All aliases will map to the same entity field internally. No alias may already be mapped to a different field.
+         * Adds a filter for the given entity field and registers multiple client-facing aliases that map to it.
+         * All aliases in the provided set will be associated with the same {@code fieldName}. None of the aliases
+         * may already be mapped to a different field.
+         *
+         * @param aliases   set of client-facing aliases to register; must not be null or empty
+         * @param fieldName the entity field name the aliases map to; must not be null or blank
+         * @param operators allowed operators for this filter; must not be null
+         * @return this configurer for chaining
+         * @throws NullPointerException     if aliases or operators are null
+         * @throws IllegalArgumentException if aliases is empty, contains blank entries, or an alias is already mapped to a different field
          */
         public FilterConfigurer<T> addFilter(
                 @NonNull final Set<String> aliases,
@@ -486,9 +570,22 @@ public final class FilterContext<T> {
             return this;
         }
 
+        /**
+         * Adds a filter that uses a custom expression provider and registers multiple client-facing aliases for it.
+         * All aliases in the provided set will be associated with the same {@code fieldName}.
+         *
+         * @param fieldName                 the entity field name the aliases map to; must not be null or blank
+         * @param aliases                   set of client-facing aliases; must not be null or empty
+         * @param expressionProviderFunction custom expression provider; must not be null
+         * @param operators                 allowed operators for this filter; must not be null
+         * @param <K>                       expression result type
+         * @return this configurer for chaining
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if aliases is empty, contains blank entries, or an alias is already mapped to a different field
+         */
         public <K extends Comparable<? super K> & Serializable> FilterConfigurer<T> addFilter(
-                @NonNull final String fieldName,
                 @NonNull final Set<String> aliases,
+                @NonNull final String fieldName,
                 @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
                 @NonNull Operator... operators
         ) {
@@ -526,6 +623,13 @@ public final class FilterContext<T> {
             return this;
         }
 
+        /**
+         * Common implementation for adding a simple (field-based) filter.
+         * Validates inputs and delegates to {@link #addFilterHolder(String, EnumSet)} to update the template.
+         *
+         * @param fieldName the entity field name
+         * @param operators allowed filter operators
+         */
         private void addBaseFilter(
                 @NonNull final String fieldName,
                 @NonNull final Operator... operators
@@ -537,6 +641,15 @@ public final class FilterContext<T> {
             addFilterHolder(fieldName, operatorsSet);
         }
 
+        /**
+         * Common implementation for adding a filter that uses a custom expression provider.
+         * Validates inputs and delegates to {@link #addFilterHolder(String, ExpressionProviderFunction, EnumSet)}.
+         *
+         * @param fieldName the entity field name
+         * @param expressionProviderFunction custom expression provider to compute the filter expression
+         * @param operators allowed filter operators
+         * @param <K> expression result type
+         */
         private <K extends Comparable<? super K> & Serializable> void addBaseFilter(
                 @NonNull final String fieldName,
                 @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
@@ -550,6 +663,14 @@ public final class FilterContext<T> {
             addFilterHolder(fieldName, expressionProviderFunction, operatorsSet);
         }
 
+        /**
+         * Create or update a {@link FilterHolder} for the given field name without registering any expression provider.
+         * This method merges operators and source types if a holder already exists.
+         *
+         * @param fieldName   entity field name
+         * @param operatorsSet validated set of operators to add to the holder
+         * @param <K>         comparable type parameter for the holder's expression
+         */
         private <K extends Comparable<? super K> & Serializable> void addFilterHolder(
                 @NonNull final String fieldName,
                 final EnumSet<Operator> operatorsSet
@@ -564,6 +685,16 @@ public final class FilterContext<T> {
             filterHolder.sourceTypes().add(sourceType);
         }
 
+        /**
+         * Create or update a {@link FilterHolder} for the given field name and set a custom expression provider.
+         * If a holder already exists this will replace its expression provider with the provided one while
+         * merging operators and source types.
+         *
+         * @param fieldName                 entity field name
+         * @param expressionProviderFunction expression provider to be attached to the holder
+         * @param operatorsSet              validated set of operators to add to the holder
+         * @param <K>                       comparable type parameter for the holder's expression
+         */
         private <K extends Comparable<? super K> & Serializable> void addFilterHolder(
                 @NonNull final String fieldName,
                 @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
@@ -579,6 +710,16 @@ public final class FilterContext<T> {
             filterHolder.sourceTypes().add(sourceType);
         }
 
+        /**
+         * Create or update a {@link CustomFilterHolder} for the named custom filter.
+         * If the custom filter already exists, its data type must match the provided one; otherwise an exception is thrown.
+         * The source type is merged into the existing holder.
+         *
+         * @param filterName       name of the custom filter
+         * @param dataTypeForInput expected input data type for the filter
+         * @param filterFunction   implementation of the custom filter
+         * @param <K>              type of the input value
+         */
         private <K extends Comparable<? super K> & Serializable> void addCustomFilterHolder(String filterName, Class<K> dataTypeForInput, CustomFilterFunction<T> filterFunction) {
             var customFilterHolder = templateBuilder.getCustomFilters()
                     .compute(filterName, (key, existingHolder) -> {
@@ -593,14 +734,35 @@ public final class FilterContext<T> {
             customFilterHolder.sourceTypes().add(sourceType);
         }
 
+        /**
+         * Register a default alias mapping where the alias is identical to the entity field name.
+         * This is used to preserve backwards compatibility when callers rely on using the entity field name
+         * as a client-facing alias. Implementations may call this helper conditionally.
+         *
+         * @param fieldName the entity field name to register as its own alias
+         */
         private void registerDefaultAlias(@NonNull final String fieldName) {
             templateBuilder.getAliasToField().putIfAbsent(fieldName, fieldName);
         }
 
+        /**
+         * Add a mapping from a client-facing alias to the actual entity field name.
+         * The method does not perform validation itself; callers should validate alias uniqueness before invoking.
+         *
+         * @param alias     the client-facing alias
+         * @param fieldName the entity field name
+         */
         private void addAliasToField(String alias, String fieldName) {
             templateBuilder.getAliasToField().put(alias, fieldName);
         }
 
+        /**
+         * Validate a set of aliases ensuring the set is not null or empty and that each alias is valid
+         * for the provided {@code fieldName}.
+         *
+         * @param aliases   the set of aliases to validate
+         * @param fieldName the entity field name the aliases will map to
+         */
         private void validateAliasesSet(Set<String> aliases, String fieldName) {
             Objects.requireNonNull(aliases, "Aliases must not be null");
             if (aliases.isEmpty())
@@ -608,6 +770,14 @@ public final class FilterContext<T> {
             aliases.forEach(alias -> validateAlias(alias, fieldName));
         }
 
+        /**
+         * Validate a single alias: non-null, non-blank, and not already mapped to a different field.
+         *
+         * @param alias     the alias to validate
+         * @param fieldName the entity field name the alias will map to
+         * @throws NullPointerException     if {@code alias} is null
+         * @throws IllegalArgumentException if {@code alias} is blank or already mapped to another field
+         */
         private void validateAlias(String alias, String fieldName) {
             Objects.requireNonNull(alias, "Alias must not be null");
             if (alias.isBlank())
