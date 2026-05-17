@@ -566,46 +566,81 @@ Using `ListAPIRequest` helps standardize your API endpoints, making development 
 ## Public API Reference
 
 ### FilterContext
-- `buildTemplateForType(Class<T> type)`: Start building a filter template for an entity.
-- `TemplateBuilder<T>.queryParam(Consumer<FilterConfigurer<T>>)`: Configure the filter template for query parameters.
-- `TemplateBuilder<T>.requestBody(Consumer<FilterConfigurer<T>>)`: Configure the filter template for request body.
-- `FilterConfigurer<T>.addFilter(String fieldName, Operator...)`: Add a filter (field name used as its default alias).
-- `FilterConfigurer<T>.addFilter(String fieldName, ExpressionProviderFunction, Operator...)`: Add a filter with expression provider (field name used as default alias).
-- `FilterConfigurer<T>.addFilter(String alias, String fieldName, Operator...)`: Add a filter and register a single client-facing alias mapped to the entity field.
-- `FilterConfigurer<T>.addFilter(String alias, String fieldName, ExpressionProviderFunction, Operator...)`: Add a filter with expression provider and register a single alias.
-- `FilterConfigurer<T>.addFilter(Set<String> aliases, String fieldName, Operator...)`: Add a filter and register multiple aliases for the same entity field.
-- `FilterConfigurer<T>.addFilter(Set<String> aliases, String fieldName, ExpressionProviderFunction, Operator...)`: Add a filter with expression provider and register multiple aliases.
-- `FilterConfigurer<T>.addCustomFilter(String, Class, CustomFilterFunction)`: Add a custom filter with specified datatype for input and custom filter function to the template.
-- `TemplateBuilder<T>.buildTemplate()`: Build the filter template.
-- `Template<T>.newSourceBuilder()`: Create a new SourceBuilder for the template.
-- `SourceBuilder<T>.withQuerySource(HttpServletRequest)`: Use query parameters as source.
-- `SourceBuilder<T>.withBodySource(List<FilterRequest>)`: Use request body as source.
-- `SourceBuilder<T>.buildFilterContext()`: Build the FilterContext.
+
+**Static Entry Point**
+- `buildTemplateForType(Class<T> type)`: Creates a TemplateBuilder for the given entity type. This is the entry point for defining a filter template. The class must be annotated with @Entity.
+
+**TemplateBuilder Methods**
+- `queryParam(Consumer<FilterConfigurer<T>> configurer)`: Configures filters that are sourced from query parameters. Accepts a consumer that provides a FilterConfigurer to define the filters.
+- `requestBody(Consumer<FilterConfigurer<T>> configurer)`: Configures filters that are sourced from the request body. Accepts a consumer that provides a FilterConfigurer to define the filters.
+- `buildTemplate()`: Builds the final immutable Template instance containing all filter configurations.
+
+**Template Methods**
+- `newSourceBuilder()`: Creates a new SourceBuilder from this template, which can then be used to specify the source of the filter data (query parameters or request body).
+
+**SourceBuilder Methods**
+- `withQuerySource(HttpServletRequest request)`: Specifies that the filter data will be sourced from an HttpServletRequest (i.e., query parameters).
+- `withBodySource(List<FilterRequest> filterRequests)`: Specifies that the filter data will be sourced from a list of FilterRequest objects (i.e., request body).
+- `buildFilterContext()`: Builds the final FilterContext instance containing the template configuration and the data source.
+
+**FilterConfigurer Methods**
+- `addFilter(String fieldName, Operator... operators)`: Adds a filter for the specified field with the given operators. The field name is used as its default alias for backward compatibility.
+- `addFilter(String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction, Operator... operators)`: Adds a filter with a custom expression provider. Useful when filter logic requires more than simple field comparison. The field name is used as default alias.
+- `addFilter(String alias, String fieldName, Operator... operators)`: Adds a filter for the given entity field and registers a single client-facing alias for it. The alias is what clients will use when submitting filter parameters.
+- `addFilter(String alias, String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction, Operator... operators)`: Adds a filter backed by a custom expression provider and registers a single client-facing alias for it.
+- `addFilter(Set<String> aliases, String fieldName, Operator... operators)`: Adds a filter for the given entity field and registers multiple client-facing aliases that map to it. All aliases will be associated with the same field.
+- `addFilter(Set<String> aliases, String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction, Operator... operators)`: Adds a filter that uses a custom expression provider and registers multiple client-facing aliases for it.
+- `addCustomFilter(String filterName, Class<K> dataTypeForInput, CustomFilterFunction<T> filterFunction)`: Adds a custom filter with a specific name, data type, and filter function. Custom filters allow for complex filtering logic that cannot be expressed with standard operators.
 
 ### SortContext
-- `buildTemplateForType(Class<T> type)`: Start building a sort template for an entity.
-- `TemplateBuilder<T>.queryParam(Consumer<SortConfigurer<T>>)`: Configure the sort template for query parameters.
-- `TemplateBuilder<T>.requestBody(Consumer<SortConfigurer<T>>)`: Configure the sort template for request body.
-- `SortConfigurer<T>.addAscSort(String)`: Add an ascending sort for the specified field to the template (registers a default alias equal to the field name).
-- `SortConfigurer<T>.addAscSort(String, ExpressionProviderFunction)`: Add an ascending sort with expression provider function for the specified field.
-- `SortConfigurer<T>.addDescSort(String)`: Add a descending sort for the specified field.
-- `SortConfigurer<T>.addDescSort(String, ExpressionProviderFunction)`: Add a descending sort with expression provider function for the specified field.
-- `SortConfigurer<T>.addSorts(String)`: Add both ascending and descending sorts for the specified field to the template.
-- `SortConfigurer<T>.addSorts(String, ExpressionProviderFunction)`: Add both ascending and descending sorts with expression provider function for the specified field to the template.
-- `SortConfigurer<T>.addSort(String alias, String fieldName, Sort.Direction...)`: Add a sort and register a single client-facing alias mapped to the entity field.
-- `SortConfigurer<T>.addSort(String alias, String fieldName, ExpressionProviderFunction, Sort.Direction...)`: Add a sort with expression provider and register a single alias.
-- `SortConfigurer<T>.addSort(Set<String> aliases, String fieldName, Sort.Direction...)`: Add a sort and register multiple aliases for the same entity field.
-- `SortConfigurer<T>.addSort(Set<String> aliases, String fieldName, ExpressionProviderFunction, Sort.Direction...)`: Add a sort with expression provider and register multiple aliases.
-- `SortConfigurer<T>.addCustomSort(String, CustomSortFunction)`: Add a custom sort for the specified field to the template.
-- `TemplateBuilder<T>.buildTemplate()`: Build the sort template.
-- `Template<T>.newSourceBuilder()`: Create a new SourceBuilder for the template.
-- `SourceBuilder<T>.withQuerySource(HttpServletRequest)`: Use query parameters as source.
-- `SourceBuilder<T>.withBodySource(List<SortRequest>)`: Use request body as source.
-- `SourceBuilder<T>.buildSortContext()`: Build the SortContext.
+
+**Static Entry Point**
+- `buildTemplateForType(Class<T> type)`: Creates a TemplateBuilder for the given entity type. This is the entry point for defining a sort template. The class must be annotated with @Entity.
+
+**TemplateBuilder Methods**
+- `queryParam(Consumer<SortConfigurer<T>> configurer)`: Configures sorts that are sourced from query parameters. Accepts a consumer that provides a SortConfigurer to define the sorts.
+- `requestBody(Consumer<SortConfigurer<T>> configurer)`: Configures sorts that are sourced from the request body. Accepts a consumer that provides a SortConfigurer to define the sorts.
+- `buildTemplate()`: Builds the final immutable Template instance containing all sort configurations.
+
+**Template Methods**
+- `newSourceBuilder()`: Creates a new SourceBuilder from this template, which can then be used to specify the source of the sort data (query parameters or request body).
+
+**SourceBuilder Methods**
+- `withQuerySource(HttpServletRequest request)`: Specifies that the sort data will be sourced from an HttpServletRequest (i.e., query parameters).
+- `withBodySource(List<SortRequest> sortRequests)`: Specifies that the sort data will be sourced from a list of SortRequest objects (i.e., request body).
+- `buildSortContext()`: Builds the final SortContext instance containing the template configuration and the data source.
+
+**SortConfigurer Methods - Field Name Based (No Alias)**
+- `addAscSort(String fieldName)`: Adds an ascending sort for the specified field. Registers a default alias where the alias equals the field name for backward compatibility.
+- `addDescSort(String fieldName)`: Adds a descending sort for the specified field. Registers a default alias where the alias equals the field name.
+- `addSorts(String fieldName)`: Adds both ascending and descending sort options for the specified field. Registers a default alias where the alias equals the field name.
+- `addAscSort(String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Adds an ascending sort with a custom expression provider. Useful when sort logic requires more than simple field comparison. Registers a default alias.
+- `addDescSort(String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Adds a descending sort with a custom expression provider. Registers a default alias.
+- `addSorts(String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Adds both ascending and descending sort options with a custom expression provider. Registers a default alias.
+
+**SortConfigurer Methods - Single Alias**
+- `addAscSort(String alias, String fieldName)`: Registers a single client-facing alias that maps to the given entity field and allows ascending sorting for that field.
+- `addDescSort(String alias, String fieldName)`: Registers a single client-facing alias that maps to the given entity field and allows descending sorting for that field.
+- `addSorts(String alias, String fieldName)`: Registers a single client-facing alias that maps to the given entity field and allows both ascending and descending sorting for that field.
+- `addAscSort(String alias, String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Registers a single client-facing alias that maps to the given field and attaches an ExpressionProviderFunction to compute the ascending sort expression.
+- `addDescSort(String alias, String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Registers a single client-facing alias that maps to the given field and attaches an ExpressionProviderFunction to compute the descending sort expression.
+- `addSorts(String alias, String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Registers a single client-facing alias that maps to the given field and attaches an ExpressionProviderFunction to compute both ascending and descending sort expressions.
+
+**SortConfigurer Methods - Multiple Aliases**
+- `addAscSort(Set<String> aliases, String fieldName)`: Registers multiple client-facing aliases that all map to the same entity field and allow ascending sorting for that field.
+- `addDescSort(Set<String> aliases, String fieldName)`: Registers multiple client-facing aliases that all map to the same entity field and allow descending sorting for that field.
+- `addSorts(Set<String> aliases, String fieldName)`: Registers multiple client-facing aliases that all map to the same entity field and allow both ascending and descending sorting for that field.
+- `addAscSort(Set<String> aliases, String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Registers multiple client-facing aliases that map to the same entity field and attaches an ExpressionProviderFunction to compute the ascending sort expression.
+- `addDescSort(Set<String> aliases, String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Registers multiple client-facing aliases that map to the same entity field and attaches an ExpressionProviderFunction to compute the descending sort expression.
+- `addSorts(Set<String> aliases, String fieldName, ExpressionProviderFunction<T, K> expressionProviderFunction)`: Registers multiple client-facing aliases that map to the same entity field and attaches an ExpressionProviderFunction to compute both ascending and descending sort expressions.
+
+**SortConfigurer Methods - Custom Sort**
+- `addCustomSort(String sortName, CustomSortFunction<T> sortFunction)`: Adds a custom sort with a specific name and sort function. Custom sorts allow for complex sorting logic that cannot be expressed with standard field-based sorting.
 
 ### QueryFilterBuilder
-- `buildFilterSpecification(FilterContext<T>)`: Build a filter specification.
-- `buildSortSpecification(SortContext<T>)`: Build a sort specification.
+
+- `buildFilterSpecification(FilterContext<T> filterContext)`: Builds a JPA Specification for filtering based on the provided FilterContext.
+- `buildSortSpecification(SortContext<T> sortContext)`: Builds a JPA Specification for sorting based on the provided SortContext.
 
 ---
 

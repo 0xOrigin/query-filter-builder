@@ -606,98 +606,223 @@ public final class SortContext<T> {
         }
 
         /**
-         * Adds a sort for the given entity field and registers a single client-facing alias for it.
-         * The alias is what clients will use when submitting sort parameters; it will be mapped to the
-         * provided {@code fieldName} internally.
+         * Register a single client-facing alias that maps to the given entity field and
+         * allow ascending sorting for that field.
+         * <p>
+         * The provided {@code alias} is what clients will use when submitting sort parameters;
+         * internally it will be mapped to {@code fieldName}.
          *
-         * @param alias      the client-facing alias to register for this field. Must not be null or blank.
-         * @param fieldName  the entity field name the alias maps to. Must not be null or blank.
-         * @param directions the sort directions to allow for this field. Must not be null.
+         * @param alias     client-facing alias to register for this field; must not be null or blank
+         * @param fieldName entity field name the alias maps to; must not be null or blank
          * @return this configurer for chaining
          * @throws NullPointerException     if any argument is null
          * @throws IllegalArgumentException if alias is blank or already mapped to a different field, or if fieldName is blank
          */
-        public SortConfigurer<T> addSort(
-                @NonNull final String alias,
-                @NonNull final String fieldName,
-                @NonNull Sort.Direction... directions
-        ) {
-            validateAlias(alias, fieldName);
-            addSortHolder(fieldName, directions);
-            addAliasToField(alias, fieldName);
+        public SortConfigurer<T> addAscSort(@NonNull final String alias, @NonNull final String fieldName) {
+            addSort(alias, fieldName, Sort.Direction.ASC);
             return this;
         }
 
         /**
-         * Adds a sort backed by a custom expression provider and registers a single client-facing alias for it.
-         * The alias will be mapped to {@code fieldName} when parsing client requests.
+         * Register a single client-facing alias that maps to the given entity field and
+         * allow descending sorting for that field.
          *
-         * @param alias                      the client-facing alias to register. Must not be null or blank.
-         * @param fieldName                  the entity field name the alias maps to. Must not be null or blank.
-         * @param expressionProviderFunction custom expression provider; must not be null
-         * @param directions                 the sort directions to allow for this field; must not be null
+         * @param alias     client-facing alias to register for this field; must not be null or blank
+         * @param fieldName entity field name the alias maps to; must not be null or blank
+         * @return this configurer for chaining
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if alias is blank or already mapped to a different field, or if fieldName is blank
+         */
+        public SortConfigurer<T> addDescSort(@NonNull final String alias, @NonNull final String fieldName) {
+            addSort(alias, fieldName, Sort.Direction.DESC);
+            return this;
+        }
+
+        /**
+         * Register a single client-facing alias that maps to the given entity field and
+         * allow both ascending and descending sorting for that field.
+         *
+         * @param alias     client-facing alias to register for this field; must not be null or blank
+         * @param fieldName entity field name the alias maps to; must not be null or blank
+         * @return this configurer for chaining
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if alias is blank or already mapped to a different field, or if fieldName is blank
+         */
+        public SortConfigurer<T> addSorts(@NonNull final String alias, @NonNull final String fieldName) {
+            addSort(alias, fieldName, Sort.Direction.ASC, Sort.Direction.DESC);
+            return this;
+        }
+
+        /**
+         * Register a single client-facing alias that maps to the given field and attach an
+         * {@link ExpressionProviderFunction} to compute the sort expression. The registered alias
+         * will be resolvable by client sort parameters and the provided expression will be used
+         * to build the JPA criteria expression when sorting.
+         *
+         * @param alias                      client-facing alias to register; must not be null or blank
+         * @param fieldName                  entity field name the alias maps to; must not be null or blank
+         * @param expressionProviderFunction function that provides the JPA expression; must not be null
          * @param <K>                        expression result type
          * @return this configurer for chaining
          * @throws NullPointerException     if any argument is null
          * @throws IllegalArgumentException if alias is blank or already mapped to a different field, or if fieldName is blank
          */
-        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSort(
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addAscSort(
                 @NonNull final String alias,
                 @NonNull final String fieldName,
-                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
-                @NonNull Sort.Direction... directions
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
         ) {
-            validateAlias(alias, fieldName);
-            addSortHolder(fieldName, expressionProviderFunction, directions);
-            addAliasToField(alias, fieldName);
+            addSort(alias, fieldName, expressionProviderFunction, Sort.Direction.ASC);
             return this;
         }
 
         /**
-         * Adds a sort for the given entity field and registers multiple client-facing aliases that map to it.
-         * All aliases in the provided set will be associated with the same {@code fieldName}. None of the aliases
-         * may already be mapped to a different field.
+         * Register a single client-facing alias that maps to the given field and attach an
+         * {@link ExpressionProviderFunction} to compute a descending sort expression.
          *
-         * @param aliases    set of client-facing aliases to register; must not be null or empty
-         * @param fieldName  the entity field name the aliases map to; must not be null or blank
-         * @param directions the sort directions to allow for this field; must not be null
+         * @param alias                      client-facing alias to register; must not be null or blank
+         * @param fieldName                  entity field name the alias maps to; must not be null or blank
+         * @param expressionProviderFunction function that provides the JPA expression; must not be null
+         * @param <K>                        expression result type
          * @return this configurer for chaining
-         * @throws NullPointerException     if aliases or directions are null
-         * @throws IllegalArgumentException if aliases is empty, contains blank entries, or an alias is already mapped to a different field
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if alias is blank or already mapped to a different field, or if fieldName is blank
          */
-        public SortConfigurer<T> addSort(
-                @NonNull final Set<String> aliases,
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addDescSort(
+                @NonNull final String alias,
                 @NonNull final String fieldName,
-                @NonNull Sort.Direction... directions
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
         ) {
-            validateAliasesSet(aliases, fieldName);
-            addSortHolder(fieldName, directions);
-            aliases.forEach(alias -> addAliasToField(alias, fieldName));
+            addSort(alias, fieldName, expressionProviderFunction, Sort.Direction.DESC);
             return this;
         }
 
         /**
-         * Adds a sort that uses a custom expression provider and registers multiple client-facing aliases for it.
-         * All aliases in the provided set will be associated with the same {@code fieldName}.
+         * Register a single client-facing alias that maps to the given field and attach an
+         * {@link ExpressionProviderFunction} to compute both ascending and descending sort expressions.
+         *
+         * @param alias                      client-facing alias to register; must not be null or blank
+         * @param fieldName                  entity field name the alias maps to; must not be null or blank
+         * @param expressionProviderFunction function that provides the JPA expression; must not be null
+         * @param <K>                        expression result type
+         * @return this configurer for chaining
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if alias is blank or already mapped to a different field, or if fieldName is blank
+         */
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSorts(
+                @NonNull final String alias,
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
+        ) {
+            addSort(alias, fieldName, expressionProviderFunction, Sort.Direction.ASC, Sort.Direction.DESC);
+            return this;
+        }
+
+        /**
+         * Register multiple client-facing aliases that all map to the same entity field and
+         * allow ascending sorting for that field.
+         *
+         * @param aliases   set of client-facing aliases to register; must not be null or empty
+         * @param fieldName entity field name the aliases map to; must not be null or blank
+         * @return this configurer for chaining
+         * @throws NullPointerException     if aliases is null
+         * @throws IllegalArgumentException if aliases is empty or any alias is blank or already mapped to a different field
+         */
+        public SortConfigurer<T> addAscSort(@NonNull final Set<String> aliases, @NonNull final String fieldName) {
+            addSort(aliases, fieldName, Sort.Direction.ASC);
+            return this;
+        }
+
+        /**
+         * Register multiple client-facing aliases that all map to the same entity field and
+         * allow descending sorting for that field.
+         *
+         * @param aliases   set of client-facing aliases to register; must not be null or empty
+         * @param fieldName entity field name the aliases map to; must not be null or blank
+         * @return this configurer for chaining
+         * @throws NullPointerException     if aliases is null
+         * @throws IllegalArgumentException if aliases is empty or any alias is blank or already mapped to a different field
+         */
+        public SortConfigurer<T> addDescSort(@NonNull final Set<String> aliases, @NonNull final String fieldName) {
+            addSort(aliases, fieldName, Sort.Direction.DESC);
+            return this;
+        }
+
+        /**
+         * Register multiple client-facing aliases that all map to the same entity field and
+         * allow both ascending and descending sorting for that field.
+         *
+         * @param aliases   set of client-facing aliases to register; must not be null or empty
+         * @param fieldName entity field name the aliases map to; must not be null or blank
+         * @return this configurer for chaining
+         * @throws NullPointerException     if aliases is null
+         * @throws IllegalArgumentException if aliases is empty or any alias is blank or already mapped to a different field
+         */
+        public SortConfigurer<T> addSorts(@NonNull final Set<String> aliases, @NonNull final String fieldName) {
+            addSort(aliases, fieldName, Sort.Direction.ASC, Sort.Direction.DESC);
+            return this;
+        }
+
+        /**
+         * Register multiple client-facing aliases that map to the same entity field and attach an
+         * {@link ExpressionProviderFunction} to compute the ascending sort expression for that field.
          *
          * @param aliases                    set of client-facing aliases to register; must not be null or empty
-         * @param fieldName                  the entity field name the aliases map to; must not be null or blank
-         * @param expressionProviderFunction custom expression provider; must not be null
-         * @param directions                 the sort directions to allow for this field; must not be null
+         * @param fieldName                  entity field name the aliases map to; must not be null or blank
+         * @param expressionProviderFunction function that provides the JPA expression; must not be null
          * @param <K>                        expression result type
          * @return this configurer for chaining
          * @throws NullPointerException     if any argument is null
-         * @throws IllegalArgumentException if aliases is empty, contains blank entries, or an alias is already mapped to a different field
+         * @throws IllegalArgumentException if aliases is empty or any alias is blank or already mapped to a different field
          */
-        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSort(
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addAscSort(
                 @NonNull final Set<String> aliases,
                 @NonNull final String fieldName,
-                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
-                @NonNull Sort.Direction... directions
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
         ) {
-            validateAliasesSet(aliases, fieldName);
-            addSortHolder(fieldName, expressionProviderFunction, directions);
-            aliases.forEach(alias -> addAliasToField(alias, fieldName));
+            addSort(aliases, fieldName, expressionProviderFunction, Sort.Direction.ASC);
+            return this;
+        }
+
+        /**
+         * Register multiple client-facing aliases that map to the same entity field and attach an
+         * {@link ExpressionProviderFunction} to compute the descending sort expression for that field.
+         *
+         * @param aliases                    set of client-facing aliases to register; must not be null or empty
+         * @param fieldName                  entity field name the aliases map to; must not be null or blank
+         * @param expressionProviderFunction function that provides the JPA expression; must not be null
+         * @param <K>                        expression result type
+         * @return this configurer for chaining
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if aliases is empty or any alias is blank or already mapped to a different field
+         */
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addDescSort(
+                @NonNull final Set<String> aliases,
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
+        ) {
+            addSort(aliases, fieldName, expressionProviderFunction, Sort.Direction.DESC);
+            return this;
+        }
+
+        /**
+         * Register multiple client-facing aliases that map to the same entity field and attach an
+         * {@link ExpressionProviderFunction} to compute both ascending and descending sort expressions for that field.
+         *
+         * @param aliases                    set of client-facing aliases to register; must not be null or empty
+         * @param fieldName                  entity field name the aliases map to; must not be null or blank
+         * @param expressionProviderFunction function that provides the JPA expression; must not be null
+         * @param <K>                        expression result type
+         * @return this configurer for chaining
+         * @throws NullPointerException     if any argument is null
+         * @throws IllegalArgumentException if aliases is empty or any alias is blank or already mapped to a different field
+         */
+        public <K extends Comparable<? super K> & Serializable> SortConfigurer<T> addSorts(
+                @NonNull final Set<String> aliases,
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction
+        ) {
+            addSort(aliases, fieldName, expressionProviderFunction, Sort.Direction.ASC, Sort.Direction.DESC);
             return this;
         }
 
@@ -787,6 +912,95 @@ public final class SortContext<T> {
             addBaseSort(fieldName, expressionProviderFunction, directions);
             registerDefaultAlias(fieldName);
             return this;
+        }
+
+        /**
+         * Internal helper for registering a single client-facing alias and adding the requested
+         * directions for the target field. This method performs alias validation, updates the
+         * {@link SortHolder} for the given {@code fieldName} (merging directions and source types),
+         * and registers the alias -> field mapping.
+         * <p>
+         * Note: unlike the public addSort(String) variants this helper does not register
+         * the default alias (i.e. fieldName -> fieldName) because it is used when an explicit
+         * client-facing alias is provided.
+         *
+         * @param alias      client-facing alias to register; must not be null or blank
+         * @param fieldName  entity field name the alias maps to; must not be null or blank
+         * @param directions allowed sort directions to add for the field
+         */
+        private void addSort(
+                @NonNull final String alias,
+                @NonNull final String fieldName,
+                @NonNull final Sort.Direction... directions
+        ) {
+            validateAlias(alias, fieldName);
+            addSortHolder(fieldName, directions);
+            addAliasToField(alias, fieldName);
+        }
+
+        /**
+         * Internal helper for registering a single client-facing alias with a custom
+         * {@link ExpressionProviderFunction} and adding the requested directions for the target field.
+         * Validates the alias, attaches or replaces the expression provider for the field, merges
+         * directions and source types, and registers the alias -> field mapping.
+         *
+         * @param alias                      client-facing alias to register; must not be null or blank
+         * @param fieldName                  entity field name the alias maps to; must not be null or blank
+         * @param expressionProviderFunction function that provides the JPA expression; must not be null
+         * @param directions                 allowed sort directions to add for the field
+         * @param <K>                        expression result type
+         */
+        private <K extends Comparable<? super K> & Serializable> void addSort(
+                @NonNull final String alias,
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+                @NonNull final Sort.Direction... directions
+        ) {
+            validateAlias(alias, fieldName);
+            addSortHolder(fieldName, expressionProviderFunction, directions);
+            addAliasToField(alias, fieldName);
+        }
+
+        /**
+         * Internal helper for registering multiple client-facing aliases that all map to the same
+         * entity field and adding the requested directions for that field. Validates the alias set
+         * and registers each alias->field mapping after updating the {@link SortHolder}.
+         *
+         * @param aliases    set of client-facing aliases to register; must not be null or empty
+         * @param fieldName  entity field name the aliases map to; must not be null or blank
+         * @param directions allowed sort directions to add for the field
+         */
+        private void addSort(
+                @NonNull final Set<String> aliases,
+                @NonNull final String fieldName,
+                @NonNull final Sort.Direction... directions
+        ) {
+            validateAliasesSet(aliases, fieldName);
+            addSortHolder(fieldName, directions);
+            aliases.forEach(alias -> addAliasToField(alias, fieldName));
+        }
+
+        /**
+         * Internal helper for registering multiple client-facing aliases that map to the same
+         * entity field and attaching a custom {@link ExpressionProviderFunction}. Validates the
+         * alias set, attaches or replaces the expression provider for the field, merges directions
+         * and source types, and registers each alias->field mapping.
+         *
+         * @param aliases                    set of client-facing aliases to register; must not be null or empty
+         * @param fieldName                  entity field name the aliases map to; must not be null or blank
+         * @param expressionProviderFunction function that provides the JPA expression; must not be null
+         * @param directions                 allowed sort directions to add for the field
+         * @param <K>                        expression result type
+         */
+        private <K extends Comparable<? super K> & Serializable> void addSort(
+                @NonNull final Set<String> aliases,
+                @NonNull final String fieldName,
+                @NonNull final ExpressionProviderFunction<T, K> expressionProviderFunction,
+                @NonNull final Sort.Direction... directions
+        ) {
+            validateAliasesSet(aliases, fieldName);
+            addSortHolder(fieldName, expressionProviderFunction, directions);
+            aliases.forEach(alias -> addAliasToField(alias, fieldName));
         }
 
         /**

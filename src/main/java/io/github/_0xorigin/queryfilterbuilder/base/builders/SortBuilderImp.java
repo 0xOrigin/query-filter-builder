@@ -182,8 +182,6 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
 
         String candidate = wrapper.field();
         String mapped = map.get(candidate);
-        if (mapped == null)
-            mapped = map.get(wrapper.originalFieldName());
 
         if (mapped != null && !mapped.equals(wrapper.field())) {
             return new SortWrapper(mapped, wrapper.originalFieldName(), wrapper.direction(), wrapper.sourceType(), wrapper.sortType());
