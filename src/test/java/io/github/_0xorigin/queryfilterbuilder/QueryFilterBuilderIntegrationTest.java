@@ -8,6 +8,7 @@ import io.github._0xorigin.queryfilterbuilder.configs.*;
 import io.github._0xorigin.queryfilterbuilder.entities.User;
 import io.github._0xorigin.queryfilterbuilder.entities.UserRepository;
 import io.github._0xorigin.queryfilterbuilder.exceptions.InvalidQueryParameterException;
+import jakarta.persistence.criteria.Expression;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Sort;
+import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ContextConfiguration;
@@ -30,6 +32,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -616,5 +619,656 @@ class QueryFilterBuilderIntegrationTest {
             .containsSequence("User1", "User1");
         users.extracting(User::getFirstName)
             .containsSequence("Inactive", "Regular");
+    }
+
+    @Test
+    @DisplayName("Filters by alias using query parameter")
+    void testFilter_ByAlias_QueryParam() {
+        // Build a template that registers an alias 'fn' for 'firstName'
+        FilterContext.Template<User> aliasTemplate = FilterContext.buildTemplateForType(User.class)
+            .queryParam(configurer -> configurer.addFilter("fn", "firstName", Operator.EQ))
+            .buildTemplate();
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addParameter("fn", "Admin");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        FilterContext<User> filterContext = aliasTemplate
+            .newSourceBuilder()
+            .withQuerySource(request)
+            .buildFilterContext();
+
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results).hasSize(1).first().extracting(User::getFirstName).isEqualTo("Admin");
+    }
+
+    @Test
+    @DisplayName("Filters by alias using request body")
+    void testFilter_ByAlias_RequestBody() {
+        // Build a template that registers an alias 'fn' for 'firstName' for body source
+        FilterContext.Template<User> aliasTemplate = FilterContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addFilter("fn", "firstName", Operator.EQ))
+            .buildTemplate();
+
+        List<FilterRequest> filterRequests = List.of(new FilterRequest("fn", Operator.EQ.getValue(), "Admin"));
+
+        FilterContext<User> filterContext = aliasTemplate
+            .newSourceBuilder()
+            .withBodySource(filterRequests)
+            .buildFilterContext();
+
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results).hasSize(1).first().extracting(User::getFirstName).isEqualTo("Admin");
+    }
+
+    @Test
+    @DisplayName("Filters by multiple aliases")
+    void testFilter_ByMultipleAliases() {
+        // Register multiple aliases for the same field
+        FilterContext.Template<User> aliasTemplate = FilterContext.buildTemplateForType(User.class)
+            .queryParam(configurer -> configurer.addFilter(Set.of("fn", "first_name"), "firstName", Operator.EQ))
+            .buildTemplate();
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addParameter("first_name", "Admin");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        FilterContext<User> filterContext = aliasTemplate
+            .newSourceBuilder()
+            .withQuerySource(request)
+            .buildFilterContext();
+
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results).hasSize(1).first().extracting(User::getFirstName).isEqualTo("Admin");
+    }
+
+    @Test
+    @DisplayName("Sorts by alias using request body")
+    void testSort_ByAlias_RequestBody() {
+        // Register alias 'fn' for firstName for sort request body
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addSorts("fn", "firstName"))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("fn", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        // Descending by firstName: Regular, Inactive, Admin
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsSequence("Regular", "Inactive", "Admin");
+    }
+
+    @Test
+    @DisplayName("Sorts by alias using query parameter")
+    void testSort_ByAlias_QueryParam() {
+        // Register alias 'fn' for firstName for sort query params
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .queryParam(configurer -> configurer.addSorts("fn", "firstName"))
+            .buildTemplate();
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addParameter("sort", "-fn");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withQuerySource(request)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsSequence("Regular", "Inactive", "Admin");
+    }
+
+    @Test
+    @DisplayName("Filters by alias with expression (request body)")
+    void testFilter_ByAlias_WithExpression_RequestBody() {
+        // Register an alias 'creatorFirst' that maps to createdBy.firstName via an expression provider
+        FilterContext.Template<User> aliasTemplate = FilterContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addFilter(
+                "creatorFirst",
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName"),
+                Operator.EQ
+            ))
+            .buildTemplate();
+
+        // We're looking for users whose creator's first name is 'Admin' -> should return the regular user
+        List<FilterRequest> filterRequests = List.of(new FilterRequest("creatorFirst", Operator.EQ.getValue(), "Admin"));
+
+        FilterContext<User> filterContext = aliasTemplate
+            .newSourceBuilder()
+            .withBodySource(filterRequests)
+            .buildFilterContext();
+
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getFirstName()).isEqualTo("Regular");
+    }
+
+    @Test
+    @DisplayName("Sorts by alias with expression (query param)")
+    void testSort_ByAlias_WithExpression_QueryParam() {
+        // Register alias 'creatorFirst' for query param sorting that sorts by createdBy.firstName
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .queryParam(configurer -> configurer.addSorts(
+                "creatorFirst",
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName")
+            ))
+            .buildTemplate();
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        // descending by creator's first name
+        request.addParameter("sort", "-creatorFirst");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withQuerySource(request)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        // Map to creator first names (null when no creator) and assert descending order: Regular, Admin, null
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        assertThat(creatorFirstNames).containsSequence("Regular", "Admin", null);
+    }
+
+    @Test
+    @DisplayName("Sorts by alias with expression (request body - desc)")
+    void testSort_ByAlias_WithExpression_RequestBody_Desc() {
+        // Register alias 'creatorFirstDesc' for body sorting that sorts by createdBy.firstName descending
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addDescSort(
+                "creatorFirstDesc",
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("creatorFirstDesc", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        // descending by creator first name: inactive user (creator=Regular), regular (creator=Admin), admin (creator=null)
+        assertThat(creatorFirstNames).containsSequence("Regular", "Admin", null);
+    }
+
+    @Test
+    @DisplayName("Sorts by aliases set (request body)")
+    void testSort_ByAliasesSet_RequestBody() {
+        // Register multiple aliases for firstName and sort using one of the aliases
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addAscSort(Set.of("fn", "first_name"), "firstName"))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("first_name", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results).hasSize(3);
+        // Ensure alias mapping produced an ordering (non-empty check)
+        assertThat(results.stream().map(User::getFirstName).toList()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("Sorts by field with expression provider (ascending)")
+    void testSort_ByField_WithExpressionProvider_Asc() {
+        SortContext.Template<User> expressionSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addAscSort(
+                "firstName",
+                (root, q, cb) -> root.get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("firstName", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = expressionSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsExactly("Admin", "Inactive", "Regular");
+    }
+
+    @Test
+    @DisplayName("Sorts by field with expression provider (descending)")
+    void testSort_ByField_WithExpressionProvider_Desc() {
+        SortContext.Template<User> expressionSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addDescSort(
+                "firstName",
+                (root, q, cb) -> root.get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("firstName", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = expressionSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsExactly("Regular", "Inactive", "Admin");
+    }
+
+    @Test
+    @DisplayName("Sorts by field with expression provider (both directions)")
+    void testSort_ByField_WithExpressionProvider_Both() {
+        SortContext.Template<User> expressionSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addSorts(
+                "firstName",
+                (root, q, cb) -> root.get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("firstName", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = expressionSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsExactly("Regular", "Inactive", "Admin");
+    }
+
+    @Test
+    @DisplayName("Sorts by single alias (ascending)")
+    void testSort_BySingleAlias_Asc() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addAscSort("fn", "firstName"))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("fn", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsExactly("Admin", "Inactive", "Regular");
+    }
+
+    @Test
+    @DisplayName("Sorts by single alias (descending)")
+    void testSort_BySingleAlias_Desc() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addDescSort("ln", "firstName"))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("ln", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsExactly("Regular", "Inactive", "Admin");
+    }
+
+    @Test
+    @DisplayName("Sorts by single alias (both directions)")
+    void testSort_BySingleAlias_Both() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addSorts("role_alias", "role"))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("role_alias", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getRole)
+            .containsExactly(User.Role.ADMIN, User.Role.USER, User.Role.USER);
+    }
+
+    @Test
+    @DisplayName("Sorts by alias with expression provider (ascending)")
+    void testSort_ByAlias_WithExpressionProvider_Asc() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addAscSort(
+                "creator_first",
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("creator_first", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        // Ascending: null, Admin, Regular
+        assertThat(creatorFirstNames).containsSequence(null, "Admin", "Regular");
+    }
+
+    @Test
+    @DisplayName("Sorts by alias with expression provider (descending)")
+    void testSort_ByAlias_WithExpressionProvider_Desc() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addDescSort(
+                "creator_first",
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("creator_first", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        // Descending: Regular, Admin, null
+        assertThat(creatorFirstNames).containsSequence("Regular", "Admin", null);
+    }
+
+    @Test
+    @DisplayName("Sorts by alias with expression provider (both directions)")
+    void testSort_ByAlias_WithExpressionProvider_Both() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addSorts(
+                "creator_name",
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("creator_name", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        // Descending: Regular, Admin, null
+        assertThat(creatorFirstNames).containsSequence("Regular", "Admin", null);
+    }
+
+    @Test
+    @DisplayName("Sorts by aliases set (ascending)")
+    void testSort_ByAliasesSet_Asc() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addAscSort(Set.of("fn", "first_name", "fname"), "firstName"))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("fname", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsExactly("Admin", "Inactive", "Regular");
+    }
+
+    @Test
+    @DisplayName("Sorts by aliases set (descending)")
+    void testSort_ByAliasesSet_Desc() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addDescSort(Set.of("ln", "last_name", "lname"), "firstName"))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("last_name", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsExactly("Regular", "Inactive", "Admin");
+    }
+
+    @Test
+    @DisplayName("Sorts by aliases set (both directions)")
+    void testSort_ByAliasesSet_Both() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addSorts(Set.of("r", "role_alias"), "role"))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("r", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getRole)
+            .containsExactly(User.Role.ADMIN, User.Role.USER, User.Role.USER);
+    }
+
+    @Test
+    @DisplayName("Sorts by aliases set with expression provider (ascending)")
+    void testSort_ByAliasesSet_WithExpressionProvider_Asc() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addAscSort(
+                Set.of("cf", "creator_first", "c_first"),
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("c_first", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        // Ascending: null, Admin, Regular
+        assertThat(creatorFirstNames).containsSequence(null, "Admin", "Regular");
+    }
+
+    @Test
+    @DisplayName("Sorts by aliases set with expression provider (descending)")
+    void testSort_ByAliasesSet_WithExpressionProvider_Desc() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addDescSort(
+                Set.of("cl", "creator_last", "c_last"),
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("creator_last", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        // Descending: Regular, Admin, null
+        assertThat(creatorFirstNames).containsSequence("Regular", "Admin", null);
+    }
+
+    @Test
+    @DisplayName("Sorts by aliases set with expression provider (both directions)")
+    void testSort_ByAliasesSet_WithExpressionProvider_Both() {
+        SortContext.Template<User> aliasSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addSorts(
+                Set.of("cn", "creator_name", "c_name"),
+                "createdBy.firstName",
+                (root, q, cb) -> root.join("createdBy", JoinType.LEFT).get("firstName")
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("cn", Sort.Direction.DESC));
+
+        SortContext<User> sortContext = aliasSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        // Descending: Regular, Admin, null
+        assertThat(creatorFirstNames).containsSequence("Regular", "Admin", null);
+    }
+
+    @Test
+    @DisplayName("Sorts by custom sort function")
+    void testSort_CustomSort() {
+        SortContext.Template<User> customSortTemplate = SortContext.buildTemplateForType(User.class)
+            .requestBody(configurer -> configurer.addCustomSort(
+                "customLengthSort",
+                (root, criteriaQuery, cb, errorWrapper) -> {
+                    Expression<String> firstNameExpression = root.get("firstName");
+                    return Optional.ofNullable(cb.asc(cb.length(firstNameExpression)));
+                }
+            ))
+            .buildTemplate();
+
+        List<SortRequest> sortRequests = List.of(new SortRequest("customLengthSort", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = customSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results)
+            .hasSize(3)
+            .extracting(User::getFirstName)
+            .containsExactly("Admin", "Regular", "Inactive");
     }
 }
