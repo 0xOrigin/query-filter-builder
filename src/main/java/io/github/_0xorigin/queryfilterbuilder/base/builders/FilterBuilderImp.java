@@ -305,8 +305,6 @@ public final class FilterBuilderImp<T> implements FilterBuilder<T> {
         // try using the parsed field (query param case) first, then originalFieldName (body case)
         String candidate = wrapper.field();
         String mapped = map.get(candidate);
-        if (mapped == null)
-            mapped = map.get(wrapper.originalFieldName());
 
         if (mapped != null && !mapped.equals(wrapper.field())) {
             return new FilterWrapper(

@@ -165,6 +165,33 @@ class FilterBuilderImpTest {
     }
 
     @Test
+    void getDistinctFilterWrappers_ResolveAlias_ByParsedField_ReturnsMappedWrapper() {
+        // Arrange: parsed wrapper uses an alias as the parsed field
+        FilterWrapper parsed = new FilterWrapper("alias", "alias", Operator.EQ, List.of("val"), SourceType.QUERY_PARAM, Optional.empty());
+        List<FilterWrapper> parsedWrappers = List.of(parsed);
+        when(filterContext.getRequest()).thenReturn(Optional.of(httpServletRequest));
+        when(filterContext.getFilterRequests()).thenReturn(Optional.empty());
+        when(filterParser.parse(httpServletRequest)).thenReturn(parsedWrappers);
+
+        // Alias map contains the parsed 'alias' key -> mappedField
+        when(filterContext.getAliasToFieldMap()).thenReturn(Map.of("alias", "mappedField"));
+
+        // Ensure the mapped field is registered in filters so it becomes a NORMAL filter
+        FilterHolder<User, String> filterHolder = mock(FilterHolder.class);
+        when(filterContext.getFilters()).thenReturn(Map.of("mappedField", filterHolder));
+        when(filterHolder.operators()).thenReturn(Set.of(Operator.EQ));
+        when(filterHolder.sourceTypes()).thenReturn(Set.of(SourceType.QUERY_PARAM));
+
+        // Act
+        Collection<FilterWrapper> result = filterBuilder.getDistinctFilterWrappers(filterContext);
+
+        // Assert: the returned wrapper should have its field resolved to the mapped field
+        FilterWrapper expected = new FilterWrapper("mappedField", "alias", Operator.EQ, List.of("val"), SourceType.QUERY_PARAM, Optional.of(FilterType.NORMAL));
+        assertThat(result).hasSize(1).containsExactly(expected);
+        verify(filterParser).parse(httpServletRequest);
+    }
+
+    @Test
     void buildPredicateForWrapper_NoFilterType_ReturnsEmpty() {
         // Arrange
         FilterWrapper wrapper = new FilterWrapper("firstName", "firstName", Operator.EQ, List.of("John"), SourceType.QUERY_PARAM, Optional.empty());

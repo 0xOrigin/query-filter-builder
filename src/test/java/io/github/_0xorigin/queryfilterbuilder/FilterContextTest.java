@@ -14,7 +14,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -418,5 +420,131 @@ class FilterContextTest {
         assertThatThrownBy(() -> builder.queryParam(c -> c.addCustomFilter("   ", String.class, (root, cq, cb, values, errorWrapper) -> Optional.ofNullable(cb.equal(root.get("firstName"), values.get(0))))))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("Filter name must not be blank");
+    }
+
+    @Test
+    void addFilter_withoutAlias_registersDefaultAlias() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addFilter("field", Operator.EQ));
+
+        FilterContext<User> context = builder.buildTemplate().newSourceBuilder().buildFilterContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+
+        assertThat(aliases).containsEntry("field", "field");
+        assertThatThrownBy(() -> aliases.put("new", "x")).isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    void addFilter_withSingleAlias_registersAliasOnly() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addFilter("alias", "field", Operator.EQ));
+
+        FilterContext<User> context = builder.buildTemplate().newSourceBuilder().buildFilterContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+
+        assertThat(aliases)
+                .containsEntry("alias", "field")
+                .doesNotContainKey("field");
+    }
+
+    @Test
+    void addFilter_withMultipleAliases_registersAllAliases() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addFilter(Set.of("a", "b"), "field", Operator.EQ));
+
+        FilterContext<User> context = builder.buildTemplate().newSourceBuilder().buildFilterContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
+    }
+
+    @Test
+    void addFilter_aliasConflict_throwsIllegalArgumentException() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+
+        assertThatThrownBy(() -> builder.queryParam(c -> {
+            c.addFilter("alias", "field1", Operator.EQ);
+            c.addFilter("alias", "field2", Operator.NEQ);
+        }))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Alias 'alias' is already mapped to a different field: field1");
+    }
+
+    @Test
+    void addFilter_nullAlias_throwsNullPointerException() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addFilter((String) null, "field", Operator.EQ)))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessage("Alias must not be null");
+    }
+
+    @Test
+    void addFilter_blankAlias_throwsIllegalArgumentException() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addFilter("   ", "field", Operator.EQ)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Alias must not be blank");
+    }
+
+    @Test
+    void addFilter_withExpression_withoutAlias_registersDefaultAlias() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addFilter("field", expr, Operator.EQ));
+
+        FilterContext<User> context = builder.buildTemplate().newSourceBuilder().buildFilterContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("field", "field");
+    }
+
+    @Test
+    void addFilter_withAlias_andExpression_registersAliasOnly() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addFilter("alias", "field", expr, Operator.EQ));
+
+        FilterContext<User> context = builder.buildTemplate().newSourceBuilder().buildFilterContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases)
+                .containsEntry("alias", "field")
+                .doesNotContainKey("field");
+    }
+
+    @Test
+    void addFilter_withMultipleAliases_andExpression_registersAllAliases() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addFilter(Set.of("a", "b"), "field", expr, Operator.EQ));
+
+        FilterContext<User> context = builder.buildTemplate().newSourceBuilder().buildFilterContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
+    }
+
+    @Test
+    void addFilter_aliasesSet_null_throwsNullPointerException() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addFilter((Set<String>) null, "field", Operator.EQ)))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessage("Aliases must not be null");
+    }
+
+    @Test
+    void addFilter_aliasesSet_empty_throwsIllegalArgumentException() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addFilter(Set.of(), "field", Operator.EQ)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Aliases must not be empty");
+    }
+
+    @Test
+    void addFilter_aliases_accumulatedAcrossSources() {
+        FilterContext.TemplateBuilder<User> builder = FilterContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addFilter("a", "field", Operator.EQ));
+        builder.requestBody(c -> c.addFilter("b", "field", Operator.GT));
+
+        FilterContext<User> context = builder.buildTemplate().newSourceBuilder().buildFilterContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
     }
 }
