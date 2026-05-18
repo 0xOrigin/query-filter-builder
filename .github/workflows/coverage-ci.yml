@@ -25,7 +25,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin
-          git pull --rebase origin/${{ github.ref_name }} || echo "Pull failed, continuing..."
+          git pull --rebase origin ${{ github.ref_name }} || echo "Pull failed, continuing..."
 
       - name: Set up JDK
         uses: actions/setup-java@v4
