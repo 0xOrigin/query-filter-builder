@@ -142,8 +142,6 @@ class QueryFilterBuilderIntegrationTest {
         inactiveUser.setLastLogin(OffsetDateTime.now().minusDays(30));
         inactiveUser.setCreatedBy(regularUser);
         userRepository.saveAndFlush(inactiveUser);
-
-        System.out.println("Test data setup complete: " + userRepository.findAll().stream().map(User::getId).toList());
     }
 
     @Test
