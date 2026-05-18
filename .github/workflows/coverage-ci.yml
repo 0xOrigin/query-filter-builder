@@ -2,7 +2,7 @@ name: CI with Coverage
 
 on:
   push:
-    branches: [ dev, master ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -49,7 +49,7 @@ jobs:
           generate-summary: true
 
       - name: Commit and Push Badges
-        if: github.event_name == 'push' && contains(fromJson('["dev", "master"]'), github.ref_name)
+        if: github.event_name == 'push' && contains(fromJson('["master"]'), github.ref_name)
         run: |
           git add .github/badges/*.svg
           if git diff --staged --quiet; then
