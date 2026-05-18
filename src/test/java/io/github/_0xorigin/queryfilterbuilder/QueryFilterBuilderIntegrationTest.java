@@ -31,10 +31,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Set;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
@@ -77,6 +74,7 @@ class QueryFilterBuilderIntegrationTest {
                 .addFilter("lastLogin", Operator.GT, Operator.LT, Operator.GTE, Operator.LTE, Operator.BETWEEN)
                 .addFilter("createdAt", Operator.GT, Operator.LT, Operator.GTE, Operator.LTE, Operator.BETWEEN)
                 .addFilter("createdBy.firstName", Operator.EQ)
+                .addFilter(Set.of("parent-user", "parent.User"), "createdBy", Operator.EQ, Operator.LT)
                 .addCustomFilter("customRoleFilter", User.Role.class,
                     (root, criteriaQuery, cb, values, filterErrorWrapper) ->
                         Optional.of(cb.equal(root.get("role"), values.get(0))))
@@ -96,6 +94,7 @@ class QueryFilterBuilderIntegrationTest {
             .requestBody(configurer -> configurer
                 .addSorts("firstName")
                 .addSorts("lastName")
+                .addAscSort("parentUser", "createdBy")
                 .addSorts("createdAt")
                 .addSorts("role"))
             .buildTemplate();
@@ -113,15 +112,17 @@ class QueryFilterBuilderIntegrationTest {
         Instant now = Instant.now();
 
         User adminUser = new User();
+        adminUser.setId(UUID.fromString("c0a86433-9e3b-198a-819e-3be990bf0000"));
         adminUser.setFirstName("Admin");
         adminUser.setLastName(null);
         adminUser.setRole(User.Role.ADMIN);
         adminUser.setIsActive(true);
         adminUser.setCreatedAt(now.minus(3, ChronoUnit.HOURS));
         adminUser.setLastLogin(OffsetDateTime.now());
-        userRepository.save(adminUser);
+        adminUser = userRepository.saveAndFlush(adminUser);
 
         User regularUser = new User();
+        regularUser.setId(UUID.fromString("c0a86433-9e3b-198a-819e-3be990d40001"));
         regularUser.setFirstName("Regular");
         regularUser.setLastName("User1");
         regularUser.setRole(User.Role.USER);
@@ -129,9 +130,10 @@ class QueryFilterBuilderIntegrationTest {
         regularUser.setCreatedAt(now.minus(1, ChronoUnit.HOURS));
         regularUser.setLastLogin(OffsetDateTime.now().minusDays(1));
         regularUser.setCreatedBy(adminUser);
-        userRepository.save(regularUser);
+        regularUser = userRepository.saveAndFlush(regularUser);
 
         User inactiveUser = new User();
+        inactiveUser.setId(UUID.fromString("c0a86433-9e3b-198a-819e-3be990d60002"));
         inactiveUser.setFirstName("Inactive");
         inactiveUser.setLastName("User1");
         inactiveUser.setRole(User.Role.USER);
@@ -139,7 +141,9 @@ class QueryFilterBuilderIntegrationTest {
         inactiveUser.setCreatedAt(now);
         inactiveUser.setLastLogin(OffsetDateTime.now().minusDays(30));
         inactiveUser.setCreatedBy(regularUser);
-        userRepository.save(inactiveUser);
+        userRepository.saveAndFlush(inactiveUser);
+
+        System.out.println("Test data setup complete: " + userRepository.findAll().stream().map(User::getId).toList());
     }
 
     @Test
@@ -342,6 +346,7 @@ class QueryFilterBuilderIntegrationTest {
     void testSorting_MultipleFieldsWithNulls() {
         // Create a user with null firstName
         User nullNameUser = new User();
+        nullNameUser.setId(UUID.fromString("c0a86433-9e3b-198a-819e-3be990d60003"));
         nullNameUser.setFirstName(null);
         nullNameUser.setLastName("NullFirst");
         nullNameUser.setRole(User.Role.USER);
@@ -1270,5 +1275,50 @@ class QueryFilterBuilderIntegrationTest {
             .hasSize(3)
             .extracting(User::getFirstName)
             .containsExactly("Admin", "Regular", "Inactive");
+    }
+
+    @Test
+    @DisplayName("Sorts by alias that map to association field")
+    void testSort_ByAlias_AssociationField() {
+        List<SortRequest> sortRequests = List.of(new SortRequest("parentUser", Sort.Direction.ASC));
+
+        SortContext<User> sortContext = userSortTemplate
+            .newSourceBuilder()
+            .withBodySource(sortRequests)
+            .buildSortContext();
+
+        Specification<User> specification = queryFilterBuilder.buildSortSpecification(sortContext);
+        List<User> results = userRepository.findAll(specification);
+
+        List<String> creatorFirstNames = results.stream()
+            .map(u -> u.getCreatedBy() == null ? null : u.getCreatedBy().getFirstName())
+            .toList();
+
+        assertThat(creatorFirstNames).containsSequence(null, "Admin", "Regular");
+    }
+
+    @Test
+    @DisplayName("Filters by alias that map to association field")
+    void testFilter_ByAlias_AssociationField() {
+        List<FilterRequest> filterRequests = List.of(
+                new FilterRequest(
+                        "parent-user",
+                        Operator.EQ.getValue(),
+                        "c0a86433-9e3b-198a-819e-3be990d40001"
+                )
+        );
+
+        FilterContext<User> filterContext = userFilterTemplate
+                .newSourceBuilder()
+                .withBodySource(filterRequests)
+                .buildFilterContext();
+
+        Specification<User> specification = queryFilterBuilder.buildFilterSpecification(filterContext);
+        List<User> results = userRepository.findAll(specification);
+
+        assertThat(results).hasSize(1)
+                .first()
+                .extracting(User::getFirstName)
+                .isEqualTo("Inactive");
     }
 }

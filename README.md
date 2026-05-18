@@ -54,6 +54,7 @@
 - **Spring Data Integration**: Seamlessly works with Spring Data JPA and Hibernate.
 - **Nested Property Filtering**: Enables filtering across related entities with customizable field delimiters.
 - **Extensibility**: Highly customizable with custom filter functions, custom sort functions, and expression providers.
+- **Field Aliases**: Allows clients to use stable, concise, or more user-friendly names in API requests.
 - **Flexible Configuration**: Configurable field delimiters, sort parameters, and localization support.
 - **Custom Filters & Sorting**: Support for complex, custom filtering and sorting logic beyond standard operators.
 - **Registry-Based Architecture**: Extensible operator and field registries for maximum flexibility.
@@ -76,7 +77,7 @@ To integrate Query Filter Builder into your project, add the following Maven dep
 <dependency>
     <groupId>io.github.0xorigin</groupId>
     <artifactId>query-filter-builder</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
 </dependency>
 ```
 
@@ -126,7 +127,7 @@ Define templates at application startup (e.g., in a private final field) to enca
 FilterContext.Template<User> userFilterTemplate = FilterContext.buildTemplateForType(User.class)
     .queryParam(configurer -> configurer
         .addFilter("role", Operator.EQ, Operator.NEQ, Operator.IN)
-        .addFilter("firstName", Operator.EQ, Operator.CONTAINS, Operator.ICONTAINS)
+        .addFilter(Set.of("first-name", "name"), "firstName", Operator.EQ, Operator.CONTAINS, Operator.ICONTAINS) // with set of aliases
         .addFilter("lastName", Operator.EQ, Operator.CONTAINS, Operator.ICONTAINS)
         .addFilter("isActive", (root, cq, cb) -> root.get("isActive"), Operator.EQ) // Can provide expression
         .addFilter("createdAt", Operator.GT, Operator.LT, Operator.GTE, Operator.LTE, Operator.BETWEEN)
@@ -135,7 +136,7 @@ FilterContext.Template<User> userFilterTemplate = FilterContext.buildTemplateFor
         .addFilter("role", Operator.EQ, Operator.NEQ, Operator.IN)
         .addFilter("firstName", Operator.EQ, Operator.CONTAINS, Operator.ICONTAINS)
         .addFilter("lastName", Operator.EQ, Operator.CONTAINS, Operator.ICONTAINS)
-        .addFilter("isActive", Operator.EQ)
+        .addFilter("active", "isActive", Operator.EQ) // with alias
         .addFilter("lastLogin", Operator.GT, Operator.LT, Operator.GTE, Operator.LTE, Operator.BETWEEN)
         .addFilter("createdAt", Operator.GT, Operator.LT, Operator.GTE, Operator.LTE, Operator.BETWEEN)
         .addFilter("createdBy.firstName", Operator.EQ) // Nested field example
@@ -160,9 +161,9 @@ SortContext.Template<User> userSortTemplate = SortContext.buildTemplateForType(U
         )
     )
     .requestBody(configurer -> configurer
-        .addSorts("firstName")
+        .addSorts(Set.of("first-name", "name"), "firstName") // with set of aliases
         .addSorts("lastName")
-        .addSorts("createdAt")
+        .addSorts("createdDateTime", "createdAt") // with alias
         .addSorts("role"))
     .buildTemplate();
 ```
