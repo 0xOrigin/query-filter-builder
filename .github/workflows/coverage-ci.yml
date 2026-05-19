@@ -1,0 +1,60 @@
+name: CI with Coverage
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull latest changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin
+          git pull --rebase origin ${{ github.ref_name }} || echo "Pull failed, continuing..."
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build and Test with Maven
+        run: mvn clean test jacoco:report
+
+      - name: Debug JaCoCo CSV
+        run: find . -name jacoco.csv
+
+      - name: Generate Coverage Badges
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          jacoco-csv-file: "**/jacoco.csv"
+          badges-directory: .github/badges
+          generate-branches-badge: true
+          generate-summary: true
+
+      - name: Commit and Push Badges
+        if: github.event_name == 'push' && contains(fromJson('["master"]'), github.ref_name)
+        run: |
+          git add .github/badges/*.svg
+          if git diff --staged --quiet; then
+            echo "No changes to coverage badges"
+          else
+            git commit -m "Update coverage badges [skip ci]"
+            git push
+          fi

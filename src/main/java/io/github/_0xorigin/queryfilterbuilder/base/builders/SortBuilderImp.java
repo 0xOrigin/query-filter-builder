@@ -10,8 +10,6 @@ import io.github._0xorigin.queryfilterbuilder.base.utils.FilterUtils;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.SortErrorWrapper;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.SortWrapper;
 import jakarta.persistence.criteria.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 
@@ -30,7 +28,6 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
 
     private final PathGenerator<T> fieldPathGenerator;
     private final SortParser sortParser;
-    private final Logger log = LoggerFactory.getLogger(SortBuilderImp.class);
 
     /**
      * Constructs a new SortBuilderImp with the necessary dependencies.
@@ -61,16 +58,17 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
     public Collection<SortWrapper> getDistinctSortWrappers(@NonNull final SortContext<T> sortContext) {
         final Map<String, SortWrapper> sortWrappers = new LinkedHashMap<>();
         sortContext.getRequest().ifPresent(request ->
-            sortParser.parse(request).forEach(sortWrapper ->
-                sortWrappers.compute(sortWrapper.field(), (k, currentValue) -> setSortType(sortContext, sortWrapper, currentValue))
-            )
+            sortParser.parse(request).forEach(sortWrapper -> {
+                final SortWrapper resolved = resolveAlias(sortContext, sortWrapper);
+                sortWrappers.compute(resolved.field(), (k, currentValue) -> setSortType(sortContext, resolved, currentValue));
+            })
         );
         sortContext.getSortRequests().ifPresent(sortRequests ->
-            sortParser.parse(sortRequests).forEach(sortWrapper ->
-                sortWrappers.compute(sortWrapper.originalFieldName(), (k, currentValue) -> setSortType(sortContext, sortWrapper, currentValue))
-            )
+            sortParser.parse(sortRequests).forEach(sortWrapper -> {
+                final SortWrapper resolved = resolveAlias(sortContext, sortWrapper);
+                sortWrappers.compute(resolved.field(), (k, currentValue) -> setSortType(sortContext, resolved, currentValue));
+            })
         );
-//        log.debug("SortWrappers: {}", sortWrappers);
         return sortWrappers.values();
     }
 
@@ -175,6 +173,20 @@ public final class SortBuilderImp<T> implements SortBuilder<T> {
             isSortExists
                 && customSortHolder.sourceTypes().contains(sortWrapper.sourceType())
         );
+    }
+
+    private SortWrapper resolveAlias(final SortContext<T> sortContext, final SortWrapper wrapper) {
+        final Map<String, String> map = sortContext.getAliasToFieldMap();
+        if (map.isEmpty())
+            return wrapper;
+
+        String candidate = wrapper.field();
+        String mapped = map.get(candidate);
+
+        if (mapped != null && !mapped.equals(wrapper.field())) {
+            return new SortWrapper(mapped, wrapper.originalFieldName(), wrapper.direction(), wrapper.sourceType(), wrapper.sortType());
+        }
+        return wrapper;
     }
 
     private <K extends Comparable<? super K> & Serializable> Expression<K> getExpression(

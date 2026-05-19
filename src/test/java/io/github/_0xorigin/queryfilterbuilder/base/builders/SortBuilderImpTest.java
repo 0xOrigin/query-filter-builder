@@ -127,6 +127,33 @@ class SortBuilderImpTest {
     }
 
     @Test
+    void getDistinctSortWrappers_ResolveAlias_ByParsedField_ReturnsMappedWrapper() {
+        // Arrange: parsed wrapper uses an alias as the parsed field
+        SortWrapper parsed = new SortWrapper("alias", "alias", Sort.Direction.ASC, SourceType.QUERY_PARAM, Optional.empty());
+        List<SortWrapper> parsedWrappers = List.of(parsed);
+        when(sortContext.getRequest()).thenReturn(Optional.of(httpServletRequest));
+        when(sortContext.getSortRequests()).thenReturn(Optional.empty());
+        when(sortParser.parse(httpServletRequest)).thenReturn(parsedWrappers);
+
+        // Alias map contains the parsed 'alias' key -> mappedField
+        when(sortContext.getAliasToFieldMap()).thenReturn(Map.of("alias", "mappedField"));
+
+        // Ensure the mapped field is registered in sorts so it becomes a NORMAL sort
+        SortHolder<User, String> sortHolder = mock(SortHolder.class);
+        when(sortContext.getSorts()).thenReturn(Map.of("mappedField", sortHolder));
+        when(sortHolder.directions()).thenReturn(Set.of(Sort.Direction.ASC));
+        when(sortHolder.sourceTypes()).thenReturn(Set.of(SourceType.QUERY_PARAM));
+
+        // Act
+        Collection<SortWrapper> result = sortBuilder.getDistinctSortWrappers(sortContext);
+
+        // Assert: the returned wrapper should have its field resolved to the mapped field
+        SortWrapper expected = new SortWrapper("mappedField", "alias", Sort.Direction.ASC, SourceType.QUERY_PARAM, Optional.of(SortType.NORMAL));
+        assertThat(result).hasSize(1).containsExactly(expected);
+        verify(sortParser).parse(httpServletRequest);
+    }
+
+    @Test
     void buildOrderForWrapper_NoSortType_ReturnsEmpty() {
         // Arrange
         SortWrapper wrapper = new SortWrapper("firstName", "firstName", Sort.Direction.ASC, SourceType.QUERY_PARAM, Optional.empty());
@@ -276,7 +303,7 @@ class SortBuilderImpTest {
         when(sortHolder.sourceTypes()).thenReturn(Set.of(SourceType.QUERY_PARAM));
         when(sortHolder.getExpression(root, criteriaQuery, criteriaBuilder)).thenAnswer(invocation -> Optional.of(stringExpression));
         when(errorHolder.bindingResult()).thenReturn(bindingResult);
-        when(errorHolder.methodParameter()).thenReturn(getSortMethodParameter());
+        when(errorHolder.methodParameter()).thenReturn(getMethodParameter("buildSortSpecification", SortContext.class));
         when(bindingResult.hasErrors()).thenReturn(true);
 
         // Act & Assert
@@ -285,16 +312,10 @@ class SortBuilderImpTest {
             .isInstanceOf(QueryBuilderConfigurationException.class);
     }
 
-    private MethodParameter getSortMethodParameter() {
+
+    private MethodParameter getMethodParameter(String methodName, Class<?> clazz) {
         try {
-            return new MethodParameter(
-                QueryFilterBuilderImp.class
-                    .getMethod(
-                        "buildSortSpecification",
-                        SortContext.class
-                    ),
-                0
-            );
+            return new MethodParameter(QueryFilterBuilderImp.class.getMethod(methodName, clazz), 0);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

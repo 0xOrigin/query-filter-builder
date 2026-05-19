@@ -17,7 +17,6 @@ import java.io.Serializable;
  */
 @FunctionalInterface
 public interface ExpressionProviderFunction<T, K extends Comparable<? super K> & Serializable> {
-
     /**
      * Creates and returns a JPA {@link Expression}.
      *
@@ -27,5 +26,4 @@ public interface ExpressionProviderFunction<T, K extends Comparable<? super K> &
      * @return The custom {@link Expression} to be used as the target for a filter or sort operation.
      */
     Expression<? extends K> apply(Root<T> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder);
-
 }

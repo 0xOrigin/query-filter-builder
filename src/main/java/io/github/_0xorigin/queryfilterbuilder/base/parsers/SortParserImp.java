@@ -5,8 +5,6 @@ import io.github._0xorigin.queryfilterbuilder.base.enums.SourceType;
 import io.github._0xorigin.queryfilterbuilder.base.wrappers.SortWrapper;
 import io.github._0xorigin.queryfilterbuilder.configs.QueryFilterBuilderProperties;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 
@@ -18,7 +16,6 @@ import java.util.*;
 public final class SortParserImp implements SortParser {
 
     private final QueryFilterBuilderProperties properties;
-    private final Logger log = LoggerFactory.getLogger(SortParserImp.class);
 
     /**
      * Constructs a new SortParserImp.
@@ -61,8 +58,7 @@ public final class SortParserImp implements SortParser {
      */
     @Override
     public List<SortWrapper> parse(@NonNull final List<SortRequest> sortRequests) {
-        if (sortRequests == null)
-            return List.of();
+        Objects.requireNonNull(sortRequests, "sortRequests cannot be null");
         return sortRequests
                 .stream()
                 .filter(sortRequest -> sortRequest.field() != null && !sortRequest.field().isBlank())

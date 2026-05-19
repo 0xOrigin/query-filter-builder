@@ -15,6 +15,8 @@ import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -109,7 +111,7 @@ class SortContextTest {
     @Test
     void sortConfigurer_addAscSortWithExpression_nullExpressionProvider_throwsNullPointerException() {
         SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
-        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort("field", null)))
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort("field", (ExpressionProviderFunction<User, String>) null)))
             .isInstanceOf(NullPointerException.class)
             .hasMessage("Expression provider function must not be null");
     }
@@ -126,7 +128,7 @@ class SortContextTest {
     @Test
     void sortConfigurer_addDescSortWithExpression_nullExpressionProvider_throwsNullPointerException() {
         SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
-        assertThatThrownBy(() -> builder.queryParam(c -> c.addDescSort("field", null)))
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addDescSort("field", (ExpressionProviderFunction<User, String>) null)))
             .isInstanceOf(NullPointerException.class)
             .hasMessage("Expression provider function must not be null");
     }
@@ -143,7 +145,7 @@ class SortContextTest {
     @Test
     void sortConfigurer_addSortsWithExpression_nullExpressionProvider_throwsNullPointerException() {
         SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
-        assertThatThrownBy(() -> builder.queryParam(c -> c.addSorts("field", null)))
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addSorts("field", (ExpressionProviderFunction<User, String>) null)))
             .isInstanceOf(NullPointerException.class)
             .hasMessage("Expression provider function must not be null");
     }
@@ -316,6 +318,74 @@ class SortContextTest {
         assertThat(holder.directions()).containsExactly(Sort.Direction.DESC);
         assertThat(holder.sourceTypes()).containsExactly(SourceType.QUERY_PARAM);
         assertThat(holder.expressionProviderFunction()).isPresent().get().isEqualTo(expr);
+    }
+
+    @Test
+    void sortConfigurer_addDescSortWithAliasAndExpression_success_setsExpressionAndDesc() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addDescSort("alias", "field", expr));
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        var holder = context.getSorts().get("field");
+
+        assertThat(holder).isNotNull();
+        assertThat(holder.directions()).containsExactly(Sort.Direction.DESC);
+        assertThat(holder.sourceTypes()).containsExactly(SourceType.QUERY_PARAM);
+        assertThat(holder.expressionProviderFunction()).isPresent().get().isEqualTo(expr);
+
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("alias", "field").doesNotContainKey("field");
+    }
+
+    @Test
+    void sortConfigurer_addSortsWithAliasAndExpression_success_setsExpressionAndAscDesc() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addSorts("alias", "field", expr));
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        var holder = context.getSorts().get("field");
+
+        assertThat(holder).isNotNull();
+        assertThat(holder.directions()).containsExactlyInAnyOrder(Sort.Direction.ASC, Sort.Direction.DESC);
+        assertThat(holder.sourceTypes()).containsExactly(SourceType.QUERY_PARAM);
+        assertThat(holder.expressionProviderFunction()).isPresent().get().isEqualTo(expr);
+
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("alias", "field").doesNotContainKey("field");
+    }
+
+    @Test
+    void sortConfigurer_addDescSortWithAliasesAndExpression_success_setsExpressionAndDesc() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addDescSort(Set.of("a", "b"), "field", expr));
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        var holder = context.getSorts().get("field");
+
+        assertThat(holder).isNotNull();
+        assertThat(holder.directions()).containsExactly(Sort.Direction.DESC);
+        assertThat(holder.sourceTypes()).containsExactly(SourceType.QUERY_PARAM);
+        assertThat(holder.expressionProviderFunction()).isPresent().get().isEqualTo(expr);
+
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
+    }
+
+    @Test
+    void sortConfigurer_addSortsWithAliasesAndExpression_success_setsExpressionAndAscDesc() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addSorts(Set.of("a", "b"), "field", expr));
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        var holder = context.getSorts().get("field");
+
+        assertThat(holder).isNotNull();
+        assertThat(holder.directions()).containsExactlyInAnyOrder(Sort.Direction.ASC, Sort.Direction.DESC);
+        assertThat(holder.sourceTypes()).containsExactly(SourceType.QUERY_PARAM);
+        assertThat(holder.expressionProviderFunction()).isPresent().get().isEqualTo(expr);
+
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
     }
 
     @Test
@@ -534,5 +604,165 @@ class SortContextTest {
         assertThatThrownBy(() -> builder.queryParam(c -> c.addCustomSort("", (root, cq, cb, errorWrapper) -> Optional.ofNullable(cb.asc(root.get("firstName"))))))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("Sort name must not be blank");
+    }
+
+    @Test
+    void addSort_withoutAlias_registersDefaultAlias() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addAscSort("field"));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+
+        assertThat(aliases).containsEntry("field", "field");
+        assertThatThrownBy(() -> aliases.put("new", "x")).isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    void addSort_withAlias_registersAliasOnly() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addAscSort("alias", "field"));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+
+        assertThat(aliases)
+                .containsEntry("alias", "field")
+                .doesNotContainKey("field");
+    }
+
+    @Test
+    void addSort_withMultipleAliases_registersAllAliases() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addAscSort(Set.of("a", "b"), "field"));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
+    }
+
+    @Test
+    void addDescSort_withMultipleAliases_registersAllAliases() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addDescSort(Set.of("a", "b"), "field"));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        var holder = context.getSorts().get("field");
+
+        assertThat(holder).isNotNull();
+        assertThat(holder.directions()).containsExactly(Sort.Direction.DESC);
+        assertThat(holder.sourceTypes()).containsExactly(SourceType.QUERY_PARAM);
+        assertThat(holder.expressionProviderFunction()).isEmpty();
+
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
+    }
+
+    @Test
+    void addSorts_withMultipleAliases_registersAllAliasesAndAscDesc() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addSorts(Set.of("a", "b"), "field"));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        var holder = context.getSorts().get("field");
+
+        assertThat(holder).isNotNull();
+        assertThat(holder.directions()).containsExactlyInAnyOrder(Sort.Direction.ASC, Sort.Direction.DESC);
+        assertThat(holder.sourceTypes()).containsExactly(SourceType.QUERY_PARAM);
+        assertThat(holder.expressionProviderFunction()).isEmpty();
+
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
+    }
+
+    @Test
+    void addSort_aliasConflict_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+
+        assertThatThrownBy(() -> builder.queryParam(c -> {
+            c.addAscSort("alias", "field1");
+            c.addDescSort("alias", "field2");
+        }))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Alias 'alias' is already mapped to a different field: field1");
+    }
+
+    @Test
+    void addSort_nullAlias_throwsNullPointerException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort((String) null, "field")))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessage("Alias must not be null");
+    }
+
+    @Test
+    void addSort_blankAlias_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort("   ", "field")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Alias must not be blank");
+    }
+
+    @Test
+    void addSort_withExpression_withoutAlias_registersDefaultAlias() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addAscSort("field", expr));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("field", "field");
+    }
+
+    @Test
+    void addSort_withAlias_andExpression_registersAliasOnly() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addAscSort("alias", "field", expr));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases)
+                .containsEntry("alias", "field")
+                .doesNotContainKey("field");
+    }
+
+    @Test
+    void addSort_withMultipleAliases_andExpression_registersAllAliases() {
+        ExpressionProviderFunction<User, String> expr = (root, cq, cb) -> root.get("firstName");
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addAscSort(Set.of("a", "b"), "field", expr));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
+    }
+
+    @Test
+    void addSort_aliasesSet_null_throwsNullPointerException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort((Set<String>) null, "field")))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessage("Aliases must not be null");
+    }
+
+    @Test
+    void addSort_aliasesSet_empty_throwsIllegalArgumentException() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        assertThatThrownBy(() -> builder.queryParam(c -> c.addAscSort(Set.of(), "field")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Aliases must not be empty");
+    }
+
+    @Test
+    void addSort_aliases_accumulatedAcrossSources() {
+        SortContext.TemplateBuilder<User> builder = SortContext.buildTemplateForType(User.class);
+        builder.queryParam(c -> c.addAscSort("a", "field"));
+        builder.requestBody(c -> c.addDescSort("b", "field"));
+
+        SortContext<User> context = builder.buildTemplate().newSourceBuilder().buildSortContext();
+        Map<String, String> aliases = context.getAliasToFieldMap();
+        assertThat(aliases).containsEntry("a", "field").containsEntry("b", "field");
     }
 }

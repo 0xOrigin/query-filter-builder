@@ -234,7 +234,8 @@ class FilterParserImpTest {
 
     @Test
     void testParseFilterRequestsWithNullList() {
-        assertThat(filterParser.parse((List<FilterRequest>) null))
-            .isEmpty();
+        assertThatThrownBy(() -> filterParser.parse((List<FilterRequest>) null))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessage("filterRequests cannot be null");
     }
 }

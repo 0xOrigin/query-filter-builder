@@ -38,17 +38,14 @@ public record SortRequest(
         @JsonProperty("field") String field,
         @JsonProperty("direction") String directionStr
     ) {
-        Sort.Direction direction = null;
+        Sort.Direction direction = Sort.Direction.ASC;
         if (directionStr != null && !directionStr.isBlank()) {
-            // Convert to uppercase and parse to enum (handles invalid values by defaulting to ASC)
             try {
                 direction = Sort.Direction.valueOf(directionStr.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                // Default to ASC
-                direction = Sort.Direction.ASC;
+                /* no-op */
             }
         }
-        // Use the record's compact constructor (which handles null default)
         return new SortRequest(field, direction);
     }
 }
