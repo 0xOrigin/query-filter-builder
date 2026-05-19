@@ -52,7 +52,10 @@ public final class QueryFilterBuilderImp<T> implements QueryFilterBuilder<T> {
     @Override
     public Specification<T> buildFilterSpecification(@NonNull final FilterContext<T> filterContext) {
         Objects.requireNonNull(filterContext, "FilterContext must not be null");
-        final ErrorHolder errorHolder = new ErrorHolder(getBindingResult(), getFilterMethodParameter());
+        final ErrorHolder errorHolder = new ErrorHolder(
+                getBindingResult(),
+                getMethodParameter("buildFilterSpecification", FilterContext.class)
+        );
         return (root, criteriaQuery, criteriaBuilder) -> {
             final List<Predicate> predicates = filterBuilder.getDistinctFilterWrappers(filterContext).stream()
                     .map(filterWrapper -> filterBuilder.buildPredicateForWrapper(root, criteriaQuery, criteriaBuilder, filterContext, filterWrapper, errorHolder))
@@ -76,7 +79,10 @@ public final class QueryFilterBuilderImp<T> implements QueryFilterBuilder<T> {
     @Override
     public Specification<T> buildSortSpecification(@NonNull final SortContext<T> sortContext) {
         Objects.requireNonNull(sortContext, "SortContext must not be null");
-        final ErrorHolder errorHolder = new ErrorHolder(getBindingResult(), getSortMethodParameter());
+        final ErrorHolder errorHolder = new ErrorHolder(
+                getBindingResult(),
+                getMethodParameter("buildSortSpecification", SortContext.class)
+        );
         return (root, criteriaQuery, criteriaBuilder) -> {
             final List<Order> orders = sortBuilder.getDistinctSortWrappers(sortContext).stream()
                     .map(sortWrapper -> sortBuilder.buildOrderForWrapper(root, criteriaQuery, criteriaBuilder, sortContext, sortWrapper, errorHolder))
@@ -93,31 +99,9 @@ public final class QueryFilterBuilderImp<T> implements QueryFilterBuilder<T> {
         return new BeanPropertyBindingResult(this, "queryFilterBuilder");
     }
 
-    private MethodParameter getFilterMethodParameter() {
+    private MethodParameter getMethodParameter(String methodName, Class<?> clazz) {
         try {
-            return new MethodParameter(
-                this.getClass()
-                    .getMethod(
-                        "buildFilterSpecification",
-                        FilterContext.class
-                    ),
-            0
-            );
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    private MethodParameter getSortMethodParameter() {
-        try {
-            return new MethodParameter(
-                this.getClass()
-                    .getMethod(
-                        "buildSortSpecification",
-                        SortContext.class
-                    ),
-            0
-            );
+            return new MethodParameter(this.getClass().getMethod(methodName, clazz), 0);
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(e);
         }

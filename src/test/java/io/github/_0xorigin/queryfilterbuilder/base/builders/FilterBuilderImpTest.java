@@ -373,7 +373,7 @@ class FilterBuilderImpTest {
         when(filterHolder.getExpression(root, criteriaQuery, criteriaBuilder)).thenAnswer(invocation -> Optional.of(stringExpression));
         when(errorHolder.bindingResult()).thenReturn(bindingResult);
         when(bindingResult.hasErrors()).thenReturn(true);
-        when(errorHolder.methodParameter()).thenReturn(getFilterMethodParameter());
+        when(errorHolder.methodParameter()).thenReturn(getMethodParameter("buildFilterSpecification", FilterContext.class));
 
         // Assert
         assertThatThrownBy(() -> filterBuilder.buildPredicateForWrapper(root, criteriaQuery, criteriaBuilder, filterContext, wrapper, errorHolder))
@@ -420,7 +420,7 @@ class FilterBuilderImpTest {
         when(filterHolder.sourceTypes()).thenReturn(Set.of(SourceType.QUERY_PARAM));
         when(filterHolder.getExpression(root, criteriaQuery, criteriaBuilder)).thenReturn(Optional.of(mock(Expression.class)));
         when(errorHolder.bindingResult()).thenReturn(bindingResult);
-        when(errorHolder.methodParameter()).thenReturn(getFilterMethodParameter());
+        when(errorHolder.methodParameter()).thenReturn(getMethodParameter("buildFilterSpecification", FilterContext.class));
         when(bindingResult.hasErrors()).thenReturn(true);
 
         // Act & Assert
@@ -442,7 +442,7 @@ class FilterBuilderImpTest {
         when(filterOperatorRegistry.getOperator(Operator.EQ)).thenReturn(filterOperator);
         when(filterField.getSupportedOperators()).thenReturn(Set.of(Operator.EQ));
         when(errorHolder.bindingResult()).thenReturn(bindingResult);
-        when(errorHolder.methodParameter()).thenReturn(getFilterMethodParameter());
+        when(errorHolder.methodParameter()).thenReturn(getMethodParameter("buildFilterSpecification", FilterContext.class));
         when(bindingResult.hasErrors()).thenReturn(true);
 
         // Act & Assert
@@ -546,7 +546,7 @@ class FilterBuilderImpTest {
         Expression<TestEnum> enumExpression = mock(Expression.class);
         when(filterHolder.getExpression(root, criteriaQuery, criteriaBuilder)).thenAnswer(invocation -> Optional.of(enumExpression));
         when(errorHolder.bindingResult()).thenReturn(bindingResult);
-        when(errorHolder.methodParameter()).thenReturn(getFilterMethodParameter());
+        when(errorHolder.methodParameter()).thenReturn(getMethodParameter("buildFilterSpecification", FilterContext.class));
         when(bindingResult.hasErrors()).thenReturn(true);
 
         // Act & Assert
@@ -592,16 +592,9 @@ class FilterBuilderImpTest {
         verify(filterOperator).apply(eq(enumExpression), eq(criteriaBuilder), eq(enumValues), any());
     }
 
-    private MethodParameter getFilterMethodParameter() {
+    private MethodParameter getMethodParameter(String methodName, Class<?> clazz) {
         try {
-            return new MethodParameter(
-                QueryFilterBuilderImp.class
-                    .getMethod(
-                        "buildFilterSpecification",
-                        FilterContext.class
-                    ),
-                0
-            );
+            return new MethodParameter(QueryFilterBuilderImp.class.getMethod(methodName, clazz), 0);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

@@ -303,7 +303,7 @@ class SortBuilderImpTest {
         when(sortHolder.sourceTypes()).thenReturn(Set.of(SourceType.QUERY_PARAM));
         when(sortHolder.getExpression(root, criteriaQuery, criteriaBuilder)).thenAnswer(invocation -> Optional.of(stringExpression));
         when(errorHolder.bindingResult()).thenReturn(bindingResult);
-        when(errorHolder.methodParameter()).thenReturn(getSortMethodParameter());
+        when(errorHolder.methodParameter()).thenReturn(getMethodParameter("buildSortSpecification", SortContext.class));
         when(bindingResult.hasErrors()).thenReturn(true);
 
         // Act & Assert
@@ -312,16 +312,10 @@ class SortBuilderImpTest {
             .isInstanceOf(QueryBuilderConfigurationException.class);
     }
 
-    private MethodParameter getSortMethodParameter() {
+
+    private MethodParameter getMethodParameter(String methodName, Class<?> clazz) {
         try {
-            return new MethodParameter(
-                QueryFilterBuilderImp.class
-                    .getMethod(
-                        "buildSortSpecification",
-                        SortContext.class
-                    ),
-                0
-            );
+            return new MethodParameter(QueryFilterBuilderImp.class.getMethod(methodName, clazz), 0);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
